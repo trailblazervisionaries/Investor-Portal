@@ -8,7 +8,7 @@ from app.models.expenses_model import ExpenseGrowth, Expense, ExpenseTypes
 from app.core.utils_functions import generate_id
 from decimal import Decimal
 from datetime import datetime, timedelta
-from decimal import Decimal, getcontext, ROUND_HALF_UP
+from decimal import Decimal, getcontext, ROUND_HALF_UP, ROUND_DOWN
 import logging
 from collections import defaultdict
 
@@ -36,6 +36,22 @@ class PropertyPerformaService:
 
         property_obj = result.scalars().first()
 
+        return property_obj
+    
+    async def get_all_info_about_property_Property_type(db, property_id):
+        
+        result = await db.execute(
+            select(Property)
+            .where(
+                Property.property_id == property_id,
+                Property.is_deleted == False
+            )
+            .options(
+                selectinload(Property.unit_types)
+                .selectinload(PropertyUnitType.units),
+            )
+        )
+        property_obj = result.scalars().first()
         return property_obj
     
 
@@ -306,6 +322,63 @@ class PropertyPerformaService:
         return final_projection
     
 
+    # async def calculate_all_expenses(db, property_id, is_for_noi = None):
+
+    #     result = defaultdict(dict)
+    #     expense_data = await ExpenseTypes.get_property_expense_details(db, property_id)
+    #     for expense_type in expense_data:
+    #         expense_name = expense_type["expense_type_name"]
+
+    #         for expense in expense_type["expenses"]:
+
+    #             growth_map = {
+    #                 g["year"]: Decimal(str(g["growth_percentage"]))
+    #                 for g in expense["expense_growth"]
+    #             }
+
+    #             current_value = Decimal(str(expense["current_expense"]))
+    #             proforma_value = Decimal(str(expense["pro_forma_expense"]))
+
+    #             result[0][expense_name] = current_value
+    #             # ---------- YEAR 1 ----------
+    #             if expense_name in ["CapEx", "Management Fee"]:
+    #                 previous_value = proforma_value
+    #             else:
+    #                 growth = growth_map.get(1, Decimal("0"))
+    #                 previous_value = current_value + (
+    #                     current_value * growth / Decimal("100")
+    #                 )
+
+    #             result[1][expense_name] = float(previous_value)
+
+    #             # ---------- YEAR 2–11 ----------
+    #             for year in range(2, 12):
+    #                 growth = growth_map.get(year, Decimal("0"))
+
+    #                 new_value = previous_value + (
+    #                     previous_value * growth / Decimal("100")
+    #                 )
+
+    #                 result[year][expense_name] = new_value
+
+    #                 previous_value = new_value
+
+    #     # ---------- ADD TOTAL ----------
+    #     final_output = {}
+
+    #     for year in range(0, 12):
+    #         year_data = result[year]
+    #         total = sum(year_data.values())
+
+    #         year_data["total_expanse"] = total
+
+    #         if is_for_noi is not None:
+    #             final_output[year] = year_data["total_expanse"]
+    #         else:
+    #             final_output[year] = year_data
+        
+    #     return final_output
+
 
     async def calculate_all_expenses(db, property_id, is_for_noi = None):
 
@@ -324,11 +397,8 @@ class PropertyPerformaService:
                 current_value = Decimal(str(expense["current_expense"]))
                 proforma_value = Decimal(str(expense["pro_forma_expense"]))
 
-                # ---------- YEAR 0 ----------
-                # result[0][expense_name] = float(
-                #     current_value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-                # )
                 result[0][expense_name] = current_value
+                
                 # ---------- YEAR 1 ----------
                 if expense_name in ["CapEx", "Management Fee"]:
                     previous_value = proforma_value
@@ -338,23 +408,14 @@ class PropertyPerformaService:
                         current_value * growth / Decimal("100")
                     )
 
-                # previous_value = previous_value.quantize(
-                #     Decimal("0.01"), rounding=ROUND_HALF_UP
-                # )
-
-                result[1][expense_name] = float(previous_value)
+                result[1][expense_name] = previous_value
 
                 # ---------- YEAR 2–11 ----------
                 for year in range(2, 12):
                     growth = growth_map.get(year, Decimal("0"))
-
                     new_value = previous_value + (
                         previous_value * growth / Decimal("100")
                     )
-
-                    # new_value = new_value.quantize(
-                    #     Decimal("0.01"), rounding=ROUND_HALF_UP
-                    # )
 
                     result[year][expense_name] = new_value
 
@@ -365,16 +426,33 @@ class PropertyPerformaService:
 
         for year in range(0, 12):
             year_data = result[year]
-            total = sum(year_data.values())
 
-            year_data["total_expanse"] = total
+            formatted_data = {}
+            total = Decimal("0")
+
+            for key, val in year_data.items():
+                formatted_val = PropertyPerformaService.format_value(val)
+                formatted_data[key] = formatted_val
+                total += formatted_val
+
+            formatted_data["total_expanse"] = total
 
             if is_for_noi is not None:
-                final_output[year] = year_data["total_expanse"]
+                final_output[year] = total.quantize(Decimal("1"), rounding=ROUND_DOWN).quantize(Decimal("0.00"))
             else:
-                final_output[year] = year_data
-        
+                final_output[year] = formatted_data
+
         return final_output
+
+
+    def format_value(value):
+        value = Decimal(str(value))
+        decimal_part = value - int(value)
+        if decimal_part < Decimal("0.50"):
+            return Decimal(int(value)).quantize(Decimal("0.00"))
+        return value.quantize(Decimal("0.00"))
+
+
 
 
 
@@ -392,18 +470,22 @@ class PropertyPerformaService:
 
             noi = total_revenue - total_expense
             opex_ratio = (total_expense/total_revenue)*100
-
+            cash_flow_after_financing = noi - loan_payment.total_annual_payment
             noi_output[year] = {
                 "noi": noi,
                 "opex_ratio": opex_ratio,
                 "debt_payment": loan_payment.total_annual_payment,
                 "dscr": noi/loan_payment.total_annual_payment,
-                "cash_flow_after_financing": noi - loan_payment.total_annual_payment
+                "cash_flow_after_financing": cash_flow_after_financing,
+                "sweet_equity": cash_flow_after_financing * Decimal("0.05"),
+                "investor_cashflow": cash_flow_after_financing * Decimal("0.95")
             }
 
         noi_output[0]["debt_payment"] = 0.00
         noi_output[0]["dscr"] = 0.00
         noi_output[0]["cash_flow_after_financing"] = 0.00
+        noi_output[0]["sweet_equity"] = 0.00
+        noi_output[0]["investor_cashflow"] = 0.00
         loan_repayment_data = []
         for term in [5,10]:
             repayment = PropertyPerformaService.loan_repayment(loan_payment.interest_rate, loan_payment.spread_intrest_rate, loan_payment.amortization_period, 
@@ -447,3 +529,63 @@ class PropertyPerformaService:
         }
     
 
+
+    async def get_performa_rent_per_year(db, property_id):
+        property_detials = await PropertyPerformaService.get_all_info_about_property_Property_type(db, property_id)
+        if not property_detials:
+            raise HTTPException(404, "property_detials not found")
+
+        data_response = await IncomeType.get_property_income_details(db, property_id)
+        if not data_response:
+            raise HTTPException(404, "revenue_response not found")
+        average_rent = PropertyPerformaService.get_all_info_related_actual_rent_average(property_detials)
+
+        unit_rents = {}
+        for unit in average_rent["unit_type"]:
+            unit_rents[unit["name"]] = Decimal(str(unit["average_actual_lease_rent"]))
+        rental_growth = []
+        for income_type in data_response:
+            if income_type["income_type_name"] == "Rental Income":
+                rental_growth = income_type["incomes"][0]["income_growth"]
+                break
+        rent_per_year = {}
+
+        rent_per_year[0] = {k: float(v) for k, v in unit_rents.items()}
+
+        for growth in rental_growth:
+            year = growth["year"]
+            growth_percent = Decimal(str(growth["growth_percentage"])) / Decimal("100")
+
+            previous_year = rent_per_year[year - 1]
+            current_year = {}
+
+            for unit_name, rent in previous_year.items():
+                new_rent = Decimal(str(rent)) * (Decimal("1") + growth_percent)
+                current_year[unit_name] = float(new_rent.quantize(Decimal("0.00")))
+
+            rent_per_year[year] = current_year
+
+        return rent_per_year
+
+
+
+    async def get_year_wise_cashflow():
+        pass
+
+
+
+
+    async def get_overall_performa_sumary(db, property_id):
+        property_detials = await PropertyPerformaService.get_all_property_info(db, property_id)
+        revenue_detials = await PropertyPerformaService.get_all_revenue(db, property_id)
+        expense_detials = await PropertyPerformaService.calculate_all_expenses(db, property_id)
+        other_detials = await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id)
+        rent_summary = await PropertyPerformaService.get_performa_rent_per_year(db, property_id)
+
+        return {
+            "property_detials":property_detials,
+            "revenue_detials":revenue_detials,
+            "expense_detials":expense_detials,
+            "other_detials":other_detials,
+            "rent_summary": rent_summary
+        }

@@ -29,11 +29,15 @@ async def get_all_expense_detials(property_id: str, db: Session = Depends(get_db
 
 
 @router.get("/get-performa-summary/{property_id}")
-async def get_all_expense_detials(property_id: str, db: Session = Depends(get_db)):
+async def get_all_performa_summary_detials(property_id: str, db: Session = Depends(get_db)):
     return await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id)
 
+@router.get("/get-rent-summary/{property_id}")
+async def get_all_rent_detials(property_id: str, db: Session = Depends(get_db)):
+    return await PropertyPerformaService.get_performa_rent_per_year(db, property_id)
 
 
-
-
+@router.get("/get-overall-summary/{property_id}")
+async def get_all_summary_detials(property_id: str, db: Session = Depends(get_db)):
+    return await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
 
