@@ -27,7 +27,7 @@ logs/
 
 # Ignore environment variable files
 .env
-.env.*
+
 
 # Ignore coverage reports
 .coverage
