@@ -1,0 +1,228 @@
+from fastapi import Request, Response, HTTPException, status
+from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession as Session
+from app.core.utils_functions import generate_id
+from sqlalchemy import select
+from datetime import datetime, timedelta
+from app.models.expenses_model import ExpenseTypes, Expense, ExpenseGrowth
+from dotenv import load_dotenv
+import traceback
+import os
+import logging
+
+load_dotenv()
+logger = logging.getLogger(__name__)
+
+
+class ExpenseTypeService:
+
+    async def add_expense_type(db, data):
+        expense_type = await ExpenseTypes.get_by_name(db, data.name, data.property_id)
+        if expense_type:
+            raise HTTPException(500, "ExpenseTypesService: Expense type is already exist with this name and property_id")
+        
+        new_expense_type = ExpenseTypes(
+            property_id = data.property_id,
+            name = data.name,
+        )
+        db.add(new_expense_type)
+        await db.commit()
+        await db.refresh(new_expense_type)
+
+        return new_expense_type
+    
+
+    async def update_expense_type(db, id, data):
+        expense_type = await ExpenseTypes.get_by_id(db, id, data.property_id)
+        if not expense_type:
+            raise HTTPException(500, "ExpenseTypesService: Expense type not found with this type id and property_id")
+        
+        if expense_type.name == data.name:
+            raise HTTPException(500, "ExpenseTypesService: Provided name is already exist for this property_id and type id")
+        
+        if data.name is not None:
+            expense_type.name = data.name
+
+        if data.property_id is not None:
+            expense_type.property_id = data.property_id
+
+        await db.commit()
+        await db.refresh(expense_type)
+        return expense_type
+    
+
+    async def delete_expense_type(db, id, property_id):
+        expense_type = await ExpenseTypes.get_by_id(db, id, property_id)
+        if not expense_type:
+            raise HTTPException(500, "ExpenseTypesService: Expense type not found with this type id and property_id")
+        print("ecpense_type is ===", expense_type)
+        expense_type.is_deleted = True
+        await db.commit()
+        await db.refresh(expense_type)
+        return {
+            "message":"ExpenseTypesService: Expense type is deleted successfully with this type id and property_id"
+        }
+    
+
+    async def get_expense_type_by_id(db, id, property_id):
+        expense_type = await ExpenseTypes.get_by_id(db, id, property_id)
+        if not expense_type:
+            raise HTTPException(500, "ExpenseTypesService: Expense type not found with this type id and property_id")
+        return expense_type
+
+
+    async def get_all_expense_type(db, property_id):
+        all_types = await ExpenseTypes.get_all_expense_types(db, property_id)
+        if not all_types:
+            raise HTTPException(404, "ExpenseTypesService: ExpenseTypes not available till now for this property")
+        return all_types
+    
+
+    async def get_property_all_expense_details(db, property_id):
+        return await ExpenseTypes.get_property_expense_details(db, property_id)
+
+
+class ExpenseService:
+
+    async def add_new_expense(db, type_id, property_id, data):
+        expense = await Expense.get_expense_data_by_property_id_and_expense_type_id(db, type_id, property_id)
+        if expense:
+            raise HTTPException(500, "ExpenseService: Expense data already exist for this property so you can't create new one without deleting the previous one.")
+        new_expense = Expense(
+            expense_id = generate_id("expense"),
+            property_id = property_id,
+            expense_type_id = type_id,
+            current_expense = data.current_expense,
+            pro_forma_expense = data.pro_forma_expense
+        )
+        db.add(new_expense)
+        await db.commit()
+        await db.refresh(new_expense)
+
+        return new_expense
+    
+    async def update_expense(db, expense_id, type_id, property_id, data):
+        expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
+        if not expense:
+            raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
+
+        if data.current_expense is not None:
+            expense.current_expense = data.current_expense
+
+        if data.pro_forma_expense is not None:
+            expense.pro_forma_expense = data.pro_forma_expense
+
+        await db.commit()
+        await db.refresh(expense)
+
+        return expense
+
+
+    async def delete_expense(db, expense_id, type_id, property_id):
+        expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
+        if not expense:
+            raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
+        
+        expense.is_deleted = True
+
+        await db.commit()
+        await db.refresh(expense)
+
+        return{
+            "message" : "ExpenseService: Expense data is deleted for this Expense_id, type_id, property_id."
+        }
+    
+
+    async def get_expense_data(db, expense_id, type_id, property_id):
+        expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
+        if not expense:
+            raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
+        
+        return expense
+    
+
+    async def get_all_expense_by_property_id(db, property_id):
+        return await Expense.get_expense_data_by_property_id(db, property_id)
+    
+
+class ExpenseGrowthService:
+
+    async def add_expense_growth(db, expense_id, data):
+
+        growth_objects = []
+
+        if data.is_same:
+            for year in range(1, 12):
+                growth = ExpenseGrowth(
+                    expense_id=expense_id,
+                    year=year,
+                    growth_percentage=data.growth_percentage
+                )
+                db.add(growth)
+                growth_objects.append(growth)
+        else:
+            growth = ExpenseGrowth(
+                expense_id=expense_id,
+                year=data.year,
+                growth_percentage=data.growth_percentage
+            )
+            db.add(growth)
+            growth_objects.append(growth)
+
+        await db.commit()
+
+        for growth in growth_objects:
+            await db.refresh(growth)
+
+        logger.info("ExpenseGrowthService: Expense growth data added successfully")
+
+        return growth_objects
+
+    
+
+    async def update_expense_growth(db, id, expense_id, data):
+        growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
+        if not growth:
+            raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
+        
+        if data.year is not None:
+            growth.year = data.year
+
+        if data.growth_percentage is not None:
+            growth.growth_percentage = data.growth_percentage
+
+        await db.commit()
+        await db.refresh(growth)
+        logger.info("ExpenseGrowthService: Expense growth data is updated successfully")
+        return growth
+    
+
+    async def delete_expense_growth(db, id, expense_id):
+        growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
+        if not growth:
+            raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
+        growth.is_deleted = True
+
+        await db.commit()
+        await db.refresh(growth)
+        return growth
+    
+
+    async def get_expense_growth_by_id(db, id, expense_id):
+        growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
+        if not growth:
+            raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
+
+        return growth
+
+
+    async def get_all_the_expense_growth_by_expense_id(db, expense_id):
+        growth_all = await ExpenseGrowth.get_all_expense_growth(db, expense_id)
+        return growth_all
+    
+
+
+
+
+
+

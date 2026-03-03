@@ -1,0 +1,142 @@
+from sqlalchemy.orm import relationship, joinedload
+from app.config.database import Base
+from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey
+from datetime import datetime
+from decimal import Decimal
+
+class Investors(Base):
+    __tablename__ = "investor"
+
+    investor_id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True,unique=True)
+
+    sirname = Column(String)
+    fname = Column(String, nullable=False)
+    mname = Column(String)
+    lname = Column(String)
+
+    email = Column(String, nullable=False, unique=True, index=True)
+    phone = Column(String, nullable=False)
+
+    role = Column(String, nullable = False, default = "investor")
+    profile_image = Column(String)
+
+    is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+
+    user = relationship("Users", back_populates="investor")
+
+    address = relationship(
+        "Address",
+        back_populates="investor",
+        uselist=False,
+        primaryjoin="Investors.investor_id == foreign(Address.user_id)",
+        overlaps="address",
+        viewonly=True,
+    )
+
+    investments = relationship(
+        "InvestorInvestments",
+        back_populates="investor",
+        cascade="all, delete-orphan"
+    )
+
+    assistant_assignment = relationship(
+        "InvestorAssignments",
+        back_populates="investor",
+        uselist=False,
+        cascade="all, delete-orphan"
+    )
+
+
+    @staticmethod
+    async def get_by_user_id(db, user_id: str):
+        stmt = (
+            select(Investors)
+            .options(joinedload(Investors.address))
+            .where(
+                Investors.user_id == user_id,
+                Investors.is_deleted == False
+            )
+        )
+        result = await db.execute(stmt)
+        admin = result.scalar_one_or_none()
+        return admin
+    
+    @staticmethod
+    async def get_by_email(db, email: str):
+        stmt = (
+            select(Investors)
+            .options(joinedload(Investors.address))
+            .where(
+                Investors.email == email,
+                Investors.is_deleted == False
+            )
+        )
+        result = await db.execute(stmt)
+        admin = result.scalar_one_or_none()
+        return admin
+    
+
+    @staticmethod
+    async def by_email(db, email):
+        stmt = (select(Investors).where(Investors.email == email))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    @staticmethod
+    async def get_by_investor_user_id(db, user_id: str):
+        stmt = (
+            select(Investors)
+            .options(
+                joinedload(Investors.address),
+                joinedload(Investors.user)
+            )
+            .where(
+                Investors.user_id == user_id,
+                Investors.is_deleted == False
+            )
+        )
+
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+
+
+
+class InvestorInvestments(Base):
+    __tablename__ = "investor_investments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    investor_id = Column(String, ForeignKey("investor.investor_id", ondelete="CASCADE"), nullable=False, index=True)
+    property_id = Column(String, ForeignKey("property.property_id", ondelete="CASCADE"), nullable=False, index=True)
+
+    invested_amount = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+
+    status = Column(String)  # ACTIVE / PARTIAL / SOLD
+
+    invested_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+    
+    # units_purchased = Column(Integer, nullable = True)
+    # purchase_price_per_unit = Column(Numeric(12, 2), nullable=False)
+
+    investor = relationship("Investors", back_populates="investments")
+    property = relationship("Property", back_populates="investments")
+
+
+    async def get_by_id(db, id, investor_id):
+        stmt = (select(InvestorInvestments).where(InvestorInvestments.id == id, InvestorInvestments.investor_id == investor_id))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+
+
+
+
+
+

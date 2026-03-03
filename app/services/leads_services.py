@@ -1,0 +1,254 @@
+from fastapi import Request, Response, HTTPException, status
+from openpyxl import Workbook
+from openpyxl.styles import Font
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession as Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from app.models.leads import Leads, LeadRemark
+from app.schemas.leads import createLeads
+import traceback
+import os
+import logging
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+
+load_dotenv()
+logger = logging.getLogger(__name__)
+
+
+
+class LeadService:
+    
+    async def create_the_leads(db: Session, data: createLeads):
+        new_leads = Leads(
+            name = data.name,
+            email = data.email,
+            description = data.description,
+            phone = data.phone,
+            # assisted_by = data.assisted_by,
+            # status = data.status,
+            # updated_by = data.updated_by
+        )
+
+        db.add(new_leads)
+        await db.commit()
+        await db.refresh(new_leads)
+
+        return new_leads
+    
+
+
+    async def get_all_lead(db):
+        return await Leads.get_all_leads(db)
+    
+
+    async def get_all_by_status(db, status):
+        return await Leads.get_all_leads_by_status(db, status)
+    
+    async def get_leads_by_attendend_id_and_status(db, user_id, status):
+        return await Leads.get_all_leads_by_attendend_id_and_status(db, user_id, status)
+    
+
+    async def delete_the_lead(db, id, user_id, remarks):
+        lead = await Leads.get_lead_by_id(db, id)
+        if not lead:
+            raise HTTPException(404, "lead with this id is not found.")
+        lead.is_deleted = True
+        new_remark = await LeadService.add_lead_remark(db, id, remarks, user_id)
+        await db.commit()
+        await db.refresh(lead)
+        await db.refresh(new_remark)
+        return {
+            "message": "lead deleted and remark added successfully."
+        }
+
+    async def Update_the_lead_status(db, id, status, updatedby, remarks):
+        lead = await Leads.get_lead_by_id(db, id)
+        if not lead:
+            raise HTTPException(404, "lead with this id is not found.")
+        lead.updated_by = updatedby
+        lead.status = status
+        lead.updated_at = datetime.utcnow()
+        new_remark = await LeadService.add_lead_remark(db, id, remarks, updatedby)
+        await db.commit()
+        await db.refresh(lead)
+        await db.refresh(new_remark)
+        return {
+            "message": "lead updated and remark added successfully."
+        }
+    
+    async def marked_the_lead_assisted_by(db, id, assistedby, remarks):
+        lead = await Leads.get_lead_by_id(db, id)
+        if not lead:
+            raise HTTPException(404, "lead with this id is not found.")
+        lead.assisted_by = assistedby
+        new_remark = await LeadService.add_lead_remark(db, id, remarks, assistedby)
+        await db.commit()
+        await db.refresh(lead)
+        await db.refresh(new_remark)
+        return {
+            "message": "lead assisted marked and remarks added successfully."
+        }
+    
+
+    async def update_the_lead_by_id(db, id, data, user_id):
+        lead = await Leads.get_lead_by_id(db, id)
+        if not lead:
+            raise HTTPException(404, "Lead data not found")
+        if data.name is not None:
+            lead.name = data.name
+        if data.email is not None:
+            lead.email = data.email
+
+        if data.description is not None:
+            lead.description = data.description
+                
+        if data.status is not None:
+            lead.status = data.status
+            
+        if data.phone is not None:
+            lead.phone = data.phone
+
+        lead.updated_by = user_id
+        new_remark = await LeadService.add_lead_remark(db, id, data.remarks, user_id)
+        await db.commit()
+        await db.refresh(new_remark)
+
+        return {
+            "message" : "lead data updated successfully"
+        }
+
+
+    async def add_lead_remark(db, lead_id: str, remark: str, user_id: str):
+        new_remark = LeadRemark(
+            lead_id=lead_id,
+            remark=remark,
+            created_by=user_id
+        )
+        db.add(new_remark)
+        return new_remark
+
+
+    def _export_leads_to_excel(
+        leads: list,
+        sheet_title: str,
+        filename: str,
+    ):
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = sheet_title
+
+        headers = [
+            "ID",
+            "Name",
+            "Email",
+            "Description",
+            "Phone",
+            "Assisted By",
+            "Status",
+            "Latest Remark",
+            "Remark Added By",
+            "Remark Created At",
+            "Created At",
+            "Updated At",
+        ]
+
+        ws.append(headers)
+
+        # Optional: make headers bold
+        for col in range(1, len(headers) + 1):
+            ws.cell(row=1, column=col).font = Font(bold=True)
+
+        for lead in leads:
+            latest_remark = lead.remarks[0] if lead.remarks else None
+
+            ws.append([
+                lead.id,
+                lead.name,
+                lead.email,
+                lead.description,
+                lead.phone,
+                lead.assisted_by,
+                lead.status,
+                latest_remark.remark if latest_remark else "",
+                latest_remark.created_by if latest_remark else "",
+                latest_remark.created_at.strftime("%Y-%m-%d %H:%M:%S") if latest_remark else "",
+                lead.created_at.strftime("%Y-%m-%d %H:%M:%S") if lead.created_at else "",
+                lead.updated_at.strftime("%Y-%m-%d %H:%M:%S") if lead.updated_at else "",
+            ])
+
+        # Optional: Auto column width
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws.column_dimensions[col_letter].width = max_length + 3
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            },
+        )
+
+
+    async def convert_to_excel_all_status_wise_leads(db, status):
+        leads = await Leads.get_all_leads_by_status(db, status)
+        if not leads:
+            return None
+
+        filename = f"{status}_leads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+
+        return LeadService._export_leads_to_excel(
+            leads=leads,
+            sheet_title=f"{status.capitalize()} Leads",
+            filename=filename,
+        )
+
+
+    async def convert_to_excel_status_and_date_wise_leads(
+        db,
+        status: str,
+        start_date: datetime,
+        end_date: datetime,
+    ):
+
+        leads = await Leads.get_leads_by_status_and_date_range(
+            db=db,
+            status=status,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        if not leads:
+            return None
+
+        filename = (
+            f"{status}_leads_"
+            f"{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.xlsx"
+        )
+
+        return LeadService._export_leads_to_excel(
+            leads=leads,
+            sheet_title=f"{status.capitalize()} Leads",
+            filename=filename,
+        )
+
