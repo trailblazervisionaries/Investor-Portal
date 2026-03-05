@@ -39,6 +39,10 @@ class createProperty(BaseModel):
     total_area: float
     total_investment_required: float
     available_required_for_investment: float
+    gp_equity_stake: float
+    hurdle: float
+    go_promote_at_hurdle: float
+    go_promote_above_hurdle: float
     address_line_1: str | None = None
     address_line_2: str | None = None
     city: str | None = None
@@ -76,6 +80,10 @@ class updateProperty(BaseModel):
     total_area: float | None = None
     total_investment_required: float | None = None
     available_required_for_investment: float | None = None
+    gp_equity_stake: float  | None = None
+    hurdle: float | None = None
+    go_promote_at_hurdle: float | None = None
+    go_promote_above_hurdle: float | None = None
     address_line_1: str | None = None
     address_line_2: str | None = None
     city: str | None = None

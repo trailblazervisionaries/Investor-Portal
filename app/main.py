@@ -10,6 +10,11 @@ from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_
 import logging
 from app.logging_config import setup_logging
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -24,6 +29,13 @@ app.add_middleware(
     allow_methods=["*"],  
     allow_headers=["*"],   
 )
+
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+app.state.limiter = limiter
+#  Added Exception Handler to return 429 error to the client
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+# Added Middleware for automatic global enforcement
+app.add_middleware(SlowAPIMiddleware)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 

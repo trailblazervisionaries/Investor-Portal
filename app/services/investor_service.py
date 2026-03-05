@@ -159,8 +159,37 @@ class InvestorService:
         return await Investors.get_by_added_by_id(db, added_by)
 
 
+    async def get_info_and_delete(db, user_id):
+        investor = await Investors.get_by_investor_user_id(db, user_id)
+        investor.is_delete = True
+        investor.user.is_delete = True
+        await db.commit()
+        await db.refresh(investor)
+        return {
+            "message" : "Investor info data deleted successfully."
+        }
+    
+    
+    async def get_info_and_deactivate(db, user_id):
+        investor = await Investors.get_by_investor_user_id(db, user_id)
+        investor.is_active = True
+        investor.user.is_active = True
+        await db.commit()
+        await db.refresh(investor)
+        return {
+            "message" : "Investor info data deactivated successfully."
+        }
+    
 
-
+    async def get_info_and_activate(db, user_id):
+        investor = await Investors.get_by_investor_user_id(db, user_id)
+        investor.is_active = True
+        investor.user.is_active = True
+        await db.commit()
+        await db.refresh(investor)
+        return {
+            "message" : "Investor info data activated successfully."
+        }
   
     
 

@@ -40,3 +40,18 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
         return []
     return [InvestorResponse.model_validate(investor) for investor in investors]
 
+
+@router.delete("/delete/{user_id}", response_model = InvestorResponse)
+async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
+    id = request.state.user.user_id
+    return await InvestorService.get_info_and_delete(db, user_id)
+
+@router.post("/deactivate/{user_id}")
+async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
+    id = request.state.user.user_id
+    return await InvestorService.get_info_and_deactivate(db, user_id)
+
+@router.post("/activate/{user_id}")
+async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
+    id = request.state.user.user_id
+    return await InvestorService.get_info_and_activate(db, user_id)
