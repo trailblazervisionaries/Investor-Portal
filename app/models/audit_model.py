@@ -235,3 +235,20 @@ __table_args__ = (
     Index('idx_audit_log_critical_review', 'is_critical', 'requires_review', 'created_at'),
     Index('idx_audit_log_search', 'user_id', 'entity_type', 'operation_type', 'created_at'),
 )
+
+
+
+# class AuditModel(Base):
+#     id = Column(Integer, primary_key = True)
+#     added_by = Column(String, nullable = False)
+#     new_data = Column(JSON, nullable = True)
+#     old_data = Column(JSON, nullable = True)
+#     audit_type = Column(String, nullable = False)
+#     entity_type = Column(String, nullable = False)
+#     object_id = Column(String, nullable = False)
+#     created_at = Column(DateTime, nullable = False, default = datetime.utcnow)
+
+
+
+
+

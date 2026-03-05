@@ -30,6 +30,7 @@ class InvestorCreate(BaseModel):
 class InvestorResponse(BaseModel):
     investor_id: str
     user_id: str
+    added_by : str | None = None
     sirname: Optional[str] = None
     fname: str
     mname: Optional[str] = None

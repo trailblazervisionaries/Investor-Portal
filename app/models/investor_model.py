@@ -9,7 +9,7 @@ class Investors(Base):
 
     investor_id = Column(String, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True,unique=True)
-
+    added_by = Column(String, nullable = False)
     sirname = Column(String)
     fname = Column(String, nullable=False)
     mname = Column(String)
@@ -103,6 +103,24 @@ class Investors(Base):
 
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+    
+
+    @staticmethod
+    async def get_by_added_by_id(db, id: str):
+        stmt = (
+            select(Investors)
+            .options(
+                joinedload(Investors.address),
+                joinedload(Investors.user)
+            )
+            .where(
+                Investors.added_by == id,
+                Investors.is_deleted == False
+            )
+        )
+
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
 
 

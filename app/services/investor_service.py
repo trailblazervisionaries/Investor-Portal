@@ -26,7 +26,7 @@ UPLOAD_DIR = "uploads"
 class InvestorService:
     
     @staticmethod
-    async def create_investor(db: Session, data: InvestorCreate):
+    async def create_investor(db: Session, user_id: str, data: InvestorCreate):
 
         # Check admin existence FIRST
         existing_investor = await Investors.by_email(db, data.email)
@@ -48,6 +48,7 @@ class InvestorService:
             new_investor = Investors(
                 investor_id=generate_id(data.fname),
                 user_id=user.user_id,
+                added_by = user_id,
                 sirname=data.sirname,
                 fname=data.fname,
                 mname=data.mname,
@@ -154,7 +155,8 @@ class InvestorService:
     async def get_my_info(db, user_id):
         return await Investors.get_by_investor_user_id(db, user_id)
 
-
+    async def get_all_investor_info(db, added_by):
+        return await Investors.get_by_added_by_id(db, added_by)
 
 
 

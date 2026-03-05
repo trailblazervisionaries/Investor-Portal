@@ -9,14 +9,15 @@ router = APIRouter()
 
 
 @router.post("/add", response_model = InvestorResponse)
-async def add_admin(data: InvestorCreate, db: Session = Depends(get_db)):
-    investor = await InvestorService.create_investor(db, data)
+async def add_admin(data: InvestorCreate, request: Request, db: Session = Depends(get_db)):
+    user_id = request.state.user.user_id
+    investor = await InvestorService.create_investor(db, user_id, data)
     return InvestorResponse.model_validate(investor)
 
 
-@router.put("/update", response_model = InvestorResponse)
-async def add_admin(data: InvestorUpdate, request: Request, db: Session = Depends(get_db)):
-    user_id = request.state.user.user_id
+@router.put("/update/{user_id}", response_model = InvestorResponse)
+async def add_admin(data: InvestorUpdate, user_id: str, request: Request, db: Session = Depends(get_db)):
+    login_user_id = request.state.user.user_id
     investor = await InvestorService.update_investor(db, user_id, data)
     return InvestorResponse.model_validate(investor)
 
@@ -28,3 +29,14 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
     if not investor:
         raise HTTPException(404, "Investor data not found")
     return InvestorResponse.model_validate(investor)
+
+
+@router.get("/getall", response_model = list[InvestorResponse])
+async def get_me(request: Request, db: Session = Depends(get_db)):
+    added_by = request.state.user.user_id
+    investors = await InvestorService.get_all_investor_info(db, added_by)
+    if not investors:
+        # raise HTTPException(404, "Investor data not found")
+        return []
+    return [InvestorResponse.model_validate(investor) for investor in investors]
+

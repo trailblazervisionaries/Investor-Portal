@@ -350,83 +350,83 @@ class PropertyLoan(Base):
 #         return result.scalar_one_or_none() is not None
 
 
-class ProFormaCalculation(Base):
-    """
-    Stores 10-year pro-forma calculations
-    One record per month × 10 years = 120 rows per property
-    """
-    __tablename__ = "pro_forma_calculation"
+# class ProFormaCalculation(Base):
+#     """
+#     Stores 10-year pro-forma calculations
+#     One record per month × 10 years = 120 rows per property
+#     """
+#     __tablename__ = "pro_forma_calculation"
 
-    proforma_id = Column(String, primary_key=True, index=True)
-    property_id = Column(String, ForeignKey("property.property_id", ondelete="CASCADE"), index=True)
+#     proforma_id = Column(String, primary_key=True, index=True)
+#     property_id = Column(String, ForeignKey("property.property_id", ondelete="CASCADE"), index=True)
 
-    # Year 1-10 and Month 1-12
-    year = Column(Integer, nullable=False)
-    month = Column(Integer, nullable=False)
+#     # Year 1-10 and Month 1-12
+#     year = Column(Integer, nullable=False)
+#     month = Column(Integer, nullable=False)
     
-    # Specific date for this projection
-    date_point = Column(DateTime, nullable=False, index=True)
+#     # Specific date for this projection
+#     date_point = Column(DateTime, nullable=False, index=True)
     
-    # Cap rate for valuation
-    market_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
+#     # Cap rate for valuation
+#     market_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
     
-    # Calculated projections
-    projected_income = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
-    projected_expense = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     # Calculated projections
+#     projected_income = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     projected_expense = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     
-    # Net Operating Income = Income - Expense
-    noi = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     # Net Operating Income = Income - Expense
+#     noi = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     
-    # Debt Service (loan payments for all active loans)
-    debt_service = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     # Debt Service (loan payments for all active loans)
+#     debt_service = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     
-    # Cash Flow = NOI - Debt Service
-    cash_flow = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     # Cash Flow = NOI - Debt Service
+#     cash_flow = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     
-    # Occupancy rate (%)
-    occupancy_rate = Column(Numeric(5, 2), nullable=False, default=Decimal("0.00"))
+#     # Occupancy rate (%)
+#     occupancy_rate = Column(Numeric(5, 2), nullable=False, default=Decimal("0.00"))
     
-    # Loss to Lease for this period
-    loss_to_lease = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
+#     # Loss to Lease for this period
+#     loss_to_lease = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     
-    # Flag if calculated
-    is_calculated = Column(Boolean, default=False, nullable=False)
+#     # Flag if calculated
+#     is_calculated = Column(Boolean, default=False, nullable=False)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, onupdate=datetime.utcnow)
+#     created_at = Column(DateTime, default=datetime.utcnow)
+#     updated_at = Column(DateTime, onupdate=datetime.utcnow)
 
-    property = relationship("Property", foreign_keys=[property_id])
+#     property = relationship("Property", foreign_keys=[property_id])
 
-    async def get_by_id(db, proforma_id, property_id):
-        stmt = (select(ProFormaCalculation).where(
-            ProFormaCalculation.proforma_id == proforma_id, 
-            ProFormaCalculation.property_id == property_id
-        ))
-        result = await db.execute(stmt)
-        return result.scalar_one_or_none()
+#     async def get_by_id(db, proforma_id, property_id):
+#         stmt = (select(ProFormaCalculation).where(
+#             ProFormaCalculation.proforma_id == proforma_id, 
+#             ProFormaCalculation.property_id == property_id
+#         ))
+#         result = await db.execute(stmt)
+#         return result.scalar_one_or_none()
 
-    async def get_10_year_projection(db, property_id):
-        """Get full 10-year monthly projection (120 rows)"""
-        stmt = (
-            select(ProFormaCalculation)
-            .where(ProFormaCalculation.property_id == property_id)
-            .order_by(ProFormaCalculation.year.asc(), ProFormaCalculation.month.asc())
-        )
-        result = await db.execute(stmt)
-        return result.scalars().all()
+#     async def get_10_year_projection(db, property_id):
+#         """Get full 10-year monthly projection (120 rows)"""
+#         stmt = (
+#             select(ProFormaCalculation)
+#             .where(ProFormaCalculation.property_id == property_id)
+#             .order_by(ProFormaCalculation.year.asc(), ProFormaCalculation.month.asc())
+#         )
+#         result = await db.execute(stmt)
+#         return result.scalars().all()
 
-    async def get_annual_summary(db, property_id, year):
-        """Get annual summary for a specific year"""
-        stmt = (
-            select(ProFormaCalculation)
-            .where(
-                ProFormaCalculation.property_id == property_id,
-                ProFormaCalculation.year == year
-            )
-            .order_by(ProFormaCalculation.month.asc())
-        )
-        result = await db.execute(stmt)
-        return result.scalars().all()
+#     async def get_annual_summary(db, property_id, year):
+#         """Get annual summary for a specific year"""
+#         stmt = (
+#             select(ProFormaCalculation)
+#             .where(
+#                 ProFormaCalculation.property_id == property_id,
+#                 ProFormaCalculation.year == year
+#             )
+#             .order_by(ProFormaCalculation.month.asc())
+#         )
+#         result = await db.execute(stmt)
+#         return result.scalars().all()
 
 
 # class RentRollAnalysisSummary(Base):
