@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.config.database import get_db
 from app.services.investor_service import InvestorService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.investor import InvestorCreate, InvestorUpdate, InvestorResponse
+from app.schemas.investor import InvestorCreate, InvestorUpdate, InvestorResponse, InvestorPaginationResponse
 import logging 
+import math
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -39,6 +40,31 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
         # raise HTTPException(404, "Investor data not found")
         return []
     return [InvestorResponse.model_validate(investor) for investor in investors]
+
+
+
+
+@router.get("/getall-info", response_model=InvestorPaginationResponse)
+async def get_me(
+    request: Request, 
+    deleted: bool,
+    db: Session = Depends(get_db),
+    page: int = 1, 
+    size: int = 10
+):
+    skip = (max(1, page) - 1) * size
+    
+    investors, total_count = await InvestorService.get_all_investor(db, skip, size, deleted)
+    
+    total_pages = math.ceil(total_count / size) if total_count > 0 else 0
+
+    return {
+        "items": [InvestorResponse.model_validate(i) for i in investors],
+        "total_count": total_count,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 
 @router.delete("/delete/{user_id}", response_model = InvestorResponse)

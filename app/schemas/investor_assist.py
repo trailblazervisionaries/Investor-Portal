@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from app.schemas.investor import InvestorResponse
 
@@ -38,6 +38,16 @@ class InvestorAssistResponse(BaseModel):
     phone: str
     role: str | None = "investor-assistant"
     address: Optional[AddressBase] = None
+
+    class Config:
+        from_attributes = True
+
+class InvestorAssistPaginationResponse(BaseModel):
+    items: List[InvestorAssistResponse]
+    total_count: int
+    page: int
+    size: int
+    total_pages: int
 
     class Config:
         from_attributes = True

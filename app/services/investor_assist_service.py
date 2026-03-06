@@ -156,7 +156,46 @@ class InvestorAssistService:
         return await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
 
 
+    async def get_all_investor_info(db, skip: int, limit: int, deleted: bool):
+        return await InvestorAssistant.get_info_all_investor_assistant(db, skip=skip, limit=limit, deleted = deleted)
+    
+    # async def get_deleted_investor_info(db, skip: int, limit: int, deleted: bool):
+    #     return await InvestorAssistant.get_info_all_investor_assistant(db, skip=skip, limit=limit, deleted = deleted)
 
+
+    async def get_info_and_delete(db, user_id):
+        investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
+        investor_assist.is_delete = True
+        investor_assist.user.is_delete = True
+        await db.commit()
+        await db.refresh(investor_assist)
+        return {
+            "message" : "investor_assist info data deleted successfully."
+        }
+    
+    
+    async def get_info_and_deactivate(db, user_id):
+        investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
+        investor_assist.is_active = True
+        investor_assist.user.is_active = True
+        await db.commit()
+        await db.refresh(investor_assist)
+        return {
+            "message" : "investor_assist info data deactivated successfully."
+        }
+    
+
+    async def get_info_and_activate(db, user_id):
+        investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
+        investor_assist.is_active = True
+        investor_assist.user.is_active = True
+        await db.commit()
+        await db.refresh(investor_assist)
+        return {
+            "message" : "investor_assist info data activated successfully."
+        }
+  
+    
 
   
     

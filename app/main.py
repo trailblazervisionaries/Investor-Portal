@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],   
 )
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"]) # 100 requests per minute per user
 app.state.limiter = limiter
 #  Added Exception Handler to return 429 error to the client
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -85,7 +85,5 @@ app.include_router(expense_routes.router, prefix="/api/expense", tags=["expense"
 
 # Property Pro-forma, Rent Roll, and Growth Assumptions (from Excel model)
 app.include_router(property_proforma_routes.router, prefix="/api/property-proforma", tags=["property-proforma"])
-
-
 
 

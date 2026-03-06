@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
 from app.core.utils_functions import generate_id
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from app.services.user_service import UserServices
 from dotenv import load_dotenv
@@ -155,7 +155,63 @@ class FundAssistService:
         return await FundAssistant.get_by_fund_assist_user_id(db, user_id)
 
 
+    @staticmethod
+    async def get_info_all_fund_assistant(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(FundAssistant)
+            .options(joinedload(FundAssistant.address), joinedload(FundAssistant.user))
+            .where(FundAssistant.is_deleted == deleted)
+            .offset(skip)
+            .limit(limit)
+        )
+        
+        count_stmt = (
+            select(func.count())
+            .select_from(FundAssistant)
+            .where(FundAssistant.is_deleted == deleted)
+        )
+
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        
+        return result.scalars().all(), total_res.scalar() or 0
 
 
 
+    async def get_info_and_delete(db, user_id):
+        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        fund_assist.is_delete = True
+        fund_assist.user.is_delete = True
+        await db.commit()
+        await db.refresh(fund_assist)
+        return {
+            "message" : "fund_assist info data deleted successfully."
+        }
+    
+    
+    async def get_info_and_deactivate(db, user_id):
+        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        fund_assist.is_active = True
+        fund_assist.user.is_active = True
+        await db.commit()
+        await db.refresh(fund_assist)
+        return {
+            "message" : "fund_assist info data deactivated successfully."
+        }
+    
+
+    async def get_info_and_activate(db, user_id):
+        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        fund_assist.is_active = True
+        fund_assist.user.is_active = True
+        await db.commit()
+        await db.refresh(fund_assist)
+        return {
+            "message" : "fund_assist info data activated successfully."
+        }
+  
+    
+
+  
+    
     

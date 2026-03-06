@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, ForeignKey, func
 from datetime import datetime
 
 
@@ -107,6 +107,43 @@ class InvestorAssistant(Base):
 
 
 
+    @staticmethod
+    async def get_all_investor_assistant(db):
+        stmt = (
+            select(InvestorAssistant)
+            .options(
+                joinedload(InvestorAssistant.address),
+                joinedload(InvestorAssistant.user)
+            )
+            .where(
+                InvestorAssistant.is_deleted == False
+            )
+        )
+
+        result = await db.execute(stmt)
+        return result.scalars().all()
+    
+
+    @staticmethod
+    async def get_info_all_investor_assistant(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(InvestorAssistant)
+            .options(joinedload(InvestorAssistant.address), joinedload(InvestorAssistant.user))
+            .where(InvestorAssistant.is_deleted == deleted)
+            .offset(skip)
+            .limit(limit)
+        )
+        
+        count_stmt = (
+            select(func.count())
+            .select_from(InvestorAssistant)
+            .where(InvestorAssistant.is_deleted == deleted)
+        )
+
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        
+        return result.scalars().all(), total_res.scalar() or 0
 
 
 class InvestorAssignments(Base):

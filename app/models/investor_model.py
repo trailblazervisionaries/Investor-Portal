@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
-from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey
+from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, func
 from datetime import datetime
 from decimal import Decimal
 
@@ -122,6 +122,27 @@ class Investors(Base):
         result = await db.execute(stmt)
         return result.scalars().all()
 
+
+    @staticmethod
+    async def get_all_info_investors(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(Investors)
+            .options(joinedload(Investors.address), joinedload(Investors.user))
+            .where(Investors.is_deleted == deleted)
+            .offset(skip)
+            .limit(limit)
+        )
+        
+        count_stmt = (
+            select(func.count())
+            .select_from(Investors)
+            .where(Investors.is_deleted == deleted)
+        )
+
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        
+        return result.scalars().all(), total_res.scalar() or 0
 
 
 

@@ -157,6 +157,9 @@ class InvestorService:
 
     async def get_all_investor_info(db, added_by):
         return await Investors.get_by_added_by_id(db, added_by)
+    
+    async def get_all_investor(db, skip: int, limit: int, deleted: bool):
+        return await Investors.get_all_info_investors(db, skip=skip, limit=limit, deleted = deleted)
 
 
     async def get_info_and_delete(db, user_id):

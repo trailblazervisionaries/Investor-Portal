@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 
@@ -38,6 +38,16 @@ class FundAssistResponse(BaseModel):
     phone: str
     role: str | None = "fund-assistant"
     address: Optional[AddressBase] = None
+
+    class Config:
+        from_attributes = True
+
+class FundAssistPaginationResponse(BaseModel):
+    items: List[FundAssistResponse]
+    total_count: int
+    page: int
+    size: int
+    total_pages: int
 
     class Config:
         from_attributes = True
