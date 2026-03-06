@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 
 
@@ -67,6 +67,16 @@ class PropertyResponse(createProperty):
     class Config:
         from_attributes = True
 
+class PropertyPaginationResponse(BaseModel):
+    items: List[PropertyResponse]
+    total_count: int
+    page: int
+    size: int
+    total_pages: int
+
+    class Config:
+        from_attributes = True
+
 class updateProperty(BaseModel):
     name: str | None = None
     description: str | None = None
@@ -111,7 +121,7 @@ class createPropertyType(BaseModel):
 class updatePropertyType(BaseModel):
     name: str | None = None
     unit_type: str | None = None
-    occupied_units: int | None = None
+    total_units: int | None = None
     occupied_units: int | None = None
 
 

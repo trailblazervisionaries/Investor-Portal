@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.config.database import get_db
 from app.services.property_service import PropertyService, PropertyUnitTypeServices, PropertyUnitServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse
+from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
 from typing import List
 import logging 
+import math
 logger = logging.getLogger(__name__)
 
 
@@ -76,13 +77,22 @@ async def update_the_property_open_for_investment(property_id: str, request: Req
     return resp
 
 
-@router.get("/getall", response_model=List[PropertyResponse])
-async def get_all_property(request: Request, db: Session = Depends(get_db)):
+@router.get("/getall", response_model=PropertyPaginationResponse)
+async def get_all_property(request: Request, deleted: bool, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    properties = await PropertyService.get_all_properties(db)
-    return [PropertyResponse.model_validate(property) for property in properties]
+    skip = (max(1, page) - 1) * size
+    properties, total_count = await PropertyService.get_info_all_properties(db, skip, size, deleted)
+    total_pages = math.ceil(total_count / size) if total_count > 0 else 0
+
+    return {
+        "items": [PropertyResponse.model_validate(property) for property in properties],
+        "total_count": total_count,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 
 @router.get("/get/{property_id}", response_model = PropertyResponse)
@@ -94,13 +104,31 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
     return PropertyResponse.model_validate(property)
 
 
-@router.get("/getall/{risk_status}",  response_model=List[PropertyResponse])
-async def get_all_property_filter_by_risk(request: Request,risk_status: str, db: Session = Depends(get_db)):
+# @router.get("/getall/{risk_status}",  response_model=List[PropertyResponse])
+# async def get_all_property_filter_by_risk(request: Request,risk_status: str, db: Session = Depends(get_db)):
+#     role = request.state.user.role
+#     if role not in ["admin","fund-assistant"]:
+#         raise HTTPException(403, "you are not authorise to perform this operation")
+#     properties = await PropertyService.get_all_property_by_risk(db, risk_status)
+#     return [PropertyResponse.model_validate(property) for property in properties]
+
+
+@router.get("/getall/{risk_status}", response_model=PropertyPaginationResponse)
+async def get_all_property(request: Request, risk_status: str, deleted: bool = False, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    properties = await PropertyService.get_all_property_by_risk(db, risk_status)
-    return [PropertyResponse.model_validate(property) for property in properties]
+    skip = (max(1, page) - 1) * size
+    properties, total_count = await PropertyService.get_all_properties_info_by_risk(db, risk_status, skip, size, deleted)
+    total_pages = math.ceil(total_count / size) if total_count > 0 else 0
+
+    return {
+        "items": [PropertyResponse.model_validate(property) for property in properties],
+        "total_count": total_count,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
 
 
 @router.get("/getall-rent-info/{property_id}")

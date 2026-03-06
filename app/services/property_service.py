@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from decimal import Decimal, ROUND_HALF_UP
@@ -156,6 +156,41 @@ class PropertyService:
         stmt = (select(Property).where(Property.is_deleted.is_(False)))
         result = await db.execute(stmt)
         return result.scalars().all()
+
+    @staticmethod
+    async def get_info_all_properties(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(Property)
+            .where(Property.is_deleted == deleted)
+            .offset(skip)
+            .limit(limit)
+        )
+        count_stmt = (
+            select(func.count())
+            .select_from(Property)
+            .where(Property.is_deleted == deleted)
+        )
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        return result.scalars().all(), total_res.scalar() or 0
+
+    @staticmethod
+    async def get_all_properties_info_by_risk(db, risk_status, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(Property)
+            .where(Property.is_deleted == deleted, Property.risk_status == risk_status)
+            .offset(skip)
+            .limit(limit)
+        )
+        count_stmt = (
+            select(func.count())
+            .select_from(Property)
+            .where(Property.is_deleted == deleted, Property.risk_status == risk_status)
+        )
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        return result.scalars().all(), total_res.scalar() or 0
+    
     
     async def get_all_property_by_risk(db, risk_status):
         stmt = (select(Property).where(Property.is_deleted.is_(False), Property.risk_status == risk_status))
