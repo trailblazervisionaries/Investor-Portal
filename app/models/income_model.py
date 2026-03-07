@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, UniqueConstraint, CheckConstraint
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 
@@ -17,6 +17,22 @@ class IncomeType(Base):
 
     incomes = relationship("Income", back_populates="income_type")
 
+
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
     async def get_by_id(db, id, property_id):
         stmt = (select(IncomeType).where(IncomeType.id == id, IncomeType.property_id == property_id, IncomeType.is_deleted.is_(False)))
@@ -115,6 +131,22 @@ class Income(Base):
         cascade="all, delete-orphan"
     )
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+
 
     async def get_income_data_by_property_id_and_income_type_id(db, type_id, property_id):
         stmt = (select(Income).where(Income.property_id == property_id, Income.income_type_id == type_id, Income.is_deleted.is_(False)))
@@ -159,6 +191,21 @@ class IncomeGrowth(Base):
         CheckConstraint('year >= 1 AND year <= 11', name='ck_year_range'),
     )
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
 
     async def get_by_id(db, id, income_id):

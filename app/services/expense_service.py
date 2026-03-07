@@ -5,6 +5,7 @@ from app.core.utils_functions import generate_id
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.models.expenses_model import ExpenseTypes, Expense, ExpenseGrowth
+from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 import traceback
 import os
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ExpenseTypeService:
 
-    async def add_expense_type(db, data):
+    async def add_expense_type(db, data, user_id):
         expense_type = await ExpenseTypes.get_by_name(db, data.name, data.property_id)
         if expense_type:
             raise HTTPException(500, "ExpenseTypesService: Expense type is already exist with this name and property_id")
@@ -26,17 +27,26 @@ class ExpenseTypeService:
             name = data.name,
         )
         db.add(new_expense_type)
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Expense Type Management",
+            object_id = new_expense_type.id
+        )
+        db.add(audit_log)
         await db.commit()
         await db.refresh(new_expense_type)
 
         return new_expense_type
     
 
-    async def update_expense_type(db, id, data):
+    async def update_expense_type(db, id, data, user_id):
         expense_type = await ExpenseTypes.get_by_id(db, id, data.property_id)
         if not expense_type:
             raise HTTPException(500, "ExpenseTypesService: Expense type not found with this type id and property_id")
-        
+        old_data = ExpenseTypes.model_to_dict(expense_type)
         if expense_type.name == data.name:
             raise HTTPException(500, "ExpenseTypesService: Provided name is already exist for this property_id and type id")
         
@@ -46,17 +56,37 @@ class ExpenseTypeService:
         if data.property_id is not None:
             expense_type.property_id = data.property_id
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Expense Type Management",
+            object_id = id
+        )
+        db.add(audit_log)
+
         await db.commit()
         await db.refresh(expense_type)
         return expense_type
     
 
-    async def delete_expense_type(db, id, property_id):
+    async def delete_expense_type(db, id, property_id, user_id):
         expense_type = await ExpenseTypes.get_by_id(db, id, property_id)
         if not expense_type:
             raise HTTPException(500, "ExpenseTypesService: Expense type not found with this type id and property_id")
-        print("ecpense_type is ===", expense_type)
+        old_data = ExpenseTypes.model_to_dict(expense_type)
         expense_type.is_deleted = True
+        
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Expense Type Management",
+            object_id = id
+        )
+        db.add(audit_log)
         await db.commit()
         await db.refresh(expense_type)
         return {
@@ -84,7 +114,7 @@ class ExpenseTypeService:
 
 class ExpenseService:
 
-    async def add_new_expense(db, type_id, property_id, data):
+    async def add_new_expense(db, type_id, property_id, data, user_id):
         expense = await Expense.get_expense_data_by_property_id_and_expense_type_id(db, type_id, property_id)
         if expense:
             raise HTTPException(500, "ExpenseService: Expense data already exist for this property so you can't create new one without deleting the previous one.")
@@ -96,34 +126,62 @@ class ExpenseService:
             pro_forma_expense = data.pro_forma_expense
         )
         db.add(new_expense)
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Expense Management",
+            object_id = new_expense.id
+        )
+        db.add(audit_log)
         await db.commit()
         await db.refresh(new_expense)
 
         return new_expense
     
-    async def update_expense(db, expense_id, type_id, property_id, data):
+    async def update_expense(db, expense_id, type_id, property_id, data, user_id):
         expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
         if not expense:
             raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
-
+        old_data = Expense.model_to_dict(expense)
         if data.current_expense is not None:
             expense.current_expense = data.current_expense
 
         if data.pro_forma_expense is not None:
             expense.pro_forma_expense = data.pro_forma_expense
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Expense Management",
+            object_id = expense_id
+        )
+        db.add(audit_log)
         await db.commit()
         await db.refresh(expense)
 
         return expense
 
 
-    async def delete_expense(db, expense_id, type_id, property_id):
+    async def delete_expense(db, expense_id, type_id, property_id, user_id):
         expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
         if not expense:
             raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
-        
+        old_data = Expense.model_to_dict(expense)
         expense.is_deleted = True
+
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Expense Management",
+            object_id = expense_id
+        )
+        db.add(audit_log)
 
         await db.commit()
         await db.refresh(expense)
@@ -147,9 +205,10 @@ class ExpenseService:
 
 class ExpenseGrowthService:
 
-    async def add_expense_growth(db, expense_id, data):
+    async def add_expense_growth(db, expense_id, data, user_id):
 
         growth_objects = []
+        audit_object = []
 
         if data.is_same:
             for year in range(1, 12):
@@ -160,6 +219,17 @@ class ExpenseGrowthService:
                 )
                 db.add(growth)
                 growth_objects.append(growth)
+
+                audit_log = AuditModel.add_new_logs(
+                    added_by = user_id,
+                    new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
+                    old_data = None,
+                    audit_type = "ADD",
+                    entity_type = "Expense Growth Management",
+                    object_id = expense_id
+                )
+                db.add(audit_log)
+                audit_object.append(audit_log)
         else:
             growth = ExpenseGrowth(
                 expense_id=expense_id,
@@ -168,11 +238,25 @@ class ExpenseGrowthService:
             )
             db.add(growth)
             growth_objects.append(growth)
+            
+            audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "Expense Growth Management",
+                object_id = expense_id
+                )
+            db.add(audit_log)
+            audit_object.append(audit_log)
 
         await db.commit()
 
         for growth in growth_objects:
             await db.refresh(growth)
+        
+        for audit in audit_object:
+            await db.refresh(audit)
 
         logger.info("ExpenseGrowthService: Expense growth data added successfully")
 
@@ -180,16 +264,26 @@ class ExpenseGrowthService:
 
     
 
-    async def update_expense_growth(db, id, expense_id, data):
+    async def update_expense_growth(db, id, expense_id, data, user_id):
         growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
         if not growth:
             raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
-        
+        old_data = ExpenseGrowth.model_to_dict(growth)
         if data.year is not None:
             growth.year = data.year
 
         if data.growth_percentage is not None:
             growth.growth_percentage = data.growth_percentage
+
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Expense Growth Management",
+            object_id = expense_id
+            )
+        db.add(audit_log)
 
         await db.commit()
         await db.refresh(growth)
@@ -197,12 +291,22 @@ class ExpenseGrowthService:
         return growth
     
 
-    async def delete_expense_growth(db, id, expense_id):
+    async def delete_expense_growth(db, id, expense_id, user_id):
         growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
         if not growth:
             raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
+        old_data = ExpenseGrowth.model_to_dict(growth)
         growth.is_deleted = True
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = {"is_deleted" : True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Expense Growth Management",
+            object_id = expense_id
+        )
+        db.add(audit_log)
         await db.commit()
         await db.refresh(growth)
         return growth

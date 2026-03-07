@@ -1,8 +1,8 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey
-from datetime import datetime
-
+from datetime import datetime, date
+from decimal import Decimal
 
 class FundAssistant(Base):
     __tablename__ = "fund_assistant"
@@ -32,6 +32,22 @@ class FundAssistant(Base):
         overlaps="address",
         viewonly=True,
     )
+
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
 
     @staticmethod

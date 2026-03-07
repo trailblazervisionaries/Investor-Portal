@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, UniqueConstraint, CheckConstraint
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 
@@ -15,6 +15,21 @@ class ExpenseTypes(Base):
     is_deleted = Column(Boolean, default = False, nullable = False)
     expenses = relationship("Expense", back_populates="expense_type")
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
     async def get_by_id(db, id, property_id):
         stmt = (select(ExpenseTypes).where(ExpenseTypes.id == id, ExpenseTypes.property_id == property_id, ExpenseTypes.is_deleted.is_(False)))
@@ -115,6 +130,22 @@ class Expense(Base):
         cascade="all, delete-orphan"
     )
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+
     async def get_expense_data_by_property_id_and_expense_type_id(db, type_id, property_id):
         stmt = (select(Expense).where(Expense.property_id == property_id, Expense.expense_type_id == type_id, Expense.is_deleted.is_(False)))
         result = await db.execute(stmt)
@@ -164,7 +195,21 @@ class ExpenseGrowth(Base):
         CheckConstraint('year >= 1 AND year <= 11', name='ck_expense_year_range'),
     )
 
-
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
 
     async def get_by_id(db, id, expense_id):

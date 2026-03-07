@@ -13,9 +13,10 @@ router = APIRouter()
 @router.post("/add-exp-type", response_model = ExpenseTypeResponse)
 async def add_new_expense_type(data: CreateExpenseType, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    type = await ExpenseTypeService.add_expense_type(db, data)
+    type = await ExpenseTypeService.add_expense_type(db, data, user_id)
     return ExpenseTypeResponse.model_validate(type)
 
 
@@ -23,18 +24,20 @@ async def add_new_expense_type(data: CreateExpenseType, request: Request, db: Se
 @router.put("/update-exp-type/{id}", response_model = ExpenseTypeResponse)
 async def update_expense_type_by_id(id: int, data: UpdateExpenseType, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    updated_type = await ExpenseTypeService.update_expense_type(db, id, data)
+    updated_type = await ExpenseTypeService.update_expense_type(db, id, data, user_id)
     return ExpenseTypeResponse.model_validate(updated_type)
 
 
 @router.delete("/del-exp-type/{property_id}/{id}")
 async def delete_expense_type_by_id(property_id: str, id: int, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    return await ExpenseTypeService.delete_expense_type(db, id, property_id)
+    return await ExpenseTypeService.delete_expense_type(db, id, property_id, user_id)
 
 @router.get("/get-exp-type/{property_id}/{id}", response_model = ExpenseTypeResponse)
 async def get_type_by_id(id: int, property_id: str, db: Session = Depends(get_db)):
@@ -60,27 +63,30 @@ async def get_property_all_type_expense_details(property_id: str, db: Session = 
 @router.post("/add/{property_id}/{type_id}", response_model = ExpenseResponse)
 async def add_new_expense(property_id: str, type_id: int, request: Request, data: CreateExpense, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    expense = await ExpenseService.add_new_expense(db, type_id, property_id, data)
+    expense = await ExpenseService.add_new_expense(db, type_id, property_id, data, user_id)
     return ExpenseResponse.model_validate(expense)
 
 
 @router.put("/update/{property_id}/{type_id}/{income_id}", response_model = ExpenseResponse)
 async def update_expense(property_id: str, type_id: int, income_id: str, request: Request, data: UpdateExpense, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    expense = await ExpenseService.update_expense(db, income_id, type_id, property_id, data)
+    expense = await ExpenseService.update_expense(db, income_id, type_id, property_id, data, user_id)
     return ExpenseResponse.model_validate(expense)
 
 
 @router.delete("/delete/{property_id}/{type_id}/{expense_id}")
 async def delete_expense_by_id(property_id: str, type_id: int, request: Request, expense_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    return await ExpenseService.delete_expense(db, expense_id, type_id, property_id)
+    return await ExpenseService.delete_expense(db, expense_id, type_id, property_id, user_id)
 
 
 @router.get("/get/{property_id}/{type_id}/{expense_id}", response_model = ExpenseResponse)
@@ -104,27 +110,30 @@ async def get_all_income_for_the_property(property_id: str, db: Session = Depend
 @router.post("/addgrowth/{expense_id}", response_model = List[ExpenseGrowthResponse])
 async def add_new_expense_growth(expense_id: str, request: Request, data: CreateExpenseGrowth, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    growths = await ExpenseGrowthService.add_expense_growth(db, expense_id, data)
+    growths = await ExpenseGrowthService.add_expense_growth(db, expense_id, data, user_id)
     return [ExpenseGrowthResponse.model_validate(growth) for growth in growths]
 
 
 @router.put("/updategrowth/{expense_id}/{id}", response_model = ExpenseGrowthResponse)
 async def update_the_expense_growth(id: int, expense_id: str, request: Request, data: UpdateExpenseGrowth, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    growth = await ExpenseGrowthService.update_expense_growth(db, id, expense_id, data)
+    growth = await ExpenseGrowthService.update_expense_growth(db, id, expense_id, data, user_id)
     return ExpenseGrowthResponse.model_validate(growth)
 
 
 @router.delete("/deletegrowth/{expense_id}/{id}")
 async def delete_the_expense_growth(id: int, expense_id: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    return await ExpenseGrowthService.delete_expense_growth(db, id, expense_id)
+    return await ExpenseGrowthService.delete_expense_growth(db, id, expense_id, user_id)
 
 
 @router.get("/getgrowth/{expense_id}/{id}", response_model = ExpenseGrowthResponse)

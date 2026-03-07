@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, selectinload, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, extract
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 
@@ -62,6 +62,22 @@ class Property(Base):
     investments = relationship("InvestorInvestments", back_populates="property", cascade="all, delete-orphan")
 
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+
     async def get_by_id(db, property_id):
         stmt = (select(Property).where(Property.property_id == property_id, Property.is_deleted.is_(False)))
         result = await db.execute(stmt)
@@ -113,6 +129,23 @@ class PropertyUnitType(Base):
     # incomes = relationship("Income", back_populates="income_type")
 
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+    
+
     async def get_by_id(db, id, property_id):
         stmt = (select(PropertyUnitType).where(PropertyUnitType.id == id, PropertyUnitType.property_id == property_id, PropertyUnitType.is_deleted.is_(False)))
         result = await db.execute(stmt)
@@ -149,6 +182,21 @@ class PropertyUnit(Base):
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
 class PropertyLoan(Base):
     __tablename__ = "property_loan"
@@ -191,6 +239,22 @@ class PropertyLoan(Base):
     #     cascade="all, delete-orphan"
     # )
 
+
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
     async def get_by_id(db, loan_id, property_id):
         stmt = (select(PropertyLoan).where(PropertyLoan.loan_id == loan_id, PropertyLoan.property_id == property_id, PropertyLoan.is_deleted.is_(False)))

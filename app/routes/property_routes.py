@@ -53,7 +53,7 @@ async def update_the_property_risk(property_id: str, risk_status: str, request: 
 @router.put("/available-investment/{property_id}")
 async def update_the_property_investment_available(property_id: str, data: investmentRequired, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant"]:
+    if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
     resp = await PropertyService.update_property_available_required_for_investment(db, property_id, data.amount)
     return resp
@@ -62,7 +62,7 @@ async def update_the_property_investment_available(property_id: str, data: inves
 @router.put("/approval/{property_id}")
 async def update_the_property_approval(property_id: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant"]:
+    if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
     resp = await PropertyService.update_property_approval(db, property_id)
     return resp
@@ -80,7 +80,7 @@ async def update_the_property_open_for_investment(property_id: str, request: Req
 @router.get("/getall", response_model=PropertyPaginationResponse)
 async def get_all_property(request: Request, deleted: bool, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     skip = (max(1, page) - 1) * size
     properties, total_count = await PropertyService.get_info_all_properties(db, skip, size, deleted)
@@ -98,7 +98,7 @@ async def get_all_property(request: Request, deleted: bool, db: Session = Depend
 @router.get("/get/{property_id}", response_model = PropertyResponse)
 async def get_by_property_id(request: Request, property_id:str, db: Session = Depends(get_db)):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     property = await PropertyService.get_by_id_of_property(db, property_id)
     return PropertyResponse.model_validate(property)
@@ -116,7 +116,7 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
 @router.get("/getall/{risk_status}", response_model=PropertyPaginationResponse)
 async def get_all_property(request: Request, risk_status: str, deleted: bool = False, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     skip = (max(1, page) - 1) * size
     properties, total_count = await PropertyService.get_all_properties_info_by_risk(db, risk_status, skip, size, deleted)
@@ -136,7 +136,8 @@ async def get_all_rent_info(property_id: str, db: Session = Depends(get_db)):
     return await PropertyService.get_all_info_related_rent(db, property_id)
 
 
-
 @router.get("/getall-rentroll-summary/{property_id}")
 async def get_all_rentroll_summary(property_id: str, db: Session = Depends(get_db)):
     return await PropertyService.calculate_rent_roll_summary(db, property_id)
+
+

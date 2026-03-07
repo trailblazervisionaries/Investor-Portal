@@ -2,7 +2,8 @@ from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, ForeignKey, func
-from datetime import datetime
+from datetime import datetime, date
+from decimal import Decimal
 
 
 class InvestorAssistant(Base):
@@ -52,6 +53,21 @@ class InvestorAssistant(Base):
         cascade="all, delete-orphan"
     )
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
     
     @staticmethod
     async def get_by_user_id(db, user_id: str):
@@ -174,6 +190,22 @@ class InvestorAssignments(Base):
     investor = relationship("Investors", back_populates="assistant_assignment")
     investor_assistant = relationship("InvestorAssistant", back_populates="assigned_investors")
 
+
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
 
     @staticmethod
     async def get_all_assignment_data_by_investor_id(db, investor_id: str):

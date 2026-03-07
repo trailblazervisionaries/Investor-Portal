@@ -1,7 +1,7 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, func
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal
 
 class Investors(Base):
@@ -51,6 +51,22 @@ class Investors(Base):
         cascade="all, delete-orphan"
     )
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+    
 
     @staticmethod
     async def get_by_user_id(db, user_id: str):
@@ -167,6 +183,22 @@ class InvestorInvestments(Base):
     investor = relationship("Investors", back_populates="investments")
     property = relationship("Property", back_populates="investments")
 
+    def model_to_dict(obj):
+        data = {}
+        for c in obj.__table__.columns:
+            value = getattr(obj, c.name)
+            
+            if isinstance(value, (datetime, date)):
+                data[c.name] = value.isoformat()
+                
+            elif isinstance(value, Decimal):
+                data[c.name] = float(value) 
+                
+            else:
+                data[c.name] = value
+                
+        return data
+    
 
     async def get_by_id(db, id, investor_id):
         stmt = (select(InvestorInvestments).where(InvestorInvestments.id == id, InvestorInvestments.investor_id == investor_id))
