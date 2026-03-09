@@ -6,6 +6,7 @@ from app.models.investor_model import Investors, InvestorInvestments
 from app.models.property_model import Property
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
+from app.models.audit_model import AuditModel
 from decimal import Decimal
 import traceback
 import os
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class InvestorInvestmentServices:
 
-    async def add_new_investment(db, investor_id, data):
+    async def add_new_investment(db, investor_id, data, user_id):
         property = await Property.get_by_id(db, data.property_id)
         if not property:
             raise HTTPException(404, "Property not found for the investment")
@@ -41,6 +42,17 @@ class InvestorInvestmentServices:
 
         property.available_required_for_investment -= amount
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Investor Investment Management",
+            object_id = new_investment.id
+        )
+        db.add(audit_log)
+        logger.info("ExpenseTypeService: Audit log recorded for new investor investment.")
+
         await db.commit()
         await db.refresh(new_investment)
 
@@ -52,14 +64,14 @@ class InvestorInvestmentServices:
         return new_investment
     
     
-    async def update_investment(db, id, investor_id, data):
+    async def update_investment(db, id, investor_id, data, user_id):
         investment = await InvestorInvestments.get_by_id(db, id, investor_id)
         if not investment:
             raise HTTPException(
                 404,
                 "InvestorInvestmentServices: investment not found using provided id and investor_id"
             )
-
+        old_data = InvestorInvestments.model_to_dict(investment)
         property = await Property.get_by_id(db, data.property_id or investment.property_id)
         if not property:
             raise HTTPException(404, "Property not found for the investment")
@@ -88,6 +100,16 @@ class InvestorInvestmentServices:
         if data.status is not None:
             investment.status = data.status
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = data,
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Investor Investment Management",
+            object_id = investment.id
+        )
+        db.add(audit_log)
+        logger.info("ExpenseTypeService: Audit log recorded for this update.")
         await db.commit()
         await db.refresh(investment)
 
@@ -98,13 +120,23 @@ class InvestorInvestmentServices:
         return investment
     
 
-    async def update_the_investment_status(db, id, investor_id, status):
+    async def update_the_investment_status(db, id, investor_id, status, user_id):
         investment = await InvestorInvestments.get_by_id(db, id, investor_id)
         if not investment:
             raise HTTPException(500, "InvestorInvestmentServices: investment not found using provided id, investor_id")
-        
+        old_data = InvestorInvestments.model_to_dict(investment)
         investment.status = status
 
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = {"status": status},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Investor Investment Management",
+            object_id = investment.id
+        )
+        db.add(audit_log)
+        logger.info("ExpenseTypeService: Audit log recorded for this status update.")
         await db.commit()
         await db.refresh(investment)
         return {

@@ -9,20 +9,32 @@ router = APIRouter()
 
 
 @router.post("/allocate/{investor_id}", response_model = InvestorInvestmentsResponse)
-async def allocate_the_new_investment_to_investor(investor_id: str, data: InvestorInvestmentCreate, db: Session = Depends(get_db)):
-    new_alloc_investment = await InvestorInvestmentServices.add_new_investment(db, investor_id, data)
+async def allocate_the_new_investment_to_investor(request: Request, investor_id: str, data: InvestorInvestmentCreate, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
+    new_alloc_investment = await InvestorInvestmentServices.add_new_investment(db, investor_id, data, user_id)
     return InvestorInvestmentsResponse.model_validate(new_alloc_investment)
 
 
 @router.put("/update/{investor_id}/{id}", response_model = InvestorInvestmentsResponse)
-async def allocate_the_new_investment_to_investor(id: int, investor_id: str, data: InvestorInvestmentsUpdate, db: Session = Depends(get_db)):
-    new_alloc_investment = await InvestorInvestmentServices.update_investment(db, id, investor_id, data)
+async def allocate_the_new_investment_to_investor(request: Request, id: int, investor_id: str, data: InvestorInvestmentsUpdate, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
+    new_alloc_investment = await InvestorInvestmentServices.update_investment(db, id, investor_id, data, user_id)
     return InvestorInvestmentsResponse.model_validate(new_alloc_investment)
 
 
 @router.put("status/{investor_id}/{id}/{status}")
-async def update_the_status_of_investemnt(id: int, investor_id: str, status: str, db: Session = Depends(get_db)):
-    return await InvestorInvestmentServices.update_the_investment_status(db, id, investor_id, status)
+async def update_the_status_of_investemnt(request: Request, id: int, investor_id: str, status: str, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
+    return await InvestorInvestmentServices.update_the_investment_status(db, id, investor_id, status, user_id)
 
 @router.get("get/{investor_id}/{id}", response_model = InvestorInvestmentsResponse)
 async def get_info_of_investemnt(id: int, investor_id: str, db: Session = Depends(get_db)):

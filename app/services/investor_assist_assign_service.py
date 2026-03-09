@@ -41,7 +41,7 @@ class InvestorassistantAssignmentService:
 
 # TODO email sending functionality implemented later to send the ifo about the new assignment for the both user
         db.add(new_assignment)
-
+        logger.info("InvestorAssistantAssignmentService:  new_assistant has been created successfull.")
         await db.commit()
         await db.refresh(new_assignment)
 
