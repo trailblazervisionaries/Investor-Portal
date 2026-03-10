@@ -43,7 +43,7 @@ class InvestorAssistant(Base):
         back_populates="investor_assistant",
         uselist=False,
         primaryjoin="InvestorAssistant.investor_assistant_id == foreign(Address.user_id)",
-        overlaps="address,admin",
+        overlaps="address,admin,investor,fund_assistant",
         # viewonly=True,
     )
 

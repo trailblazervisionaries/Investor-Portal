@@ -29,7 +29,7 @@ class Address(Base):
         "Investors",
         back_populates="address",
         primaryjoin="foreign(Address.user_id) == Investors.investor_id",
-        overlaps="admin",
+        overlaps="admin,investor_assistant,fund_assistant",
         viewonly=True,
     )
 
@@ -37,7 +37,7 @@ class Address(Base):
         "InvestorAssistant",
         back_populates="address",
         primaryjoin="foreign(Address.user_id) == InvestorAssistant.investor_assistant_id",
-        overlaps="admin",
+        overlaps="admin,investor,fund_assistant",
         viewonly=True,
     )
 
@@ -45,7 +45,7 @@ class Address(Base):
         "FundAssistant",
         back_populates="address",
         primaryjoin="foreign(Address.user_id) == FundAssistant.fund_assist_id",
-        overlaps="admin",
+        overlaps="admin,investor,investor_assistant",
         viewonly=True,
     )
 

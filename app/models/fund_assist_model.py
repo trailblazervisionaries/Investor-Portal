@@ -29,7 +29,7 @@ class FundAssistant(Base):
         back_populates="fund_assistant",
         uselist=False,
         primaryjoin="FundAssistant.fund_assist_id == foreign(Address.user_id)",
-        overlaps="address",
+        overlaps="address,admin,investor,investor_assistant",
         viewonly=True,
     )
 
