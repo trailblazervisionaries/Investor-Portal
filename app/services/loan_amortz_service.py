@@ -51,6 +51,7 @@ class PropertyLoanService:
         )
         db.add(new_load)
         audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = data,
                 old_data = None,
@@ -153,6 +154,7 @@ class PropertyLoanService:
         )
 
         audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = data,
                 old_data = old_data,
@@ -178,6 +180,7 @@ class PropertyLoanService:
         loan.is_deleted = True
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
             old_data = old_data,
@@ -209,6 +212,7 @@ class PropertyLoanService:
             type = "DEACTIVATE"
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = new_data,
             old_data = old_data,

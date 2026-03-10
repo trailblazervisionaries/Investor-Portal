@@ -29,6 +29,7 @@ class ExpenseTypeService:
         )
         db.add(new_expense_type)
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = None,
@@ -61,6 +62,7 @@ class ExpenseTypeService:
             expense_type.property_id = data.property_id
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -84,6 +86,7 @@ class ExpenseTypeService:
         expense_type.is_deleted = True
         
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
             old_data = old_data,
@@ -134,6 +137,7 @@ class ExpenseService:
         )
         db.add(new_expense)
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = None,
@@ -163,6 +167,7 @@ class ExpenseService:
             expense.pro_forma_expense = data.pro_forma_expense
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -186,6 +191,7 @@ class ExpenseService:
         expense.is_deleted = True
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
             old_data = old_data,
@@ -234,6 +240,7 @@ class ExpenseGrowthService:
                 growth_objects.append(growth)
 
                 audit_log = AuditModel.add_new_logs(
+                    db = db,
                     added_by = user_id,
                     new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
                     old_data = None,
@@ -253,6 +260,7 @@ class ExpenseGrowthService:
             growth_objects.append(growth)
             
             audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
                 old_data = None,
@@ -290,6 +298,7 @@ class ExpenseGrowthService:
             growth.growth_percentage = data.growth_percentage
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
             old_data = old_data,
@@ -314,6 +323,7 @@ class ExpenseGrowthService:
         growth.is_deleted = True
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted" : True},
             old_data = old_data,

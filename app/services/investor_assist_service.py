@@ -81,6 +81,7 @@ class InvestorAssistService:
             #     "default_password",
             # )
             audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = data,
                 old_data = None,
@@ -148,6 +149,7 @@ class InvestorAssistService:
                         **address_data
                     )
             audit_log = AuditModel.add_new_logs(
+                db=db,
                 added_by = user_id,
                 new_data = data,
                 old_data = old_data,
@@ -190,6 +192,7 @@ class InvestorAssistService:
         investor_assist.user.is_delete = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = {"is_deleted" : True},
                 old_data = old_data,
@@ -212,6 +215,7 @@ class InvestorAssistService:
         investor_assist.user.is_active = False
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = AuditModel.add_new_logs(
+                db=db,
                 added_by = user_id,
                 new_data = {"is_active" : False},
                 old_data = old_data,
@@ -234,6 +238,7 @@ class InvestorAssistService:
         investor_assist.user.is_active = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = AuditModel.add_new_logs(
+                db =db,
                 added_by = user_id,
                 new_data = {"is_active" : True},
                 old_data = old_data,

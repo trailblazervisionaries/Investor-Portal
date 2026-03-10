@@ -43,6 +43,7 @@ class InvestorInvestmentServices:
         property.available_required_for_investment -= amount
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = None,
@@ -101,6 +102,7 @@ class InvestorInvestmentServices:
             investment.status = data.status
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -128,6 +130,7 @@ class InvestorInvestmentServices:
         investment.status = status
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"status": status},
             old_data = old_data,

@@ -30,6 +30,7 @@ class IncomeTypeService:
         db.add(new_income_type)
         logger.info("IncomeTypeService: New income type log added successfully.")
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = None,
@@ -62,6 +63,7 @@ class IncomeTypeService:
             income_type.property_id = data.property_id
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -85,6 +87,7 @@ class IncomeTypeService:
         old_data = IncomeType.model_to_dict(income_type)
         income_type.is_deleted = True
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": False},
             old_data = old_data,
@@ -136,6 +139,7 @@ class IncomeService:
         db.add(new_income)
         logger.info("IncomeService: Income data is added successfully.")
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = None,
@@ -163,6 +167,7 @@ class IncomeService:
             income.pro_forma_income = data.pro_forma_income
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -187,6 +192,7 @@ class IncomeService:
         income.is_deleted = True
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": False},
             old_data = old_data,
@@ -232,6 +238,7 @@ class IncomeGrowthService:
                 db.add(growth)
                 growth_objects.append(growth)
                 audit_log = AuditModel.add_new_logs(
+                    db = db,
                     added_by = user_id,
                     new_data = data,
                     old_data = None,
@@ -250,6 +257,7 @@ class IncomeGrowthService:
             db.add(growth)
             growth_objects.append(growth)
             audit_log = AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = data,
                 old_data = None,
@@ -285,6 +293,7 @@ class IncomeGrowthService:
             growth.growth_percentage = data.growth_percentage
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = data,
             old_data = old_data,
@@ -310,6 +319,7 @@ class IncomeGrowthService:
         growth.is_deleted = True
 
         audit_log = AuditModel.add_new_logs(
+            db = db,
             added_by = user_id,
             new_data = {"is_deleted": False},
             old_data = old_data,
