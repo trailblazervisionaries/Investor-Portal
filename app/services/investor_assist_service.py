@@ -124,6 +124,7 @@ class InvestorAssistService:
             if hasattr(data, "email") and data.email is not None:
                 investor_assistant.user.email = data.email
                 investor_assistant.email = data.email
+                db.add(investor_assistant.user)
 
             if hasattr(data, "role") and data.role is not None:
                 investor_assistant.user.role = data.role
@@ -144,10 +145,12 @@ class InvestorAssistService:
                     for field, value in address_data.items():
                         setattr(investor_assistant.address, field, value)
                 else:
-                    investor_assistant.address = Address(
+                    new_address = Address(
                         user_id=investor_assistant.investor_assistant_id,
                         **address_data
                     )
+                    db.add(new_address)
+                    investor_assistant.address = new_address
             audit_log = await AuditModel.add_new_logs(
                 db=db,
                 added_by = user_id,
