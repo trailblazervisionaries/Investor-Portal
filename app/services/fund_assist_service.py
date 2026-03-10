@@ -112,6 +112,7 @@ class FundAssistService:
             if hasattr(data, "email") and data.email is not None:
                 fund_assistant.user.email = data.email
                 fund_assistant.email = data.email
+                db.add(fund_assistant.user)
 
             if hasattr(data, "role") and data.role is not None:
                 fund_assistant.user.role = data.role
@@ -132,11 +133,12 @@ class FundAssistService:
                     for field, value in address_data.items():
                         setattr(fund_assistant.address, field, value)
                 else:
-                    fund_assistant.address = Address(
+                    new_address = Address(
                         user_id=fund_assistant.fund_assist_id,
                         **address_data
                     )
-
+                    db.add(new_address)
+                    fund_assistant.address = new_address
             await db.commit()
             await db.refresh(fund_assistant, ["address"])
             logger.info("FundAssistService: fund_assistant data updated successfully")
