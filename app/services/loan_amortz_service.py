@@ -59,7 +59,7 @@ class PropertyLoanService:
                 entity_type = "PropertyLoan Management",
                 object_id = new_load.loan_id
             )
-        db.add(audit_log)
+
         logger.info("PropertyLoanService: Audit log recorded for new loan.")
         await db.commit()
         await db.refresh(new_load)
@@ -162,7 +162,7 @@ class PropertyLoanService:
                 entity_type = "PropertyLoan Management",
                 object_id = loan_id
             )
-        db.add(audit_log)
+
         logger.info("PropertyLoanService: Audit log recorded for this update in the loan data.")
         await db.commit()
         await db.refresh(loan)
@@ -188,7 +188,7 @@ class PropertyLoanService:
             entity_type = "PropertyLoan Management",
             object_id = loan_id
             )
-        db.add(audit_log)
+    
         logger.info("PropertyLoanService: Audit log recorded for this delete.")
         await db.commit()
         await db.refresh(loan)
@@ -220,7 +220,7 @@ class PropertyLoanService:
             entity_type = "PropertyLoan Management",
             object_id = loan_id
         )
-        db.add(audit_log)
+      
         logger.info("PropertyLoanServices: Audit Log data is for the loan data activate/deactivate.")
         await db.commit()
         await db.refresh(loan)

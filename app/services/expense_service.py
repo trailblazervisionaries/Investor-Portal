@@ -37,7 +37,7 @@ class ExpenseTypeService:
             entity_type = "Expense Type Management",
             object_id = new_expense_type.id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseTypeService: Audit log recorded for new expense type.")
         await db.commit()
         await db.refresh(new_expense_type)
@@ -70,7 +70,7 @@ class ExpenseTypeService:
             entity_type = "Expense Type Management",
             object_id = id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseTypesService: Audit data is stored for the current updation")
         await db.commit()
         await db.refresh(expense_type)
@@ -94,7 +94,7 @@ class ExpenseTypeService:
             entity_type = "Expense Type Management",
             object_id = id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseTypeService: Audit data is added successfully for this delete")
         await db.commit()
         await db.refresh(expense_type)
@@ -145,7 +145,7 @@ class ExpenseService:
             entity_type = "Expense Management",
             object_id = new_expense.expense_id
         )
-        db.add(audit_log)
+
 
         logger.info("ExpenseService: Audit log added for the new expense.")
         await db.commit()
@@ -175,7 +175,7 @@ class ExpenseService:
             entity_type = "Expense Management",
             object_id = expense_id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseService: Audit log recorded for this update successfully.")
         await db.commit()
         await db.refresh(expense)
@@ -199,7 +199,7 @@ class ExpenseService:
             entity_type = "Expense Management",
             object_id = expense_id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseService: AuditLog is recorded for this delete operation")
         await db.commit()
         logger.info("ExpenseService: Expense data deleted successfully.")
@@ -248,7 +248,7 @@ class ExpenseGrowthService:
                     entity_type = "Expense Growth Management",
                     object_id = growth.id
                 )
-                db.add(audit_log)
+
                 audit_object.append(audit_log)
         else:
             growth = ExpenseGrowth(
@@ -268,7 +268,7 @@ class ExpenseGrowthService:
                 entity_type = "Expense Growth Management",
                 object_id = growth.id
                 )
-            db.add(audit_log)
+
             audit_object.append(audit_log)
 
         await db.commit()
@@ -306,7 +306,7 @@ class ExpenseGrowthService:
             entity_type = "Expense Growth Management",
             object_id = id
             )
-        db.add(audit_log)
+
         logger.info("ExpenseGrowthService: audit data added successfully for update")
         await db.commit()
         await db.refresh(growth)
@@ -331,7 +331,7 @@ class ExpenseGrowthService:
             entity_type = "Expense Growth Management",
             object_id = id
         )
-        db.add(audit_log)
+
         logger.info("ExpenseGrowthService: Audit logs data stored successfully")
         await db.commit()
         await db.refresh(growth)

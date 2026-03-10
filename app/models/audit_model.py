@@ -261,7 +261,7 @@ class AuditModel(Base):
             entity_type = entity_type,
             object_id = object_id
         )
-        await db.add(new_log)
+        db.add(new_log)
 
 
     @staticmethod

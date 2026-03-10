@@ -51,7 +51,7 @@ class InvestorInvestmentServices:
             entity_type = "Investor Investment Management",
             object_id = new_investment.id
         )
-        db.add(audit_log)
+    
         logger.info("ExpenseTypeService: Audit log recorded for new investor investment.")
 
         await db.commit()
@@ -110,7 +110,7 @@ class InvestorInvestmentServices:
             entity_type = "Investor Investment Management",
             object_id = investment.id
         )
-        db.add(audit_log)
+    
         logger.info("ExpenseTypeService: Audit log recorded for this update.")
         await db.commit()
         await db.refresh(investment)
@@ -138,7 +138,7 @@ class InvestorInvestmentServices:
             entity_type = "Investor Investment Management",
             object_id = investment.id
         )
-        db.add(audit_log)
+   
         logger.info("ExpenseTypeService: Audit log recorded for this status update.")
         await db.commit()
         await db.refresh(investment)

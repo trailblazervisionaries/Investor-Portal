@@ -89,7 +89,7 @@ class InvestorAssistService:
                 entity_type = "Investor Assistant Management",
                 object_id = new_investor_assist.investor_assistant_id
             )
-            db.add(audit_log)
+            
             logger.info("InvestorAssistService: Audit log recorded for new Investor Assistant.")
             return new_investor_assist
 
@@ -160,7 +160,7 @@ class InvestorAssistService:
                 entity_type = "Investor Assistant Management",
                 object_id = investor_assistant.investor_assistant_id
             )
-            db.add(audit_log)
+            
             logger.info("InvestorAssistantService: Audit log recorded for this update.")
             
             await db.commit()
@@ -203,7 +203,7 @@ class InvestorAssistService:
                 entity_type = "Investor Assistant Management",
                 object_id = investor_assist.investor_assistant_id
             )
-        db.add(audit_log)
+        
         logger.info("InvestorAssistantService: Audit log recorded for this deleted.")
         await db.commit()
         await db.refresh(investor_assist)
@@ -226,7 +226,7 @@ class InvestorAssistService:
                 entity_type = "Investor Assistant Management",
                 object_id = investor_assist.investor_assistant_id
             )
-        db.add(audit_log)
+        
         logger.info("InvestorAssistantService: Audit log recorded for this deactivate.")
         await db.commit()
         await db.refresh(investor_assist)
@@ -249,7 +249,7 @@ class InvestorAssistService:
                 entity_type = "Investor Assistant Management",
                 object_id = investor_assist.investor_assistant_id
             )
-        db.add(audit_log)
+        
         logger.info("InvestorAssistantService: Audit log recorded for this activate.")
         await db.commit()
         await db.refresh(investor_assist)

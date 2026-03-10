@@ -38,7 +38,7 @@ class IncomeTypeService:
             entity_type = "Income Type Management",
             object_id = new_income_type.id
         )
-        db.add(audit_log)
+
         logger.info("IncomeTypeService: Audit log added successfully.")
         await db.commit()
         await db.refresh(new_income_type)
@@ -71,7 +71,7 @@ class IncomeTypeService:
             entity_type = "Income Type Management",
             object_id = id
         )
-        db.add(audit_log)
+
         logger.info("IncomeTypeService: Audit data is added for this update.")
         await db.commit()
         await db.refresh(income_type)
@@ -95,7 +95,7 @@ class IncomeTypeService:
             entity_type = "Income Type Management",
             object_id = id
         )
-        db.add(audit_log)
+
         logger.info("IncomeTypeService: Audit data is added for this delete.")
         await db.commit()
         await db.refresh(income_type)
@@ -147,7 +147,7 @@ class IncomeService:
             entity_type = "Income Management",
             object_id = new_income.income_id
         )
-        db.add(audit_log)
+
         logger.info("IncomeService: Audit log for the add income data is added successfully.")
         await db.commit()
         await db.refresh(new_income)
@@ -175,7 +175,7 @@ class IncomeService:
             entity_type = "Income Management",
             object_id = income_id
         )
-        db.add(audit_log)
+
         logger.info("IncomeService: Audit data is recorded successfully for this update")
         await db.commit()
         await db.refresh(income)
@@ -200,7 +200,7 @@ class IncomeService:
             entity_type = "Income Management",
             object_id = income_id
         )
-        db.add(audit_log)
+
         logger.info("IncomeService: Audit data is recordded successfully for this delete")
         await db.commit()
         await db.refresh(income)
@@ -246,7 +246,7 @@ class IncomeGrowthService:
                     entity_type = "Income Growth Management",
                     object_id = growth.id
                 )
-                db.add(audit_log)
+
                 audit_objects.append(audit_log)
         else:
             growth = IncomeGrowth(
@@ -265,7 +265,7 @@ class IncomeGrowthService:
                 entity_type = "Income Growth Management",
                 object_id = growth.id
             )
-            db.add(audit_log)
+
             audit_objects.append(audit_log)
         await db.commit()
 
@@ -302,7 +302,7 @@ class IncomeGrowthService:
             object_id = id
         )
 
-        db.add(audit_log)
+
         logger.info("IncomeGrowthService: Audit data added for this update in income growth.")
         await db.commit()
         await db.refresh(growth)
@@ -328,7 +328,7 @@ class IncomeGrowthService:
             object_id = id
         )
 
-        db.add(audit_log)
+
         logger.info("IncomeGrowthService: Audit data is successfully recorded for this delete")
         await db.commit()
         await db.refresh(growth)
