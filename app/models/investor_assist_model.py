@@ -44,7 +44,7 @@ class InvestorAssistant(Base):
         uselist=False,
         primaryjoin="InvestorAssistant.investor_assistant_id == foreign(Address.user_id)",
         overlaps="address",
-        overlaps="admin",
+        overlaps= "address,admin",
         # viewonly=True,
     )
 
