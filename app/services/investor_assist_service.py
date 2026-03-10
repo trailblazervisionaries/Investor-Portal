@@ -191,8 +191,8 @@ class InvestorAssistService:
 
     async def get_info_and_delete(db, user_id):
         investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
-        investor_assist.is_delete = True
-        investor_assist.user.is_delete = True
+        investor_assist.is_deleted = True
+        investor_assist.user.is_deleted = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = await AuditModel.add_new_logs(
                 db = db,

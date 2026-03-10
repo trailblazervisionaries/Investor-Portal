@@ -18,9 +18,12 @@ async def add_admin(data: FundAssistCreate, request: Request, db: Session = Depe
     return FundAssistResponse.model_validate(fund_assistant)
 
 
-@router.put("/update", response_model = FundAssistResponse)
-async def add_admin(data: FundAssistUpdate, request: Request, db: Session = Depends(get_db)):
-    user_id = request.state.user.user_id
+@router.put("/update/{user_id}", response_model = FundAssistResponse)
+async def add_admin(data: FundAssistUpdate, user_id:str, request: Request, db: Session = Depends(get_db)):
+    id = request.state.user.user_id
+    role = request.state.user.role
+    if role != "admin":
+        raise HTTPException(403, "you are not authorise to perform this operation")
     fund_assistant = await FundAssistService.update_fund_assistant(db, user_id, data)
     return FundAssistResponse.model_validate(fund_assistant)
 

@@ -71,7 +71,7 @@ async def get_me(
     }
 
 
-@router.delete("/delete/{user_id}", response_model = InvestorAssistResponse)
+@router.delete("/delete/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
     role = request.state.user.role
