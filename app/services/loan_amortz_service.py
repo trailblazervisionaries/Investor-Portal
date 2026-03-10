@@ -50,7 +50,7 @@ class PropertyLoanService:
             total_annual_payment = AmortizationScheduleService.round_half_up(calculate_other_info["emi"] * 12)
         )
         db.add(new_load)
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data,
@@ -153,7 +153,7 @@ class PropertyLoanService:
             calculate_other_info["emi"] * 12
         )
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data,
@@ -179,7 +179,7 @@ class PropertyLoanService:
         old_data = PropertyLoan.model_to_dict(loan)
         loan.is_deleted = True
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -211,7 +211,7 @@ class PropertyLoanService:
             loan.is_active = True
             type = "DEACTIVATE"
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = new_data,

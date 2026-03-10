@@ -28,7 +28,7 @@ class ExpenseTypeService:
             name = data.name,
         )
         db.add(new_expense_type)
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -61,7 +61,7 @@ class ExpenseTypeService:
         if data.property_id is not None:
             expense_type.property_id = data.property_id
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -85,7 +85,7 @@ class ExpenseTypeService:
         old_data = ExpenseTypes.model_to_dict(expense_type)
         expense_type.is_deleted = True
         
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -136,7 +136,7 @@ class ExpenseService:
             pro_forma_expense = data.pro_forma_expense
         )
         db.add(new_expense)
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -166,7 +166,7 @@ class ExpenseService:
         if data.pro_forma_expense is not None:
             expense.pro_forma_expense = data.pro_forma_expense
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -190,7 +190,7 @@ class ExpenseService:
         old_data = Expense.model_to_dict(expense)
         expense.is_deleted = True
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -239,7 +239,7 @@ class ExpenseGrowthService:
                 db.add(growth)
                 growth_objects.append(growth)
 
-                audit_log = AuditModel.add_new_logs(
+                audit_log = await AuditModel.add_new_logs(
                     db = db,
                     added_by = user_id,
                     new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
@@ -259,7 +259,7 @@ class ExpenseGrowthService:
             db.add(growth)
             growth_objects.append(growth)
             
-            audit_log = AuditModel.add_new_logs(
+            audit_log = await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
@@ -297,7 +297,7 @@ class ExpenseGrowthService:
         if data.growth_percentage is not None:
             growth.growth_percentage = data.growth_percentage
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
@@ -322,7 +322,7 @@ class ExpenseGrowthService:
         old_data = ExpenseGrowth.model_to_dict(growth)
         growth.is_deleted = True
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted" : True},

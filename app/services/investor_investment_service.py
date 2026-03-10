@@ -42,7 +42,7 @@ class InvestorInvestmentServices:
 
         property.available_required_for_investment -= amount
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -101,7 +101,7 @@ class InvestorInvestmentServices:
         if data.status is not None:
             investment.status = data.status
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data,
@@ -129,7 +129,7 @@ class InvestorInvestmentServices:
         old_data = InvestorInvestments.model_to_dict(investment)
         investment.status = status
 
-        audit_log = AuditModel.add_new_logs(
+        audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"status": status},

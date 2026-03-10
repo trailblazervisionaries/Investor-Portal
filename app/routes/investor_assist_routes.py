@@ -19,9 +19,9 @@ async def add_admin(request: Request, data: InvestorAssistCreate, db: Session = 
     return InvestorAssistResponse.model_validate(investor_assistant)
 
 
-@router.put("/update", response_model = InvestorAssistResponse)
-async def add_admin(data: InvestorAssistUpdate, request: Request, db: Session = Depends(get_db)):
-    user_id = request.state.user.user_id
+@router.put("/update/{user_id}", response_model = InvestorAssistResponse)
+async def add_admin(data: InvestorAssistUpdate, user_id: str, request: Request, db: Session = Depends(get_db)):
+    id = request.state.user.user_id
     investor_assistant = await InvestorAssistService.update_investor_assistant(db, user_id, data)
     return InvestorAssistResponse.model_validate(investor_assistant)
 
