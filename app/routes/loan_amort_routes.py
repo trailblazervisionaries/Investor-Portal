@@ -14,26 +14,29 @@ router = APIRouter()
 @router.post("/add/{property_id}", response_model = PropertyLoanResponse)
 async def create_property_loan(request: Request, property_id: str, data: createPropertyLoan, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
-    property_loan = await PropertyLoanService.add_new_loan_details(db, property_id, data)
+    property_loan = await PropertyLoanService.add_new_loan_details(db, property_id, data, user_id)
     return PropertyLoanResponse.model_validate(property_loan)
 
 
 @router.put("/update/{property_id}/{loan_id}", response_model = PropertyLoanResponse)
 async def update_property_loan(request: Request, loan_id: str, property_id: str, data: updatePropertyLoan, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
-    property_loan = await PropertyLoanService.update_loan_detials(db, loan_id, property_id, data)
+    property_loan = await PropertyLoanService.update_loan_detials(db, loan_id, property_id, data, user_id)
     return PropertyLoanResponse.model_validate(property_loan)
 
 @router.delete("/delete/{property_id}/{loan_id}")
 async def delete_property_loan(request: Request, loan_id: str, property_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
-    return await PropertyLoanService.delete_loan_data(db, loan_id, property_id)
+    return await PropertyLoanService.delete_loan_data(db, loan_id, property_id, user_id)
 
 @router.get("/get/{property_id}/{loan_id}", response_model = PropertyLoanResponse)
 async def get_property_loan_data(request: Request, loan_id: str, property_id: str, db: Session = Depends(get_db)):
@@ -56,9 +59,10 @@ async def get_all_loans_data(request: Request, db: Session = Depends(get_db)):
 @router.put("/activate-deactivate/{property_id}/{loan_id}")
 async def activate_deactivate_property_loan(request: Request, loan_id: str, property_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
-    return await PropertyLoanService.activate_deactivate_loan_data(db, loan_id, property_id)
+    return await PropertyLoanService.activate_deactivate_loan_data(db, loan_id, property_id, user_id)
 
 
 

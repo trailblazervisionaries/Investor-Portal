@@ -12,6 +12,7 @@ from app.models.address_model import Address
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.investor_assist import InvestorAssistCreate, InvestorAssistUpdate
+from app.models.audit_model import  AuditModel
 import traceback
 import os
 import logging
@@ -26,7 +27,7 @@ UPLOAD_DIR = "uploads"
 class InvestorAssistService:
     
     @staticmethod
-    async def create_investor_assistant(db: Session, data: InvestorAssistCreate):
+    async def create_investor_assistant(db: Session, data: InvestorAssistCreate, user_id):
 
         # Check admin existence FIRST
         existing_investor_assistant = await InvestorAssistant.by_email(db, data.email)
@@ -79,6 +80,16 @@ class InvestorAssistService:
             #     "investor-assistant",
             #     "default_password",
             # )
+            audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = data,
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "Investor Assistant Management",
+                object_id = new_investor_assist.investor_assistant_id
+            )
+            db.add(audit_log)
+            logger.info("InvestorAssistService: Audit log recorded for new Investor Assistant.")
             return new_investor_assist
 
         except IntegrityError as e:
@@ -107,7 +118,7 @@ class InvestorAssistService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="InvestorAssistService: investor_assistant not found"
             )
-
+        old_data = InvestorAssistant.model_to_dict(investor_assistant)
         try:
             if hasattr(data, "email") and data.email is not None:
                 investor_assistant.user.email = data.email
@@ -136,7 +147,17 @@ class InvestorAssistService:
                         user_id=investor_assistant.investor_assistant_id,
                         **address_data
                     )
-
+            audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = data,
+                old_data = old_data,
+                audit_type = "UPDATE",
+                entity_type = "Investor Assistant Management",
+                object_id = investor_assistant.investor_assistant_id
+            )
+            db.add(audit_log)
+            logger.info("InvestorAssistantService: Audit log recorded for this update.")
+            
             await db.commit()
             await db.refresh(investor_assistant, ["address"])
             logger.info("InvestorAssistService: investor_assistant data updated successfully")
@@ -167,6 +188,17 @@ class InvestorAssistService:
         investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
         investor_assist.is_delete = True
         investor_assist.user.is_delete = True
+        old_data = InvestorAssistant.model_to_dict(investor_assist)
+        audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = {"is_deleted" : True},
+                old_data = old_data,
+                audit_type = "DELETE",
+                entity_type = "Investor Assistant Management",
+                object_id = investor_assist.investor_assistant_id
+            )
+        db.add(audit_log)
+        logger.info("InvestorAssistantService: Audit log recorded for this deleted.")
         await db.commit()
         await db.refresh(investor_assist)
         return {
@@ -176,8 +208,19 @@ class InvestorAssistService:
     
     async def get_info_and_deactivate(db, user_id):
         investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
-        investor_assist.is_active = True
-        investor_assist.user.is_active = True
+        investor_assist.is_active = False
+        investor_assist.user.is_active = False
+        old_data = InvestorAssistant.model_to_dict(investor_assist)
+        audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = {"is_active" : False},
+                old_data = old_data,
+                audit_type = "DEACTIVATE",
+                entity_type = "Investor Assistant Management",
+                object_id = investor_assist.investor_assistant_id
+            )
+        db.add(audit_log)
+        logger.info("InvestorAssistantService: Audit log recorded for this deactivate.")
         await db.commit()
         await db.refresh(investor_assist)
         return {
@@ -189,6 +232,17 @@ class InvestorAssistService:
         investor_assist = await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
         investor_assist.is_active = True
         investor_assist.user.is_active = True
+        old_data = InvestorAssistant.model_to_dict(investor_assist)
+        audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = {"is_active" : True},
+                old_data = old_data,
+                audit_type = "ACTIVATE",
+                entity_type = "Investor Assistant Management",
+                object_id = investor_assist.investor_assistant_id
+            )
+        db.add(audit_log)
+        logger.info("InvestorAssistantService: Audit log recorded for this activate.")
         await db.commit()
         await db.refresh(investor_assist)
         return {

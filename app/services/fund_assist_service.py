@@ -191,8 +191,8 @@ class FundAssistService:
     
     async def get_info_and_deactivate(db, user_id):
         fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
-        fund_assist.is_active = True
-        fund_assist.user.is_active = True
+        fund_assist.is_active = False
+        fund_assist.user.is_active = False
         await db.commit()
         await db.refresh(fund_assist)
         return {

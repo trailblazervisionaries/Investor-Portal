@@ -21,13 +21,14 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 from fastapi.responses import StreamingResponse
+from app.models.audit_model import AuditModel
 
 logger = logging.getLogger(__name__)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 class PropertyLoanService:
 
-    async def add_new_loan_details(db, property_id, data):
+    async def add_new_loan_details(db, property_id, data, user_id):
 
         calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(data)
         new_load = PropertyLoan(
@@ -49,6 +50,16 @@ class PropertyLoanService:
             total_annual_payment = AmortizationScheduleService.round_half_up(calculate_other_info["emi"] * 12)
         )
         db.add(new_load)
+        audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = data,
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "PropertyLoan Management",
+                object_id = new_load.loan_id
+            )
+        db.add(audit_log)
+        logger.info("PropertyLoanService: Audit log recorded for new loan.")
         await db.commit()
         await db.refresh(new_load)
         logger.info("PropertyLoanService: loan detials added successfully for the provided property")
@@ -102,13 +113,14 @@ class PropertyLoanService:
     #     return loan
     
 
-    async def update_loan_detials(db, loan_id, property_id, data):
+    async def update_loan_detials(db, loan_id, property_id, data, user_id):
 
         loan = await PropertyLoan.get_by_id(db, loan_id, property_id)
         if not loan:
             raise HTTPException(status_code=404,
                 detail="LoanServices: no loan found with provided loan_id and property_id"
             )
+        old_data = PropertyLoan.model_to_dict(loan)
         update_fields = [
             "started_date",
             "end_date",
@@ -139,6 +151,17 @@ class PropertyLoanService:
         loan.total_annual_payment = AmortizationScheduleService.round_half_up(
             calculate_other_info["emi"] * 12
         )
+
+        audit_log = AuditModel.add_new_logs(
+                added_by = user_id,
+                new_data = data,
+                old_data = old_data,
+                audit_type = "UPDATE",
+                entity_type = "PropertyLoan Management",
+                object_id = loan_id
+            )
+        db.add(audit_log)
+        logger.info("PropertyLoanService: Audit log recorded for this update in the loan data.")
         await db.commit()
         await db.refresh(loan)
 
@@ -147,11 +170,23 @@ class PropertyLoanService:
 
 
 
-    async def delete_loan_data(db, loan_id, property_id):
+    async def delete_loan_data(db, loan_id, property_id, user_id):
         loan = await PropertyLoan.get_by_id(db, loan_id, property_id)
         if not loan:
             raise HTTPException(404, "LoanServices: no any loan found with provided loan_id and property_id")
+        old_data = PropertyLoan.model_to_dict(loan)
         loan.is_deleted = True
+
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "PropertyLoan Management",
+            object_id = loan_id
+            )
+        db.add(audit_log)
+        logger.info("PropertyLoanService: Audit log recorded for this delete.")
         await db.commit()
         await db.refresh(loan)
         logger.info("PropertyLoanServices: loan details deleted successfully for the provided loan_id and property_id")
@@ -159,14 +194,30 @@ class PropertyLoanService:
             "message":"PropertyLoanServices: loan details deleted successfully for the provided loan_id and property_id"
         }
     
-    async def activate_deactivate_loan_data(db, loan_id, property_id):
+    async def activate_deactivate_loan_data(db, loan_id, property_id, user_id):
         loan = await PropertyLoan.get_by_id(db, loan_id, property_id)
+        new_data = None
+        type = None
         if not loan:
             raise HTTPException(404, "LoanServices: no any loan found with provided loan_id and property_id")
+        old_data = PropertyLoan.model_to_dict(loan)
         if loan.is_active:
             loan.is_active = False
+            type = "ACTIVATE"
         else:
             loan.is_active = True
+            type = "DEACTIVATE"
+
+        audit_log = AuditModel.add_new_logs(
+            added_by = user_id,
+            new_data = new_data,
+            old_data = old_data,
+            audit_type = type,
+            entity_type = "PropertyLoan Management",
+            object_id = loan_id
+        )
+        db.add(audit_log)
+        logger.info("PropertyLoanServices: Audit Log data is for the loan data activate/deactivate.")
         await db.commit()
         await db.refresh(loan)
         logger.info("PropertyLoanServices: loan is_activate is updated successfully for the provided loan_id and property_id")

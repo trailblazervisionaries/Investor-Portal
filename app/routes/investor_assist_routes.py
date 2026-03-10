@@ -10,8 +10,12 @@ router = APIRouter()
 
 
 @router.post("/add", response_model = InvestorAssistResponse)
-async def add_admin(data: InvestorAssistCreate, db: Session = Depends(get_db)):
-    investor_assistant = await InvestorAssistService.create_investor_assistant(db, data)
+async def add_admin(request: Request, data: InvestorAssistCreate, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
+    investor_assistant = await InvestorAssistService.create_investor_assistant(db, data, user_id)
     return InvestorAssistResponse.model_validate(investor_assistant)
 
 
