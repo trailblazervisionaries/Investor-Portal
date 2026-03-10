@@ -22,6 +22,9 @@ async def add_admin(request: Request, data: InvestorAssistCreate, db: Session = 
 @router.put("/update/{user_id}", response_model = InvestorAssistResponse)
 async def add_admin(data: InvestorAssistUpdate, user_id: str, request: Request, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
     investor_assistant = await InvestorAssistService.update_investor_assistant(db, user_id, data)
     return InvestorAssistResponse.model_validate(investor_assistant)
 
@@ -71,16 +74,25 @@ async def get_me(
 @router.delete("/delete/{user_id}", response_model = InvestorAssistResponse)
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
     return await InvestorAssistService.get_info_and_delete(db, user_id)
 
 @router.post("/deactivate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
     return await InvestorAssistService.get_info_and_deactivate(db, user_id)
 
 @router.post("/activate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "You don't have permission to perform this operation")
     return await InvestorAssistService.get_info_and_activate(db, user_id)
 
 
