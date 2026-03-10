@@ -180,8 +180,8 @@ class FundAssistService:
 
     async def get_info_and_delete(db, user_id):
         fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
-        fund_assist.is_delete = True
-        fund_assist.user.is_delete = True
+        fund_assist.is_deleted = True
+        fund_assist.user.is_deleted = True
         await db.commit()
         await db.refresh(fund_assist)
         return {
