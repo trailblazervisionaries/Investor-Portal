@@ -36,6 +36,7 @@ class InvestorAssistResponse(BaseModel):
     lname: Optional[str] = None
     email: str
     phone: str
+    is_active:bool
     role: str | None = "investor-assistant"
     address: Optional[AddressBase] = None
 
