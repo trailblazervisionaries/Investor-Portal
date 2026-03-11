@@ -67,7 +67,7 @@ async def get_me(
     }
 
 
-@router.delete("/delete/{user_id}", response_model = InvestorResponse)
+@router.delete("/delete/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
     return await InvestorService.get_info_and_delete(db, user_id)

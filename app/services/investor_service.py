@@ -70,10 +70,10 @@ class InvestorService:
             )
             db.add(new_investor)
             db.add(address)
-            audit_log = await AuditModel.add_new_logs(
+            await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
-                new_data = data,
+                new_data = data.model_dump(),
                 old_data = None,
                 audit_type = "ADD",
                 entity_type = "Investor Management",
@@ -150,10 +150,10 @@ class InvestorService:
                     )
                     db.add(new_address)
                     investor.address = new_address
-            audit_log = await AuditModel.add_new_logs(
+            await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
-                new_data = data,
+                new_data = data.model_dump(),
                 old_data = old_data,
                 audit_type = "UPDATE",
                 entity_type = "Investor Management",
@@ -186,8 +186,23 @@ class InvestorService:
 
     async def get_info_and_delete(db, user_id):
         investor = await Investors.get_by_investor_user_id(db, user_id)
+        if not investor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="InvestorService: investor not found"
+            )
+        old_data = Investors.model_to_dict(investor)
         investor.is_deleted = True
         investor.user.is_deleted = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Investor Management",
+            object_id = investor.investor_id
+            )
         await db.commit()
         await db.refresh(investor)
         return {
@@ -197,8 +212,23 @@ class InvestorService:
     
     async def get_info_and_deactivate(db, user_id):
         investor = await Investors.get_by_investor_user_id(db, user_id)
+        if not investor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="InvestorService: investor not found"
+            )
+        old_data = Investors.model_to_dict(investor)
         investor.is_active = False
         investor.user.is_active = False
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_active": False},
+            old_data = old_data,
+            audit_type = "DEACTIVATED",
+            entity_type = "Investor Management",
+            object_id = investor.investor_id
+            )
         await db.commit()
         await db.refresh(investor)
         return {
@@ -208,8 +238,23 @@ class InvestorService:
 
     async def get_info_and_activate(db, user_id):
         investor = await Investors.get_by_investor_user_id(db, user_id)
+        if not investor:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="InvestorService: investor not found"
+            )
+        old_data = Investors.model_to_dict(investor)
         investor.is_active = True
         investor.user.is_active = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_active": True},
+            old_data = old_data,
+            audit_type = "ACTIVATED",
+            entity_type = "Investor Management",
+            object_id = investor.investor_id
+            )
         await db.commit()
         await db.refresh(investor)
         return {
