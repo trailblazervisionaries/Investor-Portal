@@ -195,14 +195,14 @@ class InvestorAssistService:
         investor_assist.user.is_deleted = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = await AuditModel.add_new_logs(
-                db = db,
-                added_by = user_id,
-                new_data = {"is_deleted" : True},
-                old_data = old_data,
-                audit_type = "DELETE",
-                entity_type = "Investor Assistant Management",
-                object_id = investor_assist.investor_assistant_id
-            )
+            db = db,
+            added_by = user_id,
+            new_data = {"is_deleted" : True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Investor Assistant Management",
+            object_id = investor_assist.investor_assistant_id
+        )
         
         logger.info("InvestorAssistantService: Audit log recorded for this deleted.")
         await db.commit()
@@ -218,14 +218,14 @@ class InvestorAssistService:
         investor_assist.user.is_active = False
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = await AuditModel.add_new_logs(
-                db=db,
-                added_by = user_id,
-                new_data = {"is_active" : False},
-                old_data = old_data,
-                audit_type = "DEACTIVATE",
-                entity_type = "Investor Assistant Management",
-                object_id = investor_assist.investor_assistant_id
-            )
+            db=db,
+            added_by = user_id,
+            new_data = {"is_active" : False},
+            old_data = old_data,
+            audit_type = "DEACTIVATE",
+            entity_type = "Investor Assistant Management",
+            object_id = investor_assist.investor_assistant_id
+        )
         
         logger.info("InvestorAssistantService: Audit log recorded for this deactivate.")
         await db.commit()
@@ -241,14 +241,14 @@ class InvestorAssistService:
         investor_assist.user.is_active = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
         audit_log = await AuditModel.add_new_logs(
-                db =db,
-                added_by = user_id,
-                new_data = {"is_active" : True},
-                old_data = old_data,
-                audit_type = "ACTIVATE",
-                entity_type = "Investor Assistant Management",
-                object_id = investor_assist.investor_assistant_id
-            )
+            db =db,
+            added_by = user_id,
+            new_data = {"is_active" : True},
+            old_data = old_data,
+            audit_type = "ACTIVATE",
+            entity_type = "Investor Assistant Management",
+            object_id = investor_assist.investor_assistant_id
+        )
         
         logger.info("InvestorAssistantService: Audit log recorded for this activate.")
         await db.commit()
