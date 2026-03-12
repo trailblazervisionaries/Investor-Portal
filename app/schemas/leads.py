@@ -69,3 +69,11 @@ class LeadListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedLeadResponse(BaseModel):
+    items: List[LeadResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int

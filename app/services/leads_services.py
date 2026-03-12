@@ -48,15 +48,40 @@ class LeadService:
     
 
 
-    async def get_all_lead(db):
-        return await Leads.get_all_leads(db)
+    # async def get_all_lead(db):
+    #     return await Leads.get_all_leads(db)
     
 
-    async def get_all_by_status(db, status):
-        return await Leads.get_all_leads_by_status(db, status)
+    # async def get_all_by_status(db, status):
+    #     return await Leads.get_all_leads_by_status(db, status)
     
-    async def get_leads_by_attendend_id_and_status(db, user_id, status):
-        return await Leads.get_all_leads_by_attendend_id_and_status(db, user_id, status)
+    async def get_leads_by_attendend_id_and_status(
+        db,
+        user_id,
+        status,
+        page,
+        page_size
+    ):
+        return await Leads.get_all_leads_by_attendend_id_and_status(
+            db,
+            user_id,
+            status,
+            page,
+            page_size
+        )
+
+
+    async def get_all_lead(db, page: int, page_size: int):
+        return await Leads.get_all_leads_(db, page, page_size)
+
+    async def get_leads_by_status(db, status: str, page: int, page_size: int):
+        return await Leads.get_all_leads_by_status_(
+            db=db,
+            status=status,
+            page=page,
+            page_size=page_size
+        )
+
     
 
     async def delete_the_lead(db, id, user_id, remarks):

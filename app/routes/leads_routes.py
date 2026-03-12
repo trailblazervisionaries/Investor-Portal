@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from app.config.database import get_db
 from app.services.leads_services import LeadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.leads import createLeads, LeadResponse, updateLeads, addRemarksLeads
+from app.schemas.leads import createLeads, LeadResponse, updateLeads, addRemarksLeads, PaginatedLeadResponse
 from typing import List
 from datetime import datetime
 import logging 
@@ -30,22 +30,52 @@ async def update_the_lead(data: updateLeads, id: int, request: Request, db: Sess
     return lead
 
 
-@router.get("/get-all", response_model = List[LeadResponse])
-async def get_all_leads(db: Session = Depends(get_db)):
-    leads = await LeadService.get_all_lead(db)
-    if not leads:
-        raise HTTPException(404, "associated leads not available")
-    return [LeadResponse.model_validate(lead) for lead in leads]
+# @router.get("/get-all", response_model = List[LeadResponse])
+# async def get_all_leads(db: Session = Depends(get_db)):
+#     leads = await LeadService.get_all_lead(db)
+#     if not leads:
+#         raise HTTPException(404, "associated leads not available")
+#     return [LeadResponse.model_validate(lead) for lead in leads]
 
 
-@router.get("/get-all/{status}", response_model = List[LeadResponse])
-async def get_all_leads_by_status(status: str, db: Session = Depends(get_db)):
-    leads = await LeadService.get_all_by_status(db, status)
-    if not leads:
-        logger.info("Leads Route: provided status associated leads not available")
-        return []
-        # raise HTTPException(404, "provided status associated leads not available")
-    return [LeadResponse.model_validate(lead) for lead in leads]
+# @router.get("/get-all/{status}", response_model = List[LeadResponse])
+# async def get_all_leads_by_status(status: str, db: Session = Depends(get_db)):
+#     leads = await LeadService.get_all_by_status(db, status)
+#     if not leads:
+#         logger.info("Leads Route: provided status associated leads not available")
+#         return []
+#         # raise HTTPException(404, "provided status associated leads not available")
+#     return [LeadResponse.model_validate(lead) for lead in leads]
+
+
+@router.get("/get-all", response_model=PaginatedLeadResponse)
+async def get_all_leads(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    result = await LeadService.get_all_lead(
+        db=db,
+        page=page,
+        page_size=page_size
+    )
+
+    return result
+
+@router.get("/get-all/{status}", response_model=PaginatedLeadResponse)
+async def get_leads_by_status(
+    status: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    return await LeadService.get_leads_by_status(
+        db=db,
+        status=status,
+        page=page,
+        page_size=page_size
+    )
+
 
 
 @router.delete("/delete/{id}")
@@ -75,28 +105,50 @@ async def mark_assisted_by(id: int, request: Request, data: addRemarksLeads, db:
     return resp
 
 
-@router.get("/by-assistent/{status}", response_model = List[LeadResponse])
-async def get_all_leads_by_attendend_id_and_status(request: Request, status: str, db: Session = Depends(get_db)):
-    user_id, role = request.state.user.user_id, request.state.user.role
-    if role not in ["admin","investor-assistant"]:
-        raise HTTPException(403, "you are not authorise to perform this operation")
-    leads = await LeadService.get_leads_by_attendend_id_and_status(db, user_id, status)
-    if not leads:
-        logger.info("associated leads not available with your id")
-        return []
-    return [LeadResponse.model_validate(lead) for lead in leads]
-
-
-@router.get("/by-assistent/{user_id}/{status}", response_model = List[LeadResponse])
-async def get_all_leads_by_attendend_id_and_status(request: Request, user_id: str, status: str, db: Session = Depends(get_db)):
+@router.get("/by-assistant/{status}", response_model=PaginatedLeadResponse)
+async def get_my_leads_by_status(
+    request: Request,
+    status: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    user_id = request.state.user.user_id
     role = request.state.user.role
-    if role not in ["admin","investor-assistant"]:
-        raise HTTPException(403, "you are not authorise to perform this operation")
-    leads = await LeadService.get_leads_by_attendend_id_and_status(db, user_id, status)
-    if not leads:
-        logger.info("associated leads not available with your id")
-        return []
-    return [LeadResponse.model_validate(lead) for lead in leads]
+
+    if role not in ["admin", "investor-assistant"]:
+        raise HTTPException(403, "you are not authorised to perform this operation")
+
+    return await LeadService.get_leads_by_attendend_id_and_status(
+        db=db,
+        user_id=user_id,
+        status=status,
+        page=page,
+        page_size=page_size
+    )
+
+
+@router.get("/by-assistant/{user_id}/{status}", response_model=PaginatedLeadResponse)
+async def get_assistant_leads_by_status(
+    request: Request,
+    user_id: str,
+    status: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    role = request.state.user.role
+
+    if role not in ["admin", "investor-assistant"]:
+        raise HTTPException(403, "you are not authorised to perform this operation")
+
+    return await LeadService.get_leads_by_attendend_id_and_status(
+        db=db,
+        user_id=user_id,
+        status=status,
+        page=page,
+        page_size=page_size
+    )
 
 
 @router.get("/export/{status}")
