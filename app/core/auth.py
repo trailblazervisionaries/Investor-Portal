@@ -35,3 +35,5 @@ def verify_token(token: str):
     except JWTError:
         logger.error("Invalid token", exc_info=True)
         raise HTTPException(status_code=401, detail="Invalid token")
+
+

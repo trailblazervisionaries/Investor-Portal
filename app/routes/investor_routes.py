@@ -12,6 +12,9 @@ router = APIRouter()
 @router.post("/add", response_model = InvestorResponse)
 async def add_admin(data: InvestorCreate, request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
+    role = request.state.user.role
+    if role != "fund-assistant":
+        raise HTTPException(403, "you are not authorise to perform this operation")
     investor = await InvestorService.create_investor(db, user_id, data)
     return InvestorResponse.model_validate(investor)
 
@@ -19,6 +22,9 @@ async def add_admin(data: InvestorCreate, request: Request, db: Session = Depend
 @router.put("/update/{user_id}", response_model = InvestorResponse)
 async def add_admin(data: InvestorUpdate, user_id: str, request: Request, db: Session = Depends(get_db)):
     login_user_id = request.state.user.user_id
+    role = request.state.user.role
+    if role != "fund-assistant":
+        raise HTTPException(403, "you are not authorise to perform this operation")
     investor = await InvestorService.update_investor(db, user_id, data)
     return InvestorResponse.model_validate(investor)
 
@@ -70,14 +76,24 @@ async def get_me(
 @router.delete("/delete/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["fund-assistant","admin"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
     return await InvestorService.get_info_and_delete(db, user_id)
 
 @router.post("/deactivate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["fund-assistant","admin"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
     return await InvestorService.get_info_and_deactivate(db, user_id)
 
 @router.post("/activate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     id = request.state.user.user_id
+    role = request.state.user.role
+    if role not in ["fund-assistant","admin"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
     return await InvestorService.get_info_and_activate(db, user_id)
+
