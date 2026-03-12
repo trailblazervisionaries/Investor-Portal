@@ -105,6 +105,15 @@ async def mark_assisted_by(id: int, request: Request, data: addRemarksLeads, db:
     return resp
 
 
+@router.put("/update-assisted/{id}/{user_id}")
+async def mark_assisted_by(id: int, user_id: str, request: Request, data: addRemarksLeads, db: Session = Depends(get_db)):
+    id_, role = request.state.user.user_id, request.state.user.role
+    if role not in ["admin"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    resp = await LeadService.update_marked_the_lead_assisted_by(db, id, user_id, data.remarks)
+    return resp
+
+
 @router.get("/by-assistant/{status}", response_model=PaginatedLeadResponse)
 async def get_my_leads_by_status(
     request: Request,

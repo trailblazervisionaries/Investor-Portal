@@ -112,7 +112,7 @@ class LeadService:
             "message": "lead updated and remark added successfully."
         }
     
-    async def marked_the_lead_assisted_by(db, id, assistedby, remarks):
+    async def update_marked_the_lead_assisted_by(db, id, assistedby, remarks):
         lead = await Leads.get_lead_by_id(db, id)
         if not lead:
             raise HTTPException(404, "lead with this id is not found.")
@@ -124,6 +124,27 @@ class LeadService:
         return {
             "message": "lead assisted marked and remarks added successfully."
         }
+
+    async def marked_the_lead_assisted_by(db, id, assistedby, remarks):
+        # Use with_for_update() to lock the row while we check/update it
+        stmt = select(Leads).where(Leads.id == id).with_for_update()
+        result = await db.execute(stmt)
+        lead = result.scalar_one_or_none()
+
+        if not lead:
+            raise HTTPException(404, "Lead not found.")
+
+        # Check if someone else already assisted this lead
+        if lead.assisted_by is not None:
+            raise HTTPException(400, f"This lead is already being assisted by {lead.assisted_by}")
+
+        lead.assisted_by = assistedby
+        # The rest of your logic remains the same
+        new_remark = await LeadService.add_lead_remark(db, id, remarks, assistedby)
+        
+        await db.commit()
+        return {"message": "lead assisted marked and remarks added successfully."}
+
     
 
     async def update_the_lead_by_id(db, id, data, user_id):
