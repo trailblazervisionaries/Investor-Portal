@@ -32,7 +32,7 @@ class IncomeTypeService:
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data,
+            new_data = data.model_dump(),
             old_data = None,
             audit_type = "ADD",
             entity_type = "Income Type Management",
@@ -65,7 +65,7 @@ class IncomeTypeService:
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data,
+            new_data = data.model_dump(),
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Income Type Management",
@@ -141,7 +141,7 @@ class IncomeService:
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data,
+            new_data = data.model_dump(),
             old_data = None,
             audit_type = "ADD",
             entity_type = "Income Management",
@@ -169,7 +169,7 @@ class IncomeService:
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data,
+            new_data = data.model_dump(),
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Income Management",
@@ -240,7 +240,7 @@ class IncomeGrowthService:
                 audit_log = await AuditModel.add_new_logs(
                     db = db,
                     added_by = user_id,
-                    new_data = data,
+                    new_data = data.model_dump(),
                     old_data = None,
                     audit_type = "ADD",
                     entity_type = "Income Growth Management",
@@ -259,7 +259,7 @@ class IncomeGrowthService:
             audit_log = await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
-                new_data = data,
+                new_data = data.model_dump(),
                 old_data = None,
                 audit_type = "ADD",
                 entity_type = "Income Growth Management",
@@ -295,7 +295,7 @@ class IncomeGrowthService:
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data,
+            new_data = data.model_dump(),
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Income Growth Management",

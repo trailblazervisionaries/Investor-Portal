@@ -212,7 +212,7 @@ class LeadService:
 
         ws.append(headers)
 
-        # Optional: make headers bold
+        # make headers bold
         for col in range(1, len(headers) + 1):
             ws.cell(row=1, column=col).font = Font(bold=True)
 
@@ -234,7 +234,7 @@ class LeadService:
                 lead.updated_at.strftime("%Y-%m-%d %H:%M:%S") if lead.updated_at else "",
             ])
 
-        # Optional: Auto column width
+        # Auto column width
         for col in ws.columns:
             max_length = 0
             col_letter = col[0].column_letter
