@@ -37,7 +37,7 @@ class ExpenseTypeService:
             old_data = None,
             audit_type = "ADD",
             entity_type = "Expense Type Management",
-            object_id = new_expense_type.id
+            object_id = str(new_expense_type.id)
         )
 
         logger.info("ExpenseTypeService: Audit log recorded for new expense type.")

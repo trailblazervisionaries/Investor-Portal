@@ -37,7 +37,7 @@ class IncomeTypeService:
             old_data = None,
             audit_type = "ADD",
             entity_type = "Income Type Management",
-            object_id = new_income_type.id
+            object_id = str(new_income_type.id)
         )
 
         logger.info("IncomeTypeService: Audit log added successfully.")
