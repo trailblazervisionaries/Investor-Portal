@@ -28,6 +28,8 @@ class ExpenseTypeService:
             name = data.name,
         )
         db.add(new_expense_type)
+        await db.flush() 
+
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
@@ -136,6 +138,7 @@ class ExpenseService:
             pro_forma_expense = data.pro_forma_expense
         )
         db.add(new_expense)
+        await db.flush() 
         audit_log = await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
@@ -237,6 +240,7 @@ class ExpenseGrowthService:
                     growth_percentage=data.growth_percentage
                 )
                 db.add(growth)
+                await db.flush() 
                 growth_objects.append(growth)
 
                 audit_log = await AuditModel.add_new_logs(
@@ -257,6 +261,7 @@ class ExpenseGrowthService:
                 growth_percentage=data.growth_percentage
             )
             db.add(growth)
+            await db.flush() 
             growth_objects.append(growth)
             
             audit_log = await AuditModel.add_new_logs(

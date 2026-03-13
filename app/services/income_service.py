@@ -28,6 +28,7 @@ class IncomeTypeService:
             name = data.name,
         )
         db.add(new_income_type)
+        await db.flush() 
         logger.info("IncomeTypeService: New income type log added successfully.")
         audit_log = await AuditModel.add_new_logs(
             db = db,
@@ -137,6 +138,7 @@ class IncomeService:
             pro_forma_income = data.pro_forma_income,
         )
         db.add(new_income)
+        await db.flush() 
         logger.info("IncomeService: Income data is added successfully.")
         audit_log = await AuditModel.add_new_logs(
             db = db,
@@ -236,6 +238,7 @@ class IncomeGrowthService:
                     growth_percentage=data.growth_percentage
                 )
                 db.add(growth)
+                await db.flush() 
                 growth_objects.append(growth)
                 audit_log = await AuditModel.add_new_logs(
                     db = db,
@@ -255,6 +258,7 @@ class IncomeGrowthService:
                 growth_percentage=data.growth_percentage
             )
             db.add(growth)
+            await db.flush() 
             growth_objects.append(growth)
             audit_log = await AuditModel.add_new_logs(
                 db = db,
