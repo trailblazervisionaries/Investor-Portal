@@ -5,6 +5,7 @@ from app.core.utils_functions import generate_id
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select, func
 from datetime import datetime, timedelta
+from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 from decimal import Decimal, ROUND_HALF_UP
 from app.models.property_model import Property, PropertyUnitType, PropertyUnit
@@ -48,6 +49,16 @@ class PropertyService:
         )
 
         db.add(new_property)
+        await db.flush()
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Property Management",
+            object_id = new_property.property_id
+        )
         await db.commit()
         await db.refresh(new_property)
         logger.info("PropertyServices: property data is stored successfully")
@@ -56,7 +67,9 @@ class PropertyService:
     async def update_property(db, user_id, property_id, data):
 
         property_obj = await Property.get_by_id(db, property_id)
-
+        if not property_obj:
+            raise HTTPException(404, "property with this property_id is not found or already deleted")
+        old_data = Property.model_to_dict(property_obj)
         allowed_fields = {
             "name", "description", "risk_status", "purchase_price", "closing_cost",
             "loan_amount", "market_cap_rate", "cap_rate_flactuation",
@@ -74,6 +87,16 @@ class PropertyService:
 
         property_obj.updated_by = user_id
 
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Management",
+            object_id = property_obj.property_id
+        )
+
         await db.commit()
         await db.refresh(property_obj)
 
@@ -83,11 +106,21 @@ class PropertyService:
 
     
 
-    async def delete_property(db, property_id):
+    async def delete_property(db, property_id, user_id):
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
+        old_data = Property.model_to_dict(property)
         property.is_deleted = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Property Management",
+            object_id = property.property_id
+        )
         await db.commit()
         await db.refresh(property)
         logger.info("PropertyServices: property deleted successfully")
@@ -95,23 +128,43 @@ class PropertyService:
 
 
     
-    async def update_property_risk(db, property_id, risk_status):
+    async def update_property_risk(db, property_id, risk_status, user_id):
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
+        old_data = Property.model_to_dict(property)
         property.risk_status = risk_status
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"risk_status": risk_status},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Management",
+            object_id = property.property_id
+        )
         await db.commit()
         await db.refresh(property)
         logger.info("PropertyServices: property risk updated successfully")
         return {"message ": "PropertyServices: property risk updated successfully"}
 
-    async def update_property_available_required_for_investment(db, property_id, available_required_for_investment):
+    async def update_property_available_required_for_investment(db, property_id, available_required_for_investment, user_id):
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
         if property.is_approved == False:
             raise HTTPException(500, "property with this property_id is not not approved now")
+        old_data = Property.model_to_dict(property)
         property.available_required_for_investment = available_required_for_investment
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"available_required_for_investment": available_required_for_investment},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Management",
+            object_id = property.property_id
+        )
         await db.commit()
         await db.refresh(property)
         logger.info("PropertyServices: property available_required_for_investment value updated successfully")
@@ -120,14 +173,24 @@ class PropertyService:
         }
 
 
-    async def update_property_approval(db, property_id):
+    async def update_property_approval(db, property_id, user_id):
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
+        old_data = Property.model_to_dict(property)
         if property.is_approved:
             property.is_approved = False
         else:
             property.is_approved = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_approved": property.is_approved},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Management",
+            object_id = property.property_id
+        )
         await db.commit()
         await db.refresh(property)
         logger.info("PropertyServices: property approval updated successfully")
@@ -136,14 +199,24 @@ class PropertyService:
         }
 
     
-    async def update_property_open_for_the_investment(db, property_id):
+    async def update_property_open_for_the_investment(db, property_id, user_id):
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
+        old_data = Property.model_to_dict(property)
         if property.is_open_for_investment:
             property.is_open_for_investment = False
         else:
             property.is_open_for_investment = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_open_for_investment": property.is_open_for_investment},
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Management",
+            object_id = property.property_id
+        )
         await db.commit()
         await db.refresh(property)
         logger.info("PropertyServices: property approval updated successfully")
@@ -430,7 +503,7 @@ class PropertyService:
 
 class PropertyUnitTypeServices:
 
-    async def add_new_property_unit_type(db, property_id, data):
+    async def add_new_property_unit_type(db, property_id, data, user_id):
         new_property_type = PropertyUnitType(
             property_id = property_id,
             name = data.name,
@@ -440,17 +513,27 @@ class PropertyUnitTypeServices:
         )
 
         db.add(new_property_type)
+        await db.flush()
+        await AuditModel.add_new_logs(
+                db = db,
+                added_by = user_id,
+                new_data = data.model_dump(),
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "Property Unit Type Management",
+                object_id = str(new_property_type.id)
+            )
         await db.commit()
         await db.refresh(new_property_type)
         logger.info("PropertyUnitService: Property unit type added successfully for the property")
         return new_property_type
     
 
-    async def update_property_unit_type(db, id, property_id, data):
+    async def update_property_unit_type(db, id, property_id, data, user_id):
         unit_type = await PropertyUnitType.get_by_id(db, id, property_id)
         if not unit_type:
             raise HTTPException(404, "property unit type not found or already deleted for this id and property_id")
-
+        old_data = PropertyUnitType.model_to_dict()
         if data.name is not None:
             unit_type.name = data.name
 
@@ -462,7 +545,15 @@ class PropertyUnitTypeServices:
 
         if data.occupied_units is not None:
             unit_type.occupied_units = data.occupied_units
-        
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = None,
+            audit_type = "UPDATE",
+            entity_type = "Property Unit Type Management",
+            object_id = str(id)
+            )
         await db.commit()
         await db.refresh(unit_type)
         logger.info("PropertyUnitType: property unit type data updated successfully")

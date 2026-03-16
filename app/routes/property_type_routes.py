@@ -11,14 +11,22 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/add/{property_id}", response_model = PropertyTypeResponse)
-async def add_new_property_type(property_id: str, data: createPropertyType, db: Session = Depends(get_db)):
-    property_type = await PropertyUnitTypeServices.add_new_property_unit_type(db, property_id, data)
+async def add_new_property_type(property_id: str, data: createPropertyType, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    property_type = await PropertyUnitTypeServices.add_new_property_unit_type(db, property_id, data, user_id)
     return PropertyTypeResponse.model_validate(property_type)
 
 
 @router.put("/update/{property_id}/{id}", response_model = PropertyTypeResponse)
-async def update_property_type( id : int, property_id: str, data: updatePropertyType, db: Session = Depends(get_db)):
-    property_type = await PropertyUnitTypeServices.update_property_unit_type(db, id, property_id, data)
+async def update_property_type( id : int, property_id: str, data: updatePropertyType, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    property_type = await PropertyUnitTypeServices.update_property_unit_type(db, id, property_id, data, user_id)
     return PropertyTypeResponse.model_validate(property_type)
 
 

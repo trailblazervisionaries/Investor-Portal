@@ -35,45 +35,50 @@ async def update_the_property(data: updateProperty, property_id: str, request: R
 @router.delete("/delete/{property_id}")
 async def delete_the_property(property_id: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.delete_property(db, property_id)
+    resp = await PropertyService.delete_property(db, property_id, user_id)
     return resp
 
 
 @router.put("/update-risk/{property_id}/{risk_status}")
 async def update_the_property_risk(property_id: str, risk_status: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.update_property_risk(db, property_id, risk_status)
+    resp = await PropertyService.update_property_risk(db, property_id, risk_status, user_id)
     return resp
 
 
 @router.put("/available-investment/{property_id}")
 async def update_the_property_investment_available(property_id: str, data: investmentRequired, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.update_property_available_required_for_investment(db, property_id, data.amount)
+    resp = await PropertyService.update_property_available_required_for_investment(db, property_id, data.amount, user_id)
     return resp
 
 
 @router.put("/approval/{property_id}")
 async def update_the_property_approval(property_id: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.update_property_approval(db, property_id)
+    resp = await PropertyService.update_property_approval(db, property_id, user_id)
     return resp
 
 
 @router.put("/open-for-investment/{property_id}")
 async def update_the_property_open_for_investment(property_id: str, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.update_property_open_for_the_investment(db, property_id)
+    resp = await PropertyService.update_property_open_for_the_investment(db, property_id, user_id)
     return resp
 
 

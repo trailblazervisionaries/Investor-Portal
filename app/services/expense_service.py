@@ -70,7 +70,7 @@ class ExpenseTypeService:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Expense Type Management",
-            object_id = id
+            object_id = str(id)
         )
 
         logger.info("ExpenseTypesService: Audit data is stored for the current updation")
@@ -94,7 +94,7 @@ class ExpenseTypeService:
             old_data = old_data,
             audit_type = "DELETE",
             entity_type = "Expense Type Management",
-            object_id = id
+            object_id = str(id)
         )
 
         logger.info("ExpenseTypeService: Audit data is added successfully for this delete")
