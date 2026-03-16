@@ -301,6 +301,18 @@ class ExpenseGrowthService:
 
             for year in years:
 
+                # check existing
+                existing = await db.execute(
+                    select(ExpenseGrowth).where(
+                        ExpenseGrowth.expense_id == expense_id,
+                        ExpenseGrowth.year == year,
+                        ExpenseGrowth.is_deleted == False
+                    )
+                )
+
+                if existing.scalar_one_or_none():
+                    continue   # skip duplicate
+
                 growth = ExpenseGrowth(
                     expense_id=expense_id,
                     year=year,
