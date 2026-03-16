@@ -32,8 +32,12 @@ async def update_property_type( id : int, property_id: str, data: updateProperty
 
 
 @router.delete("/delete/{property_id}/{id}")
-async def delete_property_type(id: int, property_id: str, db: Session = Depends(get_db)):
-    return await PropertyUnitTypeServices.delete_property_unit_type(db, id, property_id)
+async def delete_property_type(id: int, property_id: str, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    return await PropertyUnitTypeServices.delete_property_unit_type(db, id, property_id, user_id)
 
 @router.get("/get/{property_id}",  response_model = List[PropertyTypeResponse])
 async def get_all_unit_type(property_id: str, db: Session = Depends(get_db)):

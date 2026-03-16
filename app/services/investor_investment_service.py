@@ -39,7 +39,7 @@ class InvestorInvestmentServices:
         )
 
         db.add(new_investment)
-
+        await db.flush()
         property.available_required_for_investment -= amount
 
         audit_log = await AuditModel.add_new_logs(
@@ -49,7 +49,7 @@ class InvestorInvestmentServices:
             old_data = None,
             audit_type = "ADD",
             entity_type = "Investor Investment Management",
-            object_id = new_investment.id
+            object_id = str(new_investment.id)
         )
     
         logger.info("ExpenseTypeService: Audit log recorded for new investor investment.")
@@ -108,7 +108,7 @@ class InvestorInvestmentServices:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Investor Investment Management",
-            object_id = investment.id
+            object_id = str(id)
         )
     
         logger.info("ExpenseTypeService: Audit log recorded for this update.")
@@ -136,7 +136,7 @@ class InvestorInvestmentServices:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Investor Investment Management",
-            object_id = investment.id
+            object_id = str(id)
         )
    
         logger.info("ExpenseTypeService: Audit log recorded for this status update.")

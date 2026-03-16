@@ -50,6 +50,7 @@ class PropertyLoanService:
             total_annual_payment = AmortizationScheduleService.round_half_up(calculate_other_info["emi"] * 12)
         )
         db.add(new_load)
+        await db.flush()
         audit_log = await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,

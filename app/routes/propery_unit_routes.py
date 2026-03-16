@@ -11,21 +11,33 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 @router.post("/add", response_model = PropertyUnitResponse)
-async def add_new_property_Unit(data: createPropertyUnit, db: Session = Depends(get_db)):
-    property_unit = await PropertyUnitServices.add_new_property_unit(db, data)
+async def add_new_property_Unit(data: createPropertyUnit, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    property_unit = await PropertyUnitServices.add_new_property_unit(db, data, user_id)
     return PropertyUnitResponse.model_validate(property_unit)
 
 
 @router.put("/update/{unit_id}", response_model = PropertyUnitResponse)
-async def update_property_Unit( unit_id : str, data: updatePropertyUnit, db: Session = Depends(get_db)):
-    property_unit = await PropertyUnitServices.update_property_unit(db, unit_id, data)
+async def update_property_Unit( unit_id : str, data: updatePropertyUnit, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    property_unit = await PropertyUnitServices.update_property_unit(db, unit_id, data, user_id)
     return PropertyUnitResponse.model_validate(property_unit)
 
 
 
 @router.delete("/delete/{property_id}/{unit_type_id}/{unit_id}")
-async def delete_property_Unit(unit_id: str, unit_type_id: int, property_id: str, db: Session = Depends(get_db)):
-    return await PropertyUnitServices.delete_property_unit(db, unit_id, unit_type_id, property_id)
+async def delete_property_Unit(unit_id: str, unit_type_id: int, property_id: str, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    return await PropertyUnitServices.delete_property_unit(db, unit_id, unit_type_id, property_id, user_id)
 
 
 

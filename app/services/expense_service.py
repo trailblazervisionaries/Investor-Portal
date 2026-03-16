@@ -250,7 +250,7 @@ class ExpenseGrowthService:
                     old_data = None,
                     audit_type = "ADD",
                     entity_type = "Expense Growth Management",
-                    object_id = growth.id
+                    object_id = str(growth.id)
                 )
 
                 audit_object.append(audit_log)
@@ -271,7 +271,7 @@ class ExpenseGrowthService:
                 old_data = None,
                 audit_type = "ADD",
                 entity_type = "Expense Growth Management",
-                object_id = growth.id
+                object_id = str(growth.id)
                 )
 
             audit_object.append(audit_log)
@@ -309,7 +309,7 @@ class ExpenseGrowthService:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Expense Growth Management",
-            object_id = id
+            object_id = str(id)
             )
 
         logger.info("ExpenseGrowthService: audit data added successfully for update")
@@ -334,7 +334,7 @@ class ExpenseGrowthService:
             old_data = old_data,
             audit_type = "DELETE",
             entity_type = "Expense Growth Management",
-            object_id = id
+            object_id = str(id)
         )
 
         logger.info("ExpenseGrowthService: Audit logs data stored successfully")

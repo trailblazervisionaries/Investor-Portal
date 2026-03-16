@@ -10,14 +10,22 @@ router = APIRouter()
 
 
 @router.post("/add-assign", response_model = AssignAssistResponse)
-async def add_new_assignment(data: AssignNewAssist, db: Session = Depends(get_db)):
-    new_assign = await InvestorassistantAssignmentService.assign_new_assistant_to_investor(db, data)
+async def add_new_assignment(data: AssignNewAssist, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    new_assign = await InvestorassistantAssignmentService.assign_new_assistant_to_investor(db, data, user_id)
     return AssignAssistResponse.model_validate(new_assign)
 
 
 @router.delete("/delete}")
-async def delete(data: AssignNewAssist, db: Session = Depends(get_db)):
-    return await InvestorassistantAssignmentService.delete_the_assignment(db, data)
+async def delete(data: AssignNewAssist, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    return await InvestorassistantAssignmentService.delete_the_assignment(db, data, user_id)
 
 
 @router.get("/getall/assign/{investor_id}", response_model = AssignAssistResponse)

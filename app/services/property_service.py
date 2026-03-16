@@ -515,14 +515,14 @@ class PropertyUnitTypeServices:
         db.add(new_property_type)
         await db.flush()
         await AuditModel.add_new_logs(
-                db = db,
-                added_by = user_id,
-                new_data = data.model_dump(),
-                old_data = None,
-                audit_type = "ADD",
-                entity_type = "Property Unit Type Management",
-                object_id = str(new_property_type.id)
-            )
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Property Unit Type Management",
+            object_id = str(new_property_type.id)
+        )
         await db.commit()
         await db.refresh(new_property_type)
         logger.info("PropertyUnitService: Property unit type added successfully for the property")
@@ -533,7 +533,7 @@ class PropertyUnitTypeServices:
         unit_type = await PropertyUnitType.get_by_id(db, id, property_id)
         if not unit_type:
             raise HTTPException(404, "property unit type not found or already deleted for this id and property_id")
-        old_data = PropertyUnitType.model_to_dict()
+        old_data = PropertyUnitType.model_to_dict(unit_type)
         if data.name is not None:
             unit_type.name = data.name
 
@@ -549,11 +549,11 @@ class PropertyUnitTypeServices:
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
-            old_data = None,
+            old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Property Unit Type Management",
             object_id = str(id)
-            )
+        )
         await db.commit()
         await db.refresh(unit_type)
         logger.info("PropertyUnitType: property unit type data updated successfully")
@@ -561,11 +561,21 @@ class PropertyUnitTypeServices:
         return unit_type
     
 
-    async def delete_property_unit_type(db, id, property_id):
+    async def delete_property_unit_type(db, id, property_id, user_id):
         unit_type = await PropertyUnitType.get_by_id(db, id, property_id)
         if not unit_type:
             raise HTTPException(404, "property unit type not found or already deleted for this id and property_id")
+        old_data = PropertyUnitType.model_to_dict(unit_type)
         unit_type.is_deleted = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"id_deleted":True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Property Unit Type Management",
+            object_id = str(id)
+        )
         await db.commit()
         await db.refresh(unit_type)
         logger.info("PropertyUnitType: property unit type data deleted successfully")
@@ -586,7 +596,7 @@ class PropertyUnitTypeServices:
 
 class PropertyUnitServices:
 
-    async def add_new_property_unit(db, data):
+    async def add_new_property_unit(db, data, user_id):
         new_unit = PropertyUnit(
             unit_id = generate_id("unit"),
             property_id = data.property_id,
@@ -599,6 +609,16 @@ class PropertyUnitServices:
             lease_end_date = data.lease_end_date
         )
         db.add(new_unit)
+        await db.flush()
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Property Unit Management",
+            object_id = new_unit.unit_id
+        )
         await db.commit()
         await db.refresh(new_unit)
         logger.info("PropertyUnitService: Property unit detials created for the given property_id, and unit_type_id")
@@ -609,11 +629,11 @@ class PropertyUnitServices:
     
 
 
-    async def update_property_unit(db, unit_id, data):
+    async def update_property_unit(db, unit_id, data, user_id):
         unit = await PropertyUnit.get_by_id(db, unit_id, data.unit_type_id, data.property_id)
         if not unit:
             raise HTTPException(404, "property unit not found or already deleted for this id and property_id")
-        
+        old_data = PropertyUnit.model_to_dict(unit)
         if data.unit_type_id is not None:
             unit.unit_type_id = data.unit_type_id
         
@@ -641,17 +661,36 @@ class PropertyUnitServices:
         if data.lease_end_date is not None:
             unit.lease_end_date = data.lease_end_date
        
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = data.model_dump(),
+            old_data = old_data,
+            audit_type = "UPDATE",
+            entity_type = "Property Unit Management",
+            object_id = unit_id
+        )
         await db.commit()
         await db.refresh(unit)
         logger.info("PropertyUnit: property unit data updated successfully")
         return unit
     
 
-    async def delete_property_unit(db, unit_id, unit_type_id, property_id):
+    async def delete_property_unit(db, unit_id, unit_type_id, property_id, user_id):
         unit = await PropertyUnit.get_by_id(db, unit_id, unit_type_id, property_id)
         if not unit:
             raise HTTPException(404, "property unit  not found or already deleted for this id and property_id")
+        old_data = PropertyUnit.model_to_dict(unit)
         unit.is_deleted = True
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"is_deleted": True},
+            old_data = old_data,
+            audit_type = "DELETE",
+            entity_type = "Property Unit Management",
+            object_id = unit_id
+        )
         await db.commit()
         await db.refresh(unit)
         logger.info("PropertyUnit: property unit  data deleted successfully")
