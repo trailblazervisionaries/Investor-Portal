@@ -227,68 +227,130 @@ class ExpenseService:
 
 class ExpenseGrowthService:
 
+    # async def add_expense_growth(db, expense_id, data, user_id):
+
+    #     growth_objects = []
+    #     audit_object = []
+
+    #     if data.is_same:
+    #         for year in range(1, 12):
+    #             growth = ExpenseGrowth(
+    #                 expense_id=expense_id,
+    #                 year=year,
+    #                 growth_percentage=data.growth_percentage
+    #             )
+    #             db.add(growth)
+    #             await db.flush() 
+    #             growth_objects.append(growth)
+
+    #             audit_log = await AuditModel.add_new_logs(
+    #                 db = db,
+    #                 added_by = user_id,
+    #                 new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
+    #                 old_data = None,
+    #                 audit_type = "ADD",
+    #                 entity_type = "Expense Growth Management",
+    #                 object_id = str(growth.id)
+    #             )
+
+    #             audit_object.append(audit_log)
+    #     else:
+    #         growth = ExpenseGrowth(
+    #             expense_id=expense_id,
+    #             year=data.year,
+    #             growth_percentage=data.growth_percentage
+    #         )
+    #         db.add(growth)
+    #         await db.flush() 
+    #         growth_objects.append(growth)
+            
+    #         audit_log = await AuditModel.add_new_logs(
+    #             db = db,
+    #             added_by = user_id,
+    #             new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
+    #             old_data = None,
+    #             audit_type = "ADD",
+    #             entity_type = "Expense Growth Management",
+    #             object_id = str(growth.id)
+    #         )
+
+    #         audit_object.append(audit_log)
+
+    #     await db.commit()
+
+    #     for growth in growth_objects:
+    #         await db.refresh(growth)
+        
+    #     for audit in audit_object:
+    #         if audit:
+    #             await db.refresh(audit)
+    #     logger.info("ExpenseGrowthService: Audit data recorded for this new expense data")
+    #     logger.info("ExpenseGrowthService: Expense growth data added successfully")
+
+    #     return growth_objects
+
     async def add_expense_growth(db, expense_id, data, user_id):
 
         growth_objects = []
-        audit_object = []
+        audit_objects = []
 
-        if data.is_same:
-            for year in range(1, 12):
+        try:
+
+            # decide years
+            years = range(1, 12) if data.is_same else [data.year]
+
+            for year in years:
+
                 growth = ExpenseGrowth(
                     expense_id=expense_id,
                     year=year,
                     growth_percentage=data.growth_percentage
                 )
+
                 db.add(growth)
-                await db.flush() 
+                await db.flush()  # get ID without commit
                 growth_objects.append(growth)
 
+                # create audit log
                 audit_log = await AuditModel.add_new_logs(
-                    db = db,
-                    added_by = user_id,
-                    new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
-                    old_data = None,
-                    audit_type = "ADD",
-                    entity_type = "Expense Growth Management",
-                    object_id = str(growth.id)
+                    db=db,
+                    added_by=user_id,
+                    new_data={
+                        "expense_id": expense_id,
+                        "year": year,
+                        "growth_percentage": data.growth_percentage
+                    },
+                    old_data=None,
+                    audit_type="ADD",
+                    entity_type="Expense Growth Management",
+                    object_id=str(growth.id)
                 )
 
-                audit_object.append(audit_log)
-        else:
-            growth = ExpenseGrowth(
-                expense_id=expense_id,
-                year=data.year,
-                growth_percentage=data.growth_percentage
-            )
-            db.add(growth)
-            await db.flush() 
-            growth_objects.append(growth)
-            
-            audit_log = await AuditModel.add_new_logs(
-                db = db,
-                added_by = user_id,
-                new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
-                old_data = None,
-                audit_type = "ADD",
-                entity_type = "Expense Growth Management",
-                object_id = str(growth.id)
-                )
+                # append only if object returned
+                if audit_log:
+                    audit_objects.append(audit_log)
 
-            audit_object.append(audit_log)
+            await db.commit()
 
-        await db.commit()
+            # refresh growth records
+            for growth in growth_objects:
+                await db.refresh(growth)
 
-        for growth in growth_objects:
-            await db.refresh(growth)
-        
-        for audit in audit_object:
-            await db.refresh(audit)
-        logger.info("ExpenseGrowthService: Audit data recorded for this new expense data")
-        logger.info("ExpenseGrowthService: Expense growth data added successfully")
+            # refresh audit logs safely
+            for audit in audit_objects:
+                if audit:
+                    await db.refresh(audit)
 
-        return growth_objects
+            logger.info("ExpenseGrowthService: Audit data recorded for this new expense data")
+            logger.info("ExpenseGrowthService: Expense growth data added successfully")
 
-    
+            return growth_objects
+
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"ExpenseGrowthService: Failed to add expense growth -> {str(e)}")
+            raise
+
 
     async def update_expense_growth(db, id, expense_id, data, user_id):
         growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
