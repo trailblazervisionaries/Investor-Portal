@@ -12,6 +12,7 @@ from app.models.address_model import Address
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.fund_assist import FundAssistCreate, FundAssistUpdate
+from app.models.audit_model import AuditModel
 import traceback
 import os
 import logging
@@ -26,7 +27,7 @@ UPLOAD_DIR = "uploads"
 class FundAssistService:
     
     @staticmethod
-    async def create_fund_assistant(db: Session, data: FundAssistCreate):
+    async def create_fund_assistant(db: Session,user_id: str, data: FundAssistCreate):
 
         # Check admin existence FIRST
         existing_fund_assistant = await FundAssistant.by_email(db, data.email)
@@ -67,7 +68,17 @@ class FundAssistService:
                 postal_code=data.address.postal_code,
             )
             db.add(new_fund_assist)
+            await db.flush()
             db.add(address)
+            await FundAssistant(
+                db = db,
+                added_by = user_id,
+                new_data = data.model_dump(),
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "Fund Growth Management",
+                object_id = new_fund_assist.fund_assist_id
+            )
             logger.info("FundAssistService: fund assistant Addresses are added")
             await db.commit()
             logger.info("FundAssistService: All info commited successfully :)")
@@ -107,7 +118,7 @@ class FundAssistService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="FundAssistService: fund_assistant not found"
             )
-
+        old_data = FundAssistant.model_to_dict(fund_assistant)
         try:
             if hasattr(data, "email") and data.email is not None:
                 fund_assistant.user.email = data.email
@@ -139,6 +150,15 @@ class FundAssistService:
                     )
                     db.add(new_address)
                     fund_assistant.address = new_address
+            await FundAssistant(
+                db = db,
+                added_by = user_id,
+                new_data = data.model_dump(),
+                old_data = old_data,
+                audit_type = "UPDATE",
+                entity_type = "Fund Growth Management",
+                object_id = fund_assistant.fund_assist_id
+            )
             await db.commit()
             await db.refresh(fund_assistant, ["address"])
             logger.info("FundAssistService: fund_assistant data updated successfully")
@@ -181,9 +201,24 @@ class FundAssistService:
 
 
     async def get_info_and_delete(db, user_id):
-        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id, id)
+        if not fund_assist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="FundAssistService: fund_assist not found"
+            )
+        old_data = FundAssistant.model_to_dict(fund_assist)
         fund_assist.is_deleted = True
         fund_assist.user.is_deleted = True
+        await FundAssistant(
+                db = db,
+                added_by = id,
+                new_data = {"is_deleted" : True},
+                old_data = old_data,
+                audit_type = "DELETE",
+                entity_type = "Fund Growth Management",
+                object_id = fund_assist.fund_assist_id
+            )
         await db.commit()
         await db.refresh(fund_assist)
         return {
@@ -191,10 +226,26 @@ class FundAssistService:
         }
     
     
-    async def get_info_and_deactivate(db, user_id):
+    async def get_info_and_deactivate(db, user_id, id):
         fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        if not fund_assist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="FundAssistService: fund_assist not found"
+            )
+        old_data = FundAssistant.model_to_dict(fund_assist)
         fund_assist.is_active = False
         fund_assist.user.is_active = False
+
+        await FundAssistant(
+                db = db,
+                added_by = id,
+                new_data = {"is_active" : True},
+                old_data = old_data,
+                audit_type = "DEACTIVATE",
+                entity_type = "Fund Growth Management",
+                object_id = fund_assist.fund_assist_id
+            )
         await db.commit()
         await db.refresh(fund_assist)
         return {
@@ -203,9 +254,24 @@ class FundAssistService:
     
 
     async def get_info_and_activate(db, user_id):
-        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id)
+        fund_assist = await FundAssistant.get_by_fund_assist_user_id(db, user_id, id)
+        if not fund_assist:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="FundAssistService: fund_assist not found"
+            )
+        old_data = FundAssistant.model_to_dict(fund_assist)
         fund_assist.is_active = True
         fund_assist.user.is_active = True
+        await FundAssistant(
+                db = db,
+                added_by = id,
+                new_data = {"is_active" : True},
+                old_data = old_data,
+                audit_type = "ACTIVATE",
+                entity_type = "Fund Growth Management",
+                object_id = fund_assist.fund_assist_id
+            )
         await db.commit()
         await db.refresh(fund_assist)
         return {

@@ -613,7 +613,7 @@ class PropertyUnitServices:
         await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data.model_dump(),
+            new_data = data.model_dump(mode="json"),
             old_data = None,
             audit_type = "ADD",
             entity_type = "Property Unit Management",

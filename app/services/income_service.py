@@ -226,63 +226,138 @@ class IncomeService:
 
 class IncomeGrowthService:
 
+    # async def add_income_growth(db, income_id, data, user_id):
+
+    #     growth_objects = []
+    #     audit_objects = []
+    #     if data.is_same:
+    #         for year in range(1, 12):
+    #             growth = IncomeGrowth(
+    #                 income_id=income_id,
+    #                 year=year,
+    #                 growth_percentage=data.growth_percentage
+    #             )
+    #             db.add(growth)
+    #             await db.flush() 
+    #             growth_objects.append(growth)
+    #             audit_log = await AuditModel.add_new_logs(
+    #                 db = db,
+    #                 added_by = user_id,
+    #                 new_data = data.model_dump(),
+    #                 old_data = None,
+    #                 audit_type = "ADD",
+    #                 entity_type = "Income Growth Management",
+    #                 object_id = growth.id
+    #             )
+
+    #             audit_objects.append(audit_log)
+    #     else:
+    #         growth = IncomeGrowth(
+    #             income_id=income_id,
+    #             year=data.year,
+    #             growth_percentage=data.growth_percentage
+    #         )
+    #         db.add(growth)
+    #         await db.flush() 
+    #         growth_objects.append(growth)
+    #         audit_log = await AuditModel.add_new_logs(
+    #             db = db,
+    #             added_by = user_id,
+    #             new_data = data.model_dump(),
+    #             old_data = None,
+    #             audit_type = "ADD",
+    #             entity_type = "Income Growth Management",
+    #             object_id = growth.id
+    #         )
+
+    #         audit_objects.append(audit_log)
+    #     await db.commit()
+
+    #     for growth in growth_objects:
+    #         await db.refresh(growth)
+        
+    #     for audit in audit_objects:
+    #         await db.refresh(audit)
+
+    #     logger.info("IncomeGrowthService: Income growth data added successfully.")
+    #     logger.info("IncomeGrowthService: Audit log info added successfully for this new income growth.")
+    #     return growth_objects
+    
+
     async def add_income_growth(db, income_id, data, user_id):
 
         growth_objects = []
         audit_objects = []
-        if data.is_same:
-            for year in range(1, 12):
+
+        try:
+
+            # decide years
+            years = range(1, 12) if data.is_same else [data.year]
+
+            for year in years:
+
+                # check existing
+                existing = await db.execute(
+                    select(IncomeGrowth).where(
+                        IncomeGrowth.income_id == income_id,
+                        IncomeGrowth.year == year,
+                        IncomeGrowth.is_deleted == False
+                    )
+                )
+
+                if existing.scalar_one_or_none():
+                    continue   # skip duplicate
+
                 growth = IncomeGrowth(
                     income_id=income_id,
                     year=year,
                     growth_percentage=data.growth_percentage
                 )
+
                 db.add(growth)
-                await db.flush() 
+                await db.flush()  # get ID without commit
                 growth_objects.append(growth)
+
+                # create audit log
                 audit_log = await AuditModel.add_new_logs(
-                    db = db,
-                    added_by = user_id,
-                    new_data = data.model_dump(),
-                    old_data = None,
-                    audit_type = "ADD",
-                    entity_type = "Income Growth Management",
-                    object_id = growth.id
+                    db=db,
+                    added_by=user_id,
+                    new_data={
+                        "income_id": income_id,
+                        "year": year,
+                        "growth_percentage": data.growth_percentage
+                    },
+                    old_data=None,
+                    audit_type="ADD",
+                    entity_type="Income Growth Management",
+                    object_id=str(growth.id)
                 )
 
-                audit_objects.append(audit_log)
-        else:
-            growth = IncomeGrowth(
-                income_id=income_id,
-                year=data.year,
-                growth_percentage=data.growth_percentage
-            )
-            db.add(growth)
-            await db.flush() 
-            growth_objects.append(growth)
-            audit_log = await AuditModel.add_new_logs(
-                db = db,
-                added_by = user_id,
-                new_data = data.model_dump(),
-                old_data = None,
-                audit_type = "ADD",
-                entity_type = "Income Growth Management",
-                object_id = growth.id
-            )
+                # append only if object returned
+                if audit_log:
+                    audit_objects.append(audit_log)
 
-            audit_objects.append(audit_log)
-        await db.commit()
+            await db.commit()
 
-        for growth in growth_objects:
-            await db.refresh(growth)
-        
-        for audit in audit_objects:
-            await db.refresh(audit)
+            # refresh growth records
+            for growth in growth_objects:
+                await db.refresh(growth)
 
-        logger.info("IncomeGrowthService: Income growth data added successfully.")
-        logger.info("IncomeGrowthService: Audit log info added successfully for this new income growth.")
-        return growth_objects
-    
+            # refresh audit logs safely
+            for audit in audit_objects:
+                if audit:
+                    await db.refresh(audit)
+
+            logger.info("IncomeGrowthService: Audit data recorded for this new income data")
+            logger.info("IncomeGrowthService: Income growth data added successfully")
+
+            return growth_objects
+
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"IncomeGrowthService: Failed to add income growth -> {str(e)}")
+            raise
+
 
     async def update_income_growth(db, id, income_id, data, user_id):
         growth = await IncomeGrowth.get_by_id(db, id, income_id)
@@ -303,7 +378,7 @@ class IncomeGrowthService:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Income Growth Management",
-            object_id = id
+            object_id = str(id)
         )
 
 
@@ -329,7 +404,7 @@ class IncomeGrowthService:
             old_data = old_data,
             audit_type = "DELETE",
             entity_type = "Income Growth Management",
-            object_id = id
+            object_id = str(id)
         )
 
 

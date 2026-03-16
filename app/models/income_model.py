@@ -11,7 +11,7 @@ class IncomeType(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     property_id = Column(String, ForeignKey("property.property_id", ondelete="CASCADE"), nullable=False, index=True)
-    name = Column(String, nullable=False, unique=True, index=True)
+    name = Column(String, nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_deleted = Column(Boolean, default = False, nullable = False)
 

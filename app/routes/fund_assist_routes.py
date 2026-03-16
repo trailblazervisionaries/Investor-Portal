@@ -12,9 +12,10 @@ router = APIRouter()
 @router.post("/add", response_model = FundAssistResponse)
 async def add_admin(data: FundAssistCreate, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
+    user_id = request.state.user_id
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    fund_assistant = await FundAssistService.create_fund_assistant(db, data)
+    fund_assistant = await FundAssistService.create_fund_assistant(db, user_id, data)
     return FundAssistResponse.model_validate(fund_assistant)
 
 
@@ -69,7 +70,7 @@ async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    return await FundAssistService.get_info_and_delete(db, user_id)
+    return await FundAssistService.get_info_and_delete(db, user_id, id)
 
 @router.post("/deactivate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
@@ -77,7 +78,7 @@ async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    return await FundAssistService.get_info_and_deactivate(db, user_id)
+    return await FundAssistService.get_info_and_deactivate(db, user_id, id)
 
 @router.post("/activate/{user_id}")
 async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
@@ -85,6 +86,6 @@ async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     role = request.state.user.role
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
-    return await FundAssistService.get_info_and_activate(db, user_id)
+    return await FundAssistService.get_info_and_activate(db, user_id, id)
 
 
