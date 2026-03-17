@@ -45,12 +45,13 @@ class InvestorAssistant(Base):
         primaryjoin="InvestorAssistant.investor_assistant_id == foreign(Address.user_id)",
         overlaps="address,admin,investor,fund_assistant",
         # viewonly=True,
+        lazy="selectin"
     )
 
     assigned_investors = relationship(
         "InvestorAssignments",
         back_populates="investor_assistant",
-        cascade="all, delete-orphan"
+        lazy="selectin"
     )
 
     def model_to_dict(obj):
@@ -187,8 +188,17 @@ class InvestorAssignments(Base):
     assigned_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    investor = relationship("Investors", back_populates="assistant_assignment")
-    investor_assistant = relationship("InvestorAssistant", back_populates="assigned_investors")
+    investor = relationship(
+        "Investors",
+        back_populates="assistant_assignment",
+        lazy="selectin"
+    )
+
+    investor_assistant = relationship(
+        "InvestorAssistant",
+        back_populates="assigned_investors",
+        lazy="selectin"
+    )
 
 
     def model_to_dict(obj):
@@ -220,7 +230,7 @@ class InvestorAssignments(Base):
         )
 
         result = await db.execute(stmt)
-        return result.scalars().first()
+        return result.scalars().all()
     
     @staticmethod
     async def get_all_assignment_data_by_investor_assistant_id(db, investor_assistant_id: str):
@@ -235,7 +245,7 @@ class InvestorAssignments(Base):
         )
 
         result = await db.execute(stmt)
-        return result.scalars().first()
+        return result.scalars().all()
     
     
     @staticmethod
@@ -287,7 +297,7 @@ class InvestorAssignments(Base):
         )
 
         result = await db.execute(stmt)
-        return result.scalars().first()
+        return result.scalars().all()
     
 
 

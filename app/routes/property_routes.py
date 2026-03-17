@@ -85,7 +85,7 @@ async def update_the_property_open_for_investment(property_id: str, request: Req
 @router.get("/getall", response_model=PropertyPaginationResponse)
 async def get_all_property(request: Request, deleted: bool, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
+    if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     skip = (max(1, page) - 1) * size
     properties, total_count = await PropertyService.get_info_all_properties(db, skip, size, deleted)
@@ -103,7 +103,7 @@ async def get_all_property(request: Request, deleted: bool, db: Session = Depend
 @router.get("/get/{property_id}", response_model = PropertyResponse)
 async def get_by_property_id(request: Request, property_id:str, db: Session = Depends(get_db)):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
+    if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     property = await PropertyService.get_by_id_of_property(db, property_id)
     return PropertyResponse.model_validate(property)
@@ -121,7 +121,7 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
 @router.get("/getall/{risk_status}", response_model=PropertyPaginationResponse)
 async def get_all_property(request: Request, risk_status: str, deleted: bool = False, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     role = request.state.user.role
-    if role not in ["admin","fund-assistant","investor, investor-assistant"]:
+    if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     skip = (max(1, page) - 1) * size
     properties, total_count = await PropertyService.get_all_properties_info_by_risk(db, risk_status, skip, size, deleted)

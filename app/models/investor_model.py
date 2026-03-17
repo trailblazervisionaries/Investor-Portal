@@ -36,6 +36,7 @@ class Investors(Base):
         primaryjoin="Investors.investor_id == foreign(Address.user_id)",
         overlaps="address,admin,investor_assistant,fund_assistant",
         viewonly=True,
+        lazy="selectin"
     )
 
     investments = relationship(
@@ -47,8 +48,7 @@ class Investors(Base):
     assistant_assignment = relationship(
         "InvestorAssignments",
         back_populates="investor",
-        uselist=False,
-        cascade="all, delete-orphan"
+        lazy="selectin"
     )
 
     def model_to_dict(obj):

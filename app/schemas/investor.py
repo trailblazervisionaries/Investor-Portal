@@ -79,7 +79,7 @@ class InvestorUpdate(BaseModel):
 class InvestorInvestmentCreate(BaseModel):
     property_id: str
     invested_amount: float
-    status: str
+    status: str | None = None
 
     class Config:
         from_attributes = True

@@ -28,12 +28,12 @@ async def delete(data: AssignNewAssist, request: Request, db: Session = Depends(
     return await InvestorassistantAssignmentService.delete_the_assignment(db, data, user_id)
 
 
-@router.get("/getall/assign/{investor_id}", response_model = AssignAssistResponse)
+@router.get("/getall/assign/{investor_id}", response_model = list[AssignAssistResponse])
 async def get_all_the_assistant(investor_id: str, db: Session = Depends(get_db)):
     all_assistant = await InvestorassistantAssignmentService.get_all_assignment_by_investor_id(db, investor_id)
     return [AssignAssistResponse.model_validate(assistant) for assistant in all_assistant]
 
-@router.get("/getall/assign/{investor_assistant_id}", response_model = AssignAssistResponse)
+@router.get("/getall/assignment/{investor_assistant_id}", response_model = list[AssignAssistResponse])
 async def get_all_the_investor(investor_assistant_id: str, db: Session = Depends(get_db)):
     all_investor = await InvestorassistantAssignmentService.get_all_assign_investor_by_investor_assistant_id(db, investor_assistant_id)
     return [AssignAssistResponse.model_validate(assistant) for assistant in all_investor]
@@ -45,10 +45,12 @@ async def get_all_the_assistant(investor_id: str, db: Session = Depends(get_db))
     assistant = await InvestorassistantAssignmentService.get_current_assign_by_investor_id(db, investor_id)
     return AssignAssistResponse.model_validate(assistant)
 
-@router.get("/getall/current-assign/{investor_assistant_id}", response_model = AssignAssistResponse)
+@router.get("/getall/current-assign/{investor_assistant_id}", response_model = list[AssignAssistResponse])
 async def get_all_the_investor(investor_assistant_id: str, db: Session = Depends(get_db)):
     all_investor = await InvestorassistantAssignmentService.get_current_assign_by_investor_assistant_id(db, investor_assistant_id)
     return [AssignAssistResponse.model_validate(assistant) for assistant in all_investor]
+
+
 
 
 

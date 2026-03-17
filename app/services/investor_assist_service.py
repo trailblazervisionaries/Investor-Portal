@@ -91,6 +91,7 @@ class InvestorAssistService:
             )
             
             logger.info("InvestorAssistService: Audit log recorded for new Investor Assistant.")
+            await db.commit()
             return new_investor_assist
 
         except IntegrityError as e:

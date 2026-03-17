@@ -22,15 +22,27 @@ class InvestorInvestmentServices:
         property = await Property.get_by_id(db, data.property_id)
         if not property:
             raise HTTPException(404, "Property not found for the investment")
-
-        amount: Decimal = data.invested_amount
-
-        if property.available_required_for_investment < amount:
+        
+        if property.is_approved == False:
             raise HTTPException(
                 400,
-                "Insufficient available amount for this investment"
+                "This Property is not approved for the investment."
             )
+        
+        if property.is_open_for_investment == False:
+            raise HTTPException(
+                400,
+                "This Property is not Open for the investment."
+            )
+        
+        amount: Decimal = data.invested_amount
 
+        if property.available_required_for_investment <= amount:
+            raise HTTPException(
+                400,
+                "Your required investment amount is less than your entered amount ok, please enter equal or less amount then the required amount ok ."
+            )
+        
         new_investment = InvestorInvestments(
             investor_id=investor_id,  
             property_id=data.property_id,
@@ -40,7 +52,7 @@ class InvestorInvestmentServices:
 
         db.add(new_investment)
         await db.flush()
-        property.available_required_for_investment -= amount
+        property.available_required_for_investment -= Decimal(str(amount))
 
         audit_log = await AuditModel.add_new_logs(
             db = db,
@@ -79,8 +91,8 @@ class InvestorInvestmentServices:
 
 
         if data.invested_amount is not None:
-            old_amount: Decimal = investment.invested_amount
-            new_amount: Decimal = data.invested_amount
+            old_amount = investment.invested_amount
+            new_amount = Decimal(str(data.invested_amount)) 
 
             delta = new_amount - old_amount
 
