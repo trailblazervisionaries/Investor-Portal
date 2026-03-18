@@ -70,7 +70,7 @@ class IncomeTypeService:
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Income Type Management",
-            object_id = id
+            object_id = str(id)
         )
 
         logger.info("IncomeTypeService: Audit data is added for this update.")
@@ -94,7 +94,7 @@ class IncomeTypeService:
             old_data = old_data,
             audit_type = "DELETE",
             entity_type = "Income Type Management",
-            object_id = id
+            object_id = str(id)
         )
 
         logger.info("IncomeTypeService: Audit data is added for this delete.")
@@ -371,33 +371,38 @@ class IncomeGrowthService:
 
 
     async def update_income_growth(db, id, income_id, data, user_id):
-        growth = await IncomeGrowth.get_by_id(db, id, income_id)
-        if not growth:
-            logger.info(f"IncomeGrowthService: IncomeGrowth data is not found with id:{id}, income_id:{income_id}")
-            raise HTTPException(500, f"IncomeGrowthService: IncomeGrowth data is not found with id: {id}, income_id: {income_id}")
-        old_data = IncomeType.model_to_dict(growth)
-        if data.year is not None:
-            growth.year = data.year
+        try: 
+            growth = await IncomeGrowth.get_by_id(db, id, income_id)
+            if not growth:
+                logger.info(f"IncomeGrowthService: IncomeGrowth data is not found with id:{id}, income_id:{income_id}")
+                raise HTTPException(500, f"IncomeGrowthService: IncomeGrowth data is not found with id: {id}, income_id: {income_id}")
+            old_data = IncomeType.model_to_dict(growth)
+            if data.year is not None:
+                growth.year = data.year
 
-        if data.growth_percentage is not None:
-            growth.growth_percentage = data.growth_percentage
+            if data.growth_percentage is not None:
+                growth.growth_percentage = data.growth_percentage
 
-        audit_log = await AuditModel.add_new_logs(
-            db = db,
-            added_by = user_id,
-            new_data = data.model_dump(),
-            old_data = old_data,
-            audit_type = "UPDATE",
-            entity_type = "Income Growth Management",
-            object_id = str(id)
-        )
+            audit_log = await AuditModel.add_new_logs(
+                db = db,
+                added_by = user_id,
+                new_data = data.model_dump(),
+                old_data = old_data,
+                audit_type = "UPDATE",
+                entity_type = "Income Growth Management",
+                object_id = str(id)
+            )
 
 
-        logger.info("IncomeGrowthService: Audit data added for this update in income growth.")
-        await db.commit()
-        await db.refresh(growth)
-        logger.info("IncomeGrowthService: Income growth data is updated successfully")
-        return growth
+            logger.info("IncomeGrowthService: Audit data added for this update in income growth.")
+            await db.commit()
+            await db.refresh(growth)
+            logger.info("IncomeGrowthService: Income growth data is updated successfully")
+            return growth
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"IncomeGrowthService: Failed to update income growth -> {str(e)}")
+            raise
     
 
     async def delete_income_growth(db, id, income_id, user_id):
