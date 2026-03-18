@@ -306,24 +306,34 @@ class ExpenseGrowthService:
                     select(ExpenseGrowth).where(
                         ExpenseGrowth.expense_id == expense_id,
                         ExpenseGrowth.year == year,
-                        ExpenseGrowth.is_deleted == False
+                        # ExpenseGrowth.is_deleted == False
                     )
                 )
 
-                if existing.scalar_one_or_none():
-                    continue   # skip duplicate
+                exist = existing.scalar_one_or_none()
+                if exist:
+                    if not exist.is_deleted:
+                        continue  
+                
+                    exist.is_deleted = False
+                    exist.growth_percentage = data.growth_percentage
+                    exist.updated_at = datetime.utcnow()
+                    
+                    target_object = exist
+                    growth_objects.append(exist)
+                else:
+                    growth = ExpenseGrowth(
+                        expense_id=expense_id,
+                        year=year,
+                        growth_percentage=data.growth_percentage
+                    )
+                    db.add(growth)
+                    await db.flush()  
+                    
+                    target_object = growth
+                    growth_objects.append(growth)
 
-                growth = ExpenseGrowth(
-                    expense_id=expense_id,
-                    year=year,
-                    growth_percentage=data.growth_percentage
-                )
-
-                db.add(growth)
-                await db.flush()  # get ID without commit
-                growth_objects.append(growth)
-
-                # create audit log
+                # Create audit log (unified for both cases)
                 audit_log = await AuditModel.add_new_logs(
                     db=db,
                     added_by=user_id,
@@ -335,12 +345,12 @@ class ExpenseGrowthService:
                     old_data=None,
                     audit_type="ADD",
                     entity_type="Expense Growth Management",
-                    object_id=str(growth.id)
+                    object_id=str(target_object.id) 
                 )
 
-                # append only if object returned
                 if audit_log:
                     audit_objects.append(audit_log)
+
 
             await db.commit()
 

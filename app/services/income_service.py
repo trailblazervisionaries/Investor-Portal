@@ -301,22 +301,33 @@ class IncomeGrowthService:
                     select(IncomeGrowth).where(
                         IncomeGrowth.income_id == income_id,
                         IncomeGrowth.year == year,
-                        IncomeGrowth.is_deleted == False
+                        # IncomeGrowth.is_deleted == False
                     )
                 )
 
-                if existing.scalar_one_or_none():
-                    continue   # skip duplicate
+                exist = existing.scalar_one_or_none()
+                if exist:
+                    if not exist.is_deleted:
+                        continue  
+                
+                    exist.is_deleted = False
+                    exist.growth_percentage = data.growth_percentage
+                    exist.updated_at = datetime.utcnow()
+                    
+                    target_object = exist
+                    growth_objects.append(exist)
+                else:
+                    growth = IncomeGrowth(
+                        income_id=income_id,
+                        year=year,
+                        growth_percentage=data.growth_percentage
+                    )
 
-                growth = IncomeGrowth(
-                    income_id=income_id,
-                    year=year,
-                    growth_percentage=data.growth_percentage
-                )
-
-                db.add(growth)
-                await db.flush()  # get ID without commit
-                growth_objects.append(growth)
+                    db.add(growth)
+                    await db.flush() 
+                    
+                    target_object = growth
+                    growth_objects.append(growth)
 
                 # create audit log
                 audit_log = await AuditModel.add_new_logs(
@@ -330,7 +341,7 @@ class IncomeGrowthService:
                     old_data=None,
                     audit_type="ADD",
                     entity_type="Income Growth Management",
-                    object_id=str(growth.id)
+                    object_id=str(target_object.id) 
                 )
 
                 # append only if object returned
