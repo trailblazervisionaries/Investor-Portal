@@ -37,7 +37,18 @@ async def get_all_rent_detials(property_id: str, db: Session = Depends(get_db)):
     return await PropertyPerformaService.get_performa_rent_per_year(db, property_id)
 
 
+@router.get("/get-cashflow/{property_id}")
+async def get_all_cashflow(property_id: str, db:Session = Depends(get_db)):
+    return await PropertyPerformaService.get_year_wise_cashflow(db, property_id)
+
+
 @router.get("/get-overall-summary/{property_id}")
 async def get_all_summary_detials(property_id: str, db: Session = Depends(get_db)):
     return await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
+
+
+
+
+
+
 

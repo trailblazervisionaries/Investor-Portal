@@ -457,59 +457,176 @@ class PropertyPerformaService:
 
 
 
+    # @staticmethod
+    # async def get_noi_opex_and_other_detials(db, property_id, investment_required = None):
+    #     revenue_resp = await PropertyPerformaService.get_all_revenue(db, property_id, True)
+    #     expense_resp = await PropertyPerformaService.calculate_all_expenses(db, property_id, True)
+    #     loan_payment = await PropertyLoan.get_by_property_id(db, property_id)
+    #     noi_output = {}
+
+    #     for year in revenue_resp:
+    #         total_revenue = Decimal(str(revenue_resp[year]["total_revenue"]))
+    #         total_expense = Decimal(str(expense_resp.get(year, 0)))
+
+    #         noi = total_revenue - total_expense
+    #         opex_ratio = (total_expense/total_revenue)*100
+    #         cash_flow_after_financing = noi - loan_payment.total_annual_payment
+    #         levered_cashflow = cash_flow_after_financing
+    #         noi_output[year] = {
+    #             "noi": noi,
+    #             "opex_ratio": opex_ratio,
+    #             "debt_payment": loan_payment.total_annual_payment,
+    #             "dscr": noi/loan_payment.total_annual_payment,
+    #             "cash_flow_after_financing": cash_flow_after_financing,
+    #             "sweet_equity": cash_flow_after_financing * Decimal("0.05"),
+    #             "investor_cashflow": cash_flow_after_financing * Decimal("0.95"),
+    #             "levered_cashflow_10": levered_cashflow,
+    #             "levered_cashflow_5": levered_cashflow
+    #         }
+
+    #     noi_output[0]["debt_payment"] = 0.00
+    #     noi_output[0]["dscr"] = 0.00
+    #     noi_output[0]["cash_flow_after_financing"] = 0.00
+    #     noi_output[0]["sweet_equity"] = 0.00
+    #     noi_output[0]["investor_cashflow"] = 0.00
+    #     noi_output[0]["levered_cashflow_10"] = investment_required
+    #     noi_output[0]["levered_cashflow_5"] = investment_required
+
+    #     loan_repayment_data = []
+    #     for term in [5,10]:
+    #         repayment = PropertyPerformaService.loan_repayment(loan_payment.interest_rate, loan_payment.spread_intrest_rate, loan_payment.amortization_period, 
+    #                                                                   term, loan_payment.total_annual_payment, loan_payment.total_loan_amount)
+    #         loan_repayment_data.append(repayment)
+
+    #     deposition = await PropertyPerformaService.get_the_deposition_data(db, property_id, noi_output)
+    #     sales_5 = deposition.get("sales_year_5", Decimal("0"))
+    #     sales_10 = deposition.get("sales_year_10", Decimal("0"))
+
+    #     loan_repayment_5 = loan_repayment_data[0].get("loan_repayment", Decimal("0"))
+    #     loan_repayment_10 = loan_repayment_data[1].get("loan_repayment", Decimal("0"))
+
+    #     net_proceeds_5 = sales_5 - Decimal(str(loan_repayment_5))
+    #     print("sales_5 ", sales_5)
+    #     print("loan_repayment_5 ", loan_repayment_5)
+    #     net_proceeds_10 = sales_10 - Decimal(str(loan_repayment_10))
+
+    #     noi_output["sales_year_5"] = deposition.get("sales_year_5")
+    #     noi_output["loan_repayment_5"] = loan_repayment_data[0]
+    #     noi_output["net_proceeds_5"] = net_proceeds_5
+    #     noi_output["sales_year_10"] = deposition.get("sales_year_10")
+    #     noi_output["loan_repayment_10"] = loan_repayment_data[1]
+    #     noi_output["net_proceeds_10"] = net_proceeds_10
+    #     noi_output[10]["levered_cashflow_10"] = noi_output[10].get("levered_cashflow_10") + net_proceeds_10
+    #     noi_output[5]["levered_cashflow_5"] = sales_5 - Decimal(str(loan_repayment_5))
+    #     noi_output[6]["levered_cashflow_5"] =  0.00
+    #     noi_output[7]["levered_cashflow_5"] =  0.00
+    #     noi_output[8]["levered_cashflow_5"] =  0.00
+    #     noi_output[9]["levered_cashflow_5"] =  0.00
+    #     noi_output[10]["levered_cashflow_5"] =  0.00
+    #     noi_output[11]["levered_cashflow_5"] =  0.00
+
+
+    #     return noi_output
+
+
+
     @staticmethod
-    async def get_noi_opex_and_other_detials(db, property_id):
+    async def get_noi_opex_and_other_detials(db, property_id, investment_required=None):
         revenue_resp = await PropertyPerformaService.get_all_revenue(db, property_id, True)
         expense_resp = await PropertyPerformaService.calculate_all_expenses(db, property_id, True)
         loan_payment = await PropertyLoan.get_by_property_id(db, property_id)
+
         noi_output = {}
 
-        for year in revenue_resp:
-            total_revenue = Decimal(str(revenue_resp[year]["total_revenue"]))
+        annual_debt = Decimal(str(loan_payment.total_annual_payment or 0))
+
+        # Core yearly calculations -----------------------------------------------
+        for year, revenue_data in revenue_resp.items():
+            total_revenue = Decimal(str(revenue_data.get("total_revenue", 0)))
             total_expense = Decimal(str(expense_resp.get(year, 0)))
 
             noi = total_revenue - total_expense
-            opex_ratio = (total_expense/total_revenue)*100
-            cash_flow_after_financing = noi - loan_payment.total_annual_payment
+
+            opex_ratio = (total_expense / total_revenue * 100) if total_revenue else Decimal("0")
+            dscr = (noi / annual_debt) if annual_debt else Decimal("0")
+
+            cash_flow = noi - annual_debt
+
             noi_output[year] = {
                 "noi": noi,
                 "opex_ratio": opex_ratio,
-                "debt_payment": loan_payment.total_annual_payment,
-                "dscr": noi/loan_payment.total_annual_payment,
-                "cash_flow_after_financing": cash_flow_after_financing,
-                "sweet_equity": cash_flow_after_financing * Decimal("0.05"),
-                "investor_cashflow": cash_flow_after_financing * Decimal("0.95")
+                "debt_payment": annual_debt,
+                "dscr": dscr,
+                "cash_flow_after_financing": cash_flow,
+                "sweet_equity": cash_flow * Decimal("0.05"),
+                "investor_cashflow": cash_flow * Decimal("0.95"),
+                "levered_cashflow_10": cash_flow,
+                "levered_cashflow_5": cash_flow
             }
 
-        noi_output[0]["debt_payment"] = 0.00
-        noi_output[0]["dscr"] = 0.00
-        noi_output[0]["cash_flow_after_financing"] = 0.00
-        noi_output[0]["sweet_equity"] = 0.00
-        noi_output[0]["investor_cashflow"] = 0.00
-        loan_repayment_data = []
-        for term in [5,10]:
-            repayment = PropertyPerformaService.loan_repayment(loan_payment.interest_rate, loan_payment.spread_intrest_rate, loan_payment.amortization_period, 
-                                                                      term, loan_payment.total_annual_payment, loan_payment.total_loan_amount)
-            loan_repayment_data.append(repayment)
+        # Year 0 override ---------------------------------------
+        if 0 in noi_output:
+            noi_output[0].update({
+                "debt_payment": Decimal("0"),
+                "dscr": Decimal("0"),
+                "cash_flow_after_financing": Decimal("0"),
+                "sweet_equity": Decimal("0"),
+                "investor_cashflow": Decimal("0"),
+                "levered_cashflow_10": Decimal(str(investment_required or 0)),
+                "levered_cashflow_5": Decimal(str(investment_required or 0)),
+            })
 
+        # Loan repayment--------------------------------------------
+        loan_repayment_data = {
+            term: PropertyPerformaService.loan_repayment(
+                loan_payment.interest_rate,
+                loan_payment.spread_intrest_rate,
+                loan_payment.amortization_period,
+                term,
+                loan_payment.total_annual_payment,
+                loan_payment.total_loan_amount
+            )
+            for term in (5, 10)
+        }
+
+        # Sale & proceeds ---------------------------------------
         deposition = await PropertyPerformaService.get_the_deposition_data(db, property_id, noi_output)
-        sales_5 = deposition.get("sales_year_5", Decimal("0"))
-        sales_10 = deposition.get("sales_year_10", Decimal("0"))
 
-        loan_repayment_5 = loan_repayment_data[0].get("loan_repayment", Decimal("0"))
-        loan_repayment_10 = loan_repayment_data[1].get("loan_repayment", Decimal("0"))
+        sales_5 = Decimal(str(deposition.get("sales_year_5", 0)))
+        sales_10 = Decimal(str(deposition.get("sales_year_10", 0)))
 
-        net_proceeds_5 = sales_5 - Decimal(str(loan_repayment_5))
-        net_proceeds_10 = sales_10 - Decimal(str(loan_repayment_10))
+        loan_repayment_5 = Decimal(str(loan_repayment_data[5].get("loan_repayment", 0)))
+        loan_repayment_10 = Decimal(str(loan_repayment_data[10].get("loan_repayment", 0)))
 
-        noi_output["sales_year_5"] = deposition.get("sales_year_5")
-        noi_output["loan_repayment_5"] = loan_repayment_data[0]
-        noi_output["net_proceeds_5"] = net_proceeds_5
-        noi_output["sales_year_10"] = deposition.get("sales_year_10")
-        noi_output["loan_repayment_10"] = loan_repayment_data[1]
-        noi_output["net_proceeds_10"] = net_proceeds_10
+        net_proceeds_5 = sales_5 - loan_repayment_5
+        net_proceeds_10 = sales_10 - loan_repayment_10
+
+
+        # Attach summary data-----------------------------------------
+        noi_output.update({
+            "sales_year_5": sales_5,
+            "loan_repayment_5": loan_repayment_data[5],
+            "net_proceeds_5": net_proceeds_5,
+            "sales_year_10": sales_10,
+            "loan_repayment_10": loan_repayment_data[10],
+            "net_proceeds_10": net_proceeds_10,
+        })
+
+        # Levered cashflow adjustments ------------------------------------
+        if 10 in noi_output:
+            noi_output[10]["levered_cashflow_10"] += net_proceeds_10
+
+        if 5 in noi_output:
+            noi_output[5]["levered_cashflow_5"] = net_proceeds_5
+
+        # Clear years after exit (5-year scenario) --------------------------
+        for year in range(6, 12):
+            if year in noi_output:
+                noi_output[year]["levered_cashflow_5"] = Decimal("0")
 
         return noi_output
+
+
     
 
     async def get_the_deposition_data(db, property_id, noi_output):
@@ -569,7 +686,7 @@ class PropertyPerformaService:
 
 
 
-    async def get_year_wise_cashflow():
+    async def get_year_wise_cashflow(db, property_id):
         pass
 
 
@@ -577,9 +694,10 @@ class PropertyPerformaService:
 
     async def get_overall_performa_sumary(db, property_id):
         property_detials = await PropertyPerformaService.get_all_property_info(db, property_id)
+        investment_required = property_detials["total_investment_required"]
         revenue_detials = await PropertyPerformaService.get_all_revenue(db, property_id)
         expense_detials = await PropertyPerformaService.calculate_all_expenses(db, property_id)
-        other_detials = await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id)
+        other_detials = await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id, investment_required)
         rent_summary = await PropertyPerformaService.get_performa_rent_per_year(db, property_id)
 
         return {

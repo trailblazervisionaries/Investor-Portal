@@ -187,6 +187,7 @@ class createPropertyLoan(BaseModel):
     intrest_only_period: int
     term: int
     amortization_period : int
+    origination_fee: float
     no_of_payments : int | None = None
     monthly_payments : float | None = None
     total_annual_payment : float | None = None
