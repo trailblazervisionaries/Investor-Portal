@@ -219,9 +219,10 @@ class ExpenseGrowth(Base):
 
 
     async def get_all_expense_growth(db, expense_id):
-        stmt = select(ExpenseGrowth).where(
+        stmt = (select(ExpenseGrowth).where(
             ExpenseGrowth.expense_id == expense_id,
             ExpenseGrowth.is_deleted.is_(False)
+            ).order_by(ExpenseGrowth.id.asc())
         )
         result = await db.execute(stmt)
         return result.scalars().all()
