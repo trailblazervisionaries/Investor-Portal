@@ -207,10 +207,15 @@ class updatePropertyLoan(BaseModel):
     stabilized_cap_rate: float | None = None
     term: int | None = None
 
+class PropertyName(BaseModel):
+    name: str | None = "----"
+    class Config:
+        from_attributes = True
 
 class PropertyLoanResponse(createPropertyLoan):
     loan_id: str
     property_id: str
+    property: PropertyName 
     is_active: bool
     is_deleted: bool
     created_at: datetime

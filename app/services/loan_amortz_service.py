@@ -231,15 +231,25 @@ class PropertyLoanService:
         }
     
     async def get_loan_detials_for_property(db, loan_id, property_id):
-        return await PropertyLoan.get_by_id(db, loan_id, property_id)
+        return await PropertyLoan.get_property_by_id(db, loan_id, property_id)
     
 
+
+
     async def get_all_loans_details(db):
-        stmt = (select(PropertyLoan).where(PropertyLoan.is_active.is_(True), PropertyLoan.is_deleted.is_(False)))
+        stmt = (
+            select(PropertyLoan)
+            .options(joinedload(PropertyLoan.property)) # Pre-loads the property object
+            .where(
+                PropertyLoan.is_active.is_(True), 
+                PropertyLoan.is_deleted.is_(False)
+            )
+        )
         result = await db.execute(stmt)
-        return result.scalars().all()
-
-
+        loans = result.scalars().all()
+        
+        # Now you can access loan.property.name without another DB hit
+        return loans 
 
 
 

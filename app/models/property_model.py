@@ -265,6 +265,22 @@ class PropertyLoan(Base):
         stmt = (select(PropertyLoan).where(PropertyLoan.property_id == property_id, PropertyLoan.is_deleted.is_(False)))
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_property_by_id(db, loan_id, property_id):
+        stmt = (
+            select(PropertyLoan)
+            .options(joinedload(PropertyLoan.property)) 
+            .where(
+                PropertyLoan.loan_id == loan_id,
+                PropertyLoan.property_id == property_id,
+                PropertyLoan.is_active.is_(True), 
+                PropertyLoan.is_deleted.is_(False)
+            )
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    
 
 
 
