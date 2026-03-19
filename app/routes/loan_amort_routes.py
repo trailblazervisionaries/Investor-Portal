@@ -52,7 +52,8 @@ async def get_all_loans_data(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(401, "you are not authorise to perform this operation.")
     property_loan = await PropertyLoanService.get_all_loans_details(db)
     if not property_loan:
-        raise HTTPException(404, "Loan_amortz_routes: property-loan data not found.")
+        # raise HTTPException(404, "Loan_amortz_routes: property-loan data not found.")
+        return []
     return [PropertyLoanResponse.model_validate(loan) for loan in property_loan]
 
 
