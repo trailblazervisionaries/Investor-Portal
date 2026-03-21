@@ -3,6 +3,7 @@ from app.config.database import get_db
 from app.services.property_service import PropertyService, PropertyUnitTypeServices, PropertyUnitServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
+from app.services.growth_service import IncomeExpanseGrowthService
 from typing import List
 import logging 
 import math
@@ -140,9 +141,35 @@ async def get_all_property(request: Request, risk_status: str, deleted: bool = F
 async def get_all_rent_info(property_id: str, db: Session = Depends(get_db)):
     return await PropertyService.get_all_info_related_rent(db, property_id)
 
+@router.get("/export-rentroll-analysis/{property_id}")
+async def download_rent_roll(property_id: str, db: Session = Depends(get_db)):
+    return await PropertyService.create_rent_roll_excel(db, property_id)
+    
+
+
 
 @router.get("/getall-rentroll-summary/{property_id}")
 async def get_all_rentroll_summary(property_id: str, db: Session = Depends(get_db)):
     return await PropertyService.calculate_rent_roll_summary(db, property_id)
+
+
+@router.get("/export-rentroll-summary/{property_id}")
+async def download_rentroll_summary(property_id: str, db: Session = Depends(get_db)):
+    return await PropertyService.create_rent_roll_summary_excel(db, property_id)
+
+@router.get("/getall-growth-assumption/{property_id}")
+async def export_growth_assumption(property_id: str, db: Session = Depends(get_db)):
+    return await IncomeExpanseGrowthService.export_growth_assumption(db, property_id)
+
+@router.get("/export-growth-assumption/{property_id}")
+async def export_growth_assumption(property_id: str, db: Session = Depends(get_db)):
+    return await IncomeExpanseGrowthService.create_growth_projection_excel(db, property_id)
+
+
+
+
+
+
+
 
 

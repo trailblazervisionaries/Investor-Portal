@@ -707,3 +707,13 @@ class PropertyPerformaService:
             "other_detials":other_detials,
             "rent_summary": rent_summary
         }
+
+
+
+
+    async def export_all_summary_detials(db, property_id):
+        pass
+
+
+
+

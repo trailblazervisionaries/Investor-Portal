@@ -7,6 +7,11 @@ from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from io import BytesIO
+from fastapi.responses import StreamingResponse
+from openpyxl.utils import get_column_letter
 from decimal import Decimal, ROUND_HALF_UP
 from app.models.property_model import Property, PropertyUnitType, PropertyUnit
 import traceback
@@ -327,6 +332,112 @@ class PropertyService:
                 for ut in property_obj.unit_types if not ut.is_deleted
             ]
         }
+    
+    
+    async def create_rent_roll_excel(db, property_id) -> BytesIO:
+        data = await PropertyService.get_all_info_related_rent(db, property_id)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Rent Roll"
+
+        ws.merge_cells("A1:N1")
+        ws["A1"] = "Rent Roll Analysis"
+        ws["A1"].font = Font(bold=True, size=16)
+        ws["A1"].alignment = Alignment(horizontal="center")
+
+        ws["A3"] = "Property Name:"
+        ws["B3"] = data["name"]
+
+        ws["A4"] = "Rent Roll Date:"
+        # ws["B4"] = "As of: 01-Sep-25"
+
+
+        header_row_1 = 6
+        header_row_2 = 7
+
+        headers_lvl1 = [
+            "ID", "Type", "SF", "Status", "Move-In", "Start", "End",
+            "Market Rent", "Lease Rent", "Loss to Lease", "% Loss",
+            "Vacant Unit", "Occupied SF"
+        ]
+
+        headers_lvl2 = [
+            "Unit ID", "Unit Type", "Unit SF", "Unit Status", "Move In Date",
+            "Lease Start", "End Date", "Market Rent", "Lease Rent",
+            "LTL", "to Lease", "Count", "Count"
+        ]
+
+        for col, header in enumerate(headers_lvl1, 1):
+            ws.cell(row=header_row_1, column=col, value=header)
+            ws.cell(row=header_row_1, column=col).font = Font(bold=True)
+
+        for col, header in enumerate(headers_lvl2, 1):
+            ws.cell(row=header_row_2, column=col, value=header)
+            ws.cell(row=header_row_2, column=col).font = Font(bold=True)
+
+
+        row = header_row_2 + 1
+        unit_counter = 100
+
+        for unit_type in data["unit_type"]:
+            type_letter = "C" if "Bedroom" in unit_type["name"] else "A"
+
+            for unit in unit_type["units"]:
+                market = unit["market_lease_rent"]
+                actual = unit["actual_lease_rent"]
+                loss = actual - market
+                percent_loss = (loss / actual) * 100 if market else 0
+                start_date = datetime.fromisoformat(str(unit["lease_start_date"]))
+                end_date = datetime.fromisoformat(str(unit["lease_end_date"]))
+
+                ws.cell(row=row, column=1, value=unit_counter)
+                ws.cell(row=row, column=2, value=type_letter)
+                ws.cell(row=row, column=3, value=unit["area_sqft"])
+                ws.cell(row=row, column=4, value=unit["unit_status"])
+                ws.cell(row=row, column=5, value="")
+
+                ws.cell(row=row, column=6, value=start_date)
+                ws.cell(row=row, column=7, value=end_date)
+
+                ws.cell(row=row, column=6).number_format = 'yyyy-mm-dd'
+                ws.cell(row=row, column=7).number_format = 'yyyy-mm-dd'
+
+                ws.cell(row=row, column=8, value=market)
+                ws.cell(row=row, column=9, value=actual)
+                ws.cell(row=row, column=10, value=loss)
+                ws.cell(row=row, column=11, value=percent_loss)
+                # ws.cell(row=row, column=11).value = f"=IF(I{row}=0,0,(H{row}-I{row})/I{row})"
+                # ws.cell(row=row, column=11).number_format = '0.00%'
+
+                ws.cell(row=row, column=12, value=False)
+                ws.cell(row=row, column=13, value=unit["area_sqft"])
+
+                row += 1
+                unit_counter += 1
+
+
+        for r in range(header_row_2 + 1, row):
+            ws.cell(r, 8).number_format = '#,##0.00'
+            ws.cell(r, 9).number_format = '#,##0.00'
+            ws.cell(r, 10).number_format = '"$"#,##0'
+            ws.cell(r, 11).number_format = '0.00"%"'
+
+        # column widths
+        widths = [8, 8, 8, 10, 12, 12, 12, 14, 14, 14, 10, 8, 8]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        stream = BytesIO()
+        wb.save(stream)
+        stream.seek(0)
+        return StreamingResponse(
+            stream,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": "attachment; filename=rent_roll.xlsx"
+            }
+        )
+
 
     def round_half_up(value):
         return value.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
@@ -404,8 +515,161 @@ class PropertyService:
 
             overall_summary = PropertyService.final_overall_summary(summary)
         return {
-            "summary": summary, "overall_summary":overall_summary
+
+            "summary": summary, "overall_summary":overall_summary, "property_name" : property_data["name"] 
         }
+
+
+    async def create_rent_roll_summary_excel(db, property_id) -> BytesIO:
+        summary_data = await PropertyService.calculate_rent_roll_summary(db, property_id)
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Rent Roll Summary"
+
+        ws.merge_cells("A1:Q1")
+        ws["A1"] = "Rent Roll Summary"
+        ws["A1"].font = Font(size=16, bold=True)
+        ws["A1"].alignment = Alignment(horizontal="center")
+
+        ws.merge_cells("A2:Q2")
+        ws["A2"] = summary_data["property_name"]
+        ws["A2"].alignment = Alignment(horizontal="center")
+
+        ws.merge_cells("A3:Q3")
+        ws["A3"] = "Rent Roll Summary"
+        ws["A3"].alignment = Alignment(horizontal="center")
+
+        ws.merge_cells("G5:H5")
+        ws["G5"] = "Status"
+
+        ws.merge_cells("I5:J5")
+        ws["I5"] = "Market"
+
+        ws.merge_cells("K5:M5")
+        ws["K5"] = "Actual"
+
+        ws.merge_cells("N5:O5")
+        ws["N5"] = "Actual"
+
+        ws.merge_cells("P5:Q5")
+        ws["P5"] = "Market"
+
+        ws.merge_cells("R5:S5")
+        ws["R5"] = "Gap-to-Market"
+
+        for cell in ["G5", "I5", "K5", "N5", "P5", "R5"]:
+            ws[cell].font = Font(bold=True)
+            ws[cell].alignment = Alignment(horizontal="center")
+
+        headers = [
+            "Type", "Unit Description", "Units", "%", "SF Total", "SF / Unit",
+            "Occupied", "Vacant",
+            "Rent", "PSF",
+            "Rent", "PSF", "LTL",
+            "Monthly Rent", "Annual Rent",
+            "Monthly Rent", "Annual Rent",
+            "LTL"
+        ]
+
+        for col, val in enumerate(headers, 1):
+            ws.cell(row=6, column=col, value=val).font = Font(bold=True)
+
+        row = 7
+        type_labels = ["A", "B", "C", "D", "E"]
+        description_map = {
+            "Bachelors": "BACH",
+            "2 Bedroom": "2 BR/BA",
+            "1 Bedroom": "1 BR/BA",
+            "2 Bedroom Den": "1 BR/BA DEN",
+            "3 Bedroom Den": "1 BR/BA DEN"
+        }
+
+        total_units = summary_data["overall_summary"]["overall_total_units"]
+
+        for idx, item in enumerate(summary_data["summary"]):
+            ws.cell(row=row, column=1, value=type_labels[idx])
+            ws.cell(row=row, column=2, value=description_map.get(item["unit_type"], item["unit_type"]))
+
+            ws.cell(row=row, column=3, value=item["total_units"])
+            ws.cell(row=row, column=4, value=item["total_units"] / total_units)
+
+            ws.cell(row=row, column=5, value=item["total_area_sqft"])
+            ws.cell(row=row, column=6, value=item["area_per_unit"])
+
+            ws.cell(row=row, column=7, value=item["total_occupied"])
+            ws.cell(row=row, column=8, value=item["total_vacant"])
+
+            ws.cell(row=row, column=9, value=item["market_rent_per_unit"])
+            ws.cell(row=row, column=10, value=item["market_rent_per_sf"])
+
+            ws.cell(row=row, column=11, value=item["actual_rent_per_unit"])
+            ws.cell(row=row, column=12, value=item["actual_rent_per_sf"])
+            ws.cell(row=row, column=13, value=item["ltl"] / 100)
+
+            ws.cell(row=row, column=14, value=item["total_actual_rent"])
+            ws.cell(row=row, column=15, value=item["total_actual_rent_annual"])
+
+            ws.cell(row=row, column=16, value=item["total_market_rent"])
+            ws.cell(row=row, column=17, value=item["total_market_rent_annual"])
+
+            ws.cell(row=row, column=18, value=item["ltl_gap_to_market"] / 100)
+
+            row += 1
+
+        overall = summary_data["overall_summary"]
+
+        ws.cell(row=row, column=3, value=overall["overall_total_units"])
+        ws.cell(row=row, column=4, value=1)
+
+        ws.cell(row=row, column=5, value=overall["overall_total_area_sqft"])
+        ws.cell(row=row, column=6, value=overall["overall_total_area_sqft_per_unit"])
+
+        ws.cell(row=row, column=7, value=overall["overall_total_occupied"])
+        ws.cell(row=row, column=8, value=overall["overall_total_vacant"])
+
+        ws.cell(row=row, column=9, value=overall["overall_total_market_rent_per_unit"])
+        ws.cell(row=row, column=10, value=overall["overall_total_market_rent_per_unit_psf"])
+
+        ws.cell(row=row, column=11, value=overall["overall_total_actual_rent_per_unit"])
+        ws.cell(row=row, column=12, value=overall["overall_total_actual_rent_per_unit_psf"])
+        ws.cell(row=row, column=13, value=overall["overall_ltl_percent"] / 100)
+
+        ws.cell(row=row, column=14, value=overall["overall_total_actual_rent"])
+        ws.cell(row=row, column=15, value=overall["overall_total_actual_rent_annual"])
+
+        ws.cell(row=row, column=16, value=overall["overall_total_market_rent"])
+        ws.cell(row=row, column=17, value=overall["overall_total_market_rent_annual"])
+
+        ws.cell(row=row, column=18, value=overall["overall_ltl_gap_to_market_percent"] / 100)
+
+        for r in range(7, row + 1):
+            ws.cell(r, 4).number_format = '0.0%'
+            ws.cell(r, 9).number_format = '"$"#,##0'
+            ws.cell(r, 10).number_format = '"$"#,##0.00'
+            ws.cell(r, 11).number_format = '"$"#,##0'
+            ws.cell(r, 12).number_format = '"$"#,##0.00'
+            ws.cell(r, 13).number_format = '0.0%'
+            ws.cell(r, 14).number_format = '"$"#,##0'
+            ws.cell(r, 15).number_format = '"$"#,##0'
+            ws.cell(r, 16).number_format = '"$"#,##0'
+            ws.cell(r, 17).number_format = '"$"#,##0'
+            ws.cell(r, 18).number_format = '0.0%'
+
+        widths = [6, 18, 8, 8, 10, 10, 8, 8, 12, 8, 12, 8, 10, 14, 14, 14, 14, 10]
+        for i, w in enumerate(widths, 1):
+            ws.column_dimensions[get_column_letter(i)].width = w
+
+        stream = BytesIO()
+        wb.save(stream)
+        stream.seek(0)
+        return StreamingResponse(
+            stream,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": "attachment; "
+                "filename=rent_roll_summary.xlsx"
+                }
+        )
 
 
     @staticmethod
