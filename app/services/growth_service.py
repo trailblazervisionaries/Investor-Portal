@@ -55,15 +55,15 @@ class IncomeExpanseGrowthService:
 
         ws.cell(row=header_row, column=1).fill = PatternFill("solid", fgColor="ED7D31")
         ws.cell(row=header_row, column=2).fill = PatternFill("solid", fgColor="ED7D31")
-        ws.cell(row=header_row, column=1).font = Font(bold=True)
-        ws.cell(row=header_row, column=2).font = Font(bold=True)
+        ws.cell(row=header_row, column=1).font = Font(bold=True, color="FFFFFF")
+        ws.cell(row=header_row, column=2).font = Font(bold=True, color="FFFFFF")
 
         # Year columns
         for year in range(1, 12):
             col = year + 2
             ws.cell(row=header_row, column=col, value=f"Year {year}")
             ws.cell(row=header_row, column=col).fill = PatternFill("solid", fgColor="ED7D31")
-            ws.cell(row=header_row, column=col).font = Font(bold=True)
+            ws.cell(row=header_row, column=col).font = Font(bold=True, color="FFFFFF")
 
         # ===================== INCOME DATA =====================
         row = 4
@@ -100,14 +100,14 @@ class IncomeExpanseGrowthService:
 
         ws.cell(row=expense_header_row, column=1).fill = PatternFill("solid", fgColor="ED7D31")
         ws.cell(row=expense_header_row, column=2).fill = PatternFill("solid", fgColor="ED7D31")
-        ws.cell(row=expense_header_row, column=1).font = Font(bold=True)
-        ws.cell(row=expense_header_row, column=2).font = Font(bold=True)
+        ws.cell(row=expense_header_row, column=1).font = Font(bold=True, color="FFFFFF")
+        ws.cell(row=expense_header_row, column=2).font = Font(bold=True, color="FFFFFF")
 
         for year in range(1, 12):
             col = year + 2
             ws.cell(row=expense_header_row, column=col, value=f"Year {year}")
             ws.cell(row=expense_header_row, column=col).fill = PatternFill("solid", fgColor="ED7D31")
-            ws.cell(row=expense_header_row, column=col).font = Font(bold=True)
+            ws.cell(row=expense_header_row, column=col).font = Font(bold=True, color="FFFFFF")
 
         row += 1
 

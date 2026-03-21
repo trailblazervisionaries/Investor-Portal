@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 from openpyxl.utils import get_column_letter
@@ -342,15 +342,24 @@ class PropertyService:
 
         ws.merge_cells("A1:N1")
         ws["A1"] = "Rent Roll Analysis"
-        ws["A1"].font = Font(bold=True, size=16)
         ws["A1"].alignment = Alignment(horizontal="center")
+        ws["A1"].font = Font(bold=True, size=14, color="FFFFFF")
+        ws["A1"].fill = PatternFill("solid", fgColor="1F4E79")
 
-        ws["A3"] = "Property Name:"
-        ws["B3"] = data["name"]
+        ws.merge_cells("A3:B3")
+        ws.merge_cells("C3:H3")
+        ws["A3"] = "Property Name :"
+        ws["C3"] = data["name"]
 
-        ws["A4"] = "Rent Roll Date:"
-        # ws["B4"] = "As of: 01-Sep-25"
+        ws.merge_cells("A4:B4")
+        ws.merge_cells("C4:E4")
+        ws["A4"] = "Rent Roll Date :"
+        ws["C4"] = "As of: -----"
 
+        for a in ["A3","A4","C3","C4"]:
+            ws[a].alignment = Alignment(horizontal="center")
+            ws[a].font = Font(bold=True, color="FFFFFF")
+            ws[a].fill = PatternFill("solid", fgColor="1F4E79")
 
         header_row_1 = 6
         header_row_2 = 7
@@ -358,29 +367,32 @@ class PropertyService:
         headers_lvl1 = [
             "ID", "Type", "SF", "Status", "Move-In", "Start", "End",
             "Market Rent", "Lease Rent", "Loss to Lease", "% Loss",
-            "Vacant Unit", "Occupied SF"
+            "Vacant", "Occupied"
         ]
 
         headers_lvl2 = [
             "Unit ID", "Unit Type", "Unit SF", "Unit Status", "Move In Date",
             "Lease Start", "End Date", "Market Rent", "Lease Rent",
-            "LTL", "to Lease", "Count", "Count"
+            "LTL", "to Lease", "Unit Count", " SF Count"
         ]
 
         for col, header in enumerate(headers_lvl1, 1):
             ws.cell(row=header_row_1, column=col, value=header)
-            ws.cell(row=header_row_1, column=col).font = Font(bold=True)
+            ws.cell(row=header_row_1, column=col).font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=header_row_1, column=col).fill = PatternFill("solid", fgColor="fc7703")
+            ws.cell(row=header_row_1, column=col).alignment  = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         for col, header in enumerate(headers_lvl2, 1):
             ws.cell(row=header_row_2, column=col, value=header)
-            ws.cell(row=header_row_2, column=col).font = Font(bold=True)
-
+            ws.cell(row=header_row_2, column=col).font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=header_row_2, column=col).fill = PatternFill("solid", fgColor="fc7703")
+            ws.cell(row=header_row_2, column=col).alignment  = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         row = header_row_2 + 1
         unit_counter = 100
 
         for unit_type in data["unit_type"]:
-            type_letter = "C" if "Bedroom" in unit_type["name"] else "A"
+            # type_letter = "C" if "Bedroom" in unit_type["name"] else "A"
 
             for unit in unit_type["units"]:
                 market = unit["market_lease_rent"]
@@ -391,7 +403,7 @@ class PropertyService:
                 end_date = datetime.fromisoformat(str(unit["lease_end_date"]))
 
                 ws.cell(row=row, column=1, value=unit_counter)
-                ws.cell(row=row, column=2, value=type_letter)
+                ws.cell(row=row, column=2, value=unit_type["name"])
                 ws.cell(row=row, column=3, value=unit["area_sqft"])
                 ws.cell(row=row, column=4, value=unit["unit_status"])
                 ws.cell(row=row, column=5, value="")
@@ -423,9 +435,10 @@ class PropertyService:
             ws.cell(r, 11).number_format = '0.00"%"'
 
         # column widths
-        widths = [8, 8, 8, 10, 12, 12, 12, 14, 14, 14, 10, 8, 8]
+        widths = [10, 18, 8, 10, 12, 12, 12, 14, 14, 14, 10, 14, 18]
         for i, w in enumerate(widths, 1):
             ws.column_dimensions[get_column_letter(i)].width = w
+            ws.allignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
         stream = BytesIO()
         wb.save(stream)
@@ -528,16 +541,21 @@ class PropertyService:
 
         ws.merge_cells("A1:Q1")
         ws["A1"] = "Rent Roll Summary"
-        ws["A1"].font = Font(size=16, bold=True)
+        ws["A1"].font = Font(size=16, bold=True, color="FFFFFF")
         ws["A1"].alignment = Alignment(horizontal="center")
+        ws["A1"].fill = PatternFill("solid", fgColor="1F4E79")
 
         ws.merge_cells("A2:Q2")
         ws["A2"] = summary_data["property_name"]
+        ws["A2"].font = Font(size=12, bold=True, color="FFFFFF")
         ws["A2"].alignment = Alignment(horizontal="center")
+        ws["A2"].fill = PatternFill("solid", fgColor="1F4E79")
 
         ws.merge_cells("A3:Q3")
         ws["A3"] = "Rent Roll Summary"
+        ws["A3"].font = Font(size=12, bold=True, color="FFFFFF")
         ws["A3"].alignment = Alignment(horizontal="center")
+        ws["A3"].fill = PatternFill("solid", fgColor="1F4E79")
 
         ws.merge_cells("G5:H5")
         ws["G5"] = "Status"
@@ -558,8 +576,9 @@ class PropertyService:
         ws["R5"] = "Gap-to-Market"
 
         for cell in ["G5", "I5", "K5", "N5", "P5", "R5"]:
-            ws[cell].font = Font(bold=True)
+            ws[cell].font = Font(bold=True, color="FFFFFF")
             ws[cell].alignment = Alignment(horizontal="center")
+            ws[cell].fill = PatternFill("solid", fgColor="fc7703")
 
         headers = [
             "Type", "Unit Description", "Units", "%", "SF Total", "SF / Unit",
@@ -572,7 +591,8 @@ class PropertyService:
         ]
 
         for col, val in enumerate(headers, 1):
-            ws.cell(row=6, column=col, value=val).font = Font(bold=True)
+            ws.cell(row=6, column=col, value=val).font = Font(bold=True, color="FFFFFF")
+            ws.cell(row=6, column=col, value=val).fill = PatternFill("solid", fgColor="1F4E79")
 
         row = 7
         type_labels = ["A", "B", "C", "D", "E"]
@@ -611,7 +631,6 @@ class PropertyService:
 
             ws.cell(row=row, column=16, value=item["total_market_rent"])
             ws.cell(row=row, column=17, value=item["total_market_rent_annual"])
-
             ws.cell(row=row, column=18, value=item["ltl_gap_to_market"] / 100)
 
             row += 1
@@ -642,6 +661,15 @@ class PropertyService:
 
         ws.cell(row=row, column=18, value=overall["overall_ltl_gap_to_market_percent"] / 100)
 
+        orange_fill = PatternFill(start_color="FC7703", end_color="FC7703", fill_type="solid")
+        white_bold_font = Font(bold=True, color="FFFFFF")
+        top_border_style = Border(top=Side(style='thick', color='1F4E79')) 
+        for col in range(3, 19):
+            cell = ws.cell(row=row, column=col)
+            cell.border = top_border_style
+            cell.fill = orange_fill
+            cell.font = white_bold_font
+
         for r in range(7, row + 1):
             ws.cell(r, 4).number_format = '0.0%'
             ws.cell(r, 9).number_format = '"$"#,##0'
@@ -655,7 +683,7 @@ class PropertyService:
             ws.cell(r, 17).number_format = '"$"#,##0'
             ws.cell(r, 18).number_format = '0.0%'
 
-        widths = [6, 18, 8, 8, 10, 10, 8, 8, 12, 8, 12, 8, 10, 14, 14, 14, 14, 10]
+        widths = [6, 18, 8, 8, 10, 10, 10, 8, 12, 8, 12, 8, 10, 14, 14, 14, 14, 10]
         for i, w in enumerate(widths, 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
