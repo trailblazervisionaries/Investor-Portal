@@ -259,6 +259,27 @@ class InvestorAssistService:
         }
   
     
+    async def get_assistant_name_id(db):
+        stmt = select(
+            InvestorAssistant.investor_assistant_id,
+            InvestorAssistant.user_id,
+            InvestorAssistant.fname,
+            InvestorAssistant.mname,
+            InvestorAssistant.lname
+        ).where(
+            InvestorAssistant.is_deleted.is_(False),
+            InvestorAssistant.is_active.is_(True)
+        )
 
-  
-    
+        result = await db.execute(stmt)
+
+        return [
+            {
+                "investor_assistant_id": row.investor_assistant_id,
+                "user_id": row.user_id,
+                "fname": row.fname,
+                "mname": row.mname,
+                "lname": row.lname,
+            }
+            for row in result.all()
+        ] 

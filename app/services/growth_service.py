@@ -181,12 +181,12 @@ class IncomeExpanseGrowthService:
         ws["A1"].alignment = center
         ws["A1"].fill = PatternFill("solid", fgColor="1F4E79")
         ws.append([])
-        ws.merge_cells("D4:E4")
-        ws.merge_cells("F4:G4")
-        ws["D4"].fill = PatternFill("solid", fgColor="1F4E79")
-        ws["D4"].alignment = center
-        ws["F4"].fill = PatternFill("solid", fgColor="1F4E79")
-        ws["F4"].alignment = center
+        ws.merge_cells("D5:E5")
+        ws.merge_cells("F5:G5")
+        ws["D5"].fill = PatternFill("solid", fgColor="1F4E79")
+        ws["D5"].alignment = center
+        ws["F5"].fill = PatternFill("solid", fgColor="1F4E79")
+        ws["F5"].alignment = center
         ws.append(["", "", "", "Current", "", "Potential"])
         ws.append([
             "Unit Type",
@@ -197,8 +197,8 @@ class IncomeExpanseGrowthService:
             "Avg Rent/Sqft",
             "Monthly Rent",
         ])
-
-        for cell in ws[5]:
+        he_row = ws.max_row
+        for cell in ws[he_row]:
             cell.font = bold
             cell.fill = PatternFill("solid", fgColor="1F4E79")
 

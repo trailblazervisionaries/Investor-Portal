@@ -96,3 +96,9 @@ async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     return await InvestorAssistService.get_info_and_activate(db, user_id)
 
 
+@router.get("/get-name-id")
+async def get_name_id(db: Session = Depends(get_db)):
+    return await InvestorAssistService.get_assistant_name_id(db)
+
+
+
