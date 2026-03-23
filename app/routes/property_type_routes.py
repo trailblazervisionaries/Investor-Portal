@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.config.database import get_db
 from app.services.property_service import PropertyService, PropertyUnitTypeServices, PropertyUnitServices
+from app.services.expense_service import ExpenseTypeService
+from app.services.income_service import IncomeTypeService
+from app.services.growth_service import IncomeExpanseGrowthService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.property import createPropertyType, updatePropertyType, PropertyTypeResponse
 from typing import List
@@ -56,10 +59,28 @@ async def get_unit_type_by_id(id: int, property_id: str, db: Session = Depends(g
 
 
 
+@router.get("/get-type-summary/{property_id}")
+async def get_property_income_expense(property_id: str, db: Session = Depends(get_db)):
+    rent_summary = await PropertyUnitTypeServices.get_property_rent_summary(db, property_id)
+    exp_summary = await ExpenseTypeService.get_expense_summary_by_property(db, property_id)
+    inc_summary = await IncomeTypeService.get_income_summary_by_property(db, property_id)
+    return{
+        "rent_summary" : rent_summary,
+        "exp_summary": exp_summary,
+        "inc_summary": inc_summary
+    }
+    
 
+@router.get("/get-type-summary/export/{property_id}")
+async def export_property_summary(property_id: str, db: Session = Depends(get_db)):
+    rent_summary = await PropertyUnitTypeServices.get_property_rent_summary(db, property_id)
+    exp_summary = await ExpenseTypeService.get_expense_summary_by_property(db, property_id)
+    inc_summary = await IncomeTypeService.get_income_summary_by_property(db, property_id)
 
-
-
-
+    return IncomeExpanseGrowthService.export_income_expense_to_excel(
+        rent_summary=rent_summary,
+        inc_summary=inc_summary,
+        exp_summary=exp_summary,
+    )
 
 

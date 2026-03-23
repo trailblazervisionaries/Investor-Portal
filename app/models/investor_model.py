@@ -130,7 +130,7 @@ class Investors(Base):
                 joinedload(Investors.user)
             )
             .where(
-                Investors.added_by == id,
+                # Investors.added_by == id,
                 Investors.is_deleted == False
             )
         )

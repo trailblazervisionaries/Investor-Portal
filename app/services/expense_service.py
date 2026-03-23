@@ -2,7 +2,7 @@ from fastapi import Request, Response, HTTPException, status
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from app.models.expenses_model import ExpenseTypes, Expense, ExpenseGrowth
 from app.models.audit_model import AuditModel
@@ -122,6 +122,33 @@ class ExpenseTypeService:
 
     async def get_property_all_expense_details(db, property_id):
         return await ExpenseTypes.get_property_expense_details(db, property_id)
+    
+
+    async def get_expense_summary_by_property(db: Session, property_id: str):
+        stmt = (
+            select(
+                ExpenseTypes.name.label("expense_type_name"),
+                func.sum(Expense.current_expense).label("current_expense"),
+                func.sum(Expense.pro_forma_expense).label("proforma_expense"),
+            )
+            .outerjoin(Expense, Expense.expense_type_id == ExpenseTypes.id)
+            .where(
+                ExpenseTypes.property_id == property_id,
+                ExpenseTypes.is_deleted.is_(False),
+            )
+            .group_by(ExpenseTypes.name)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        data = {}
+        for row in rows:
+            data[row.expense_type_name] = {
+                "current_expense": float(row.current_expense or 0),
+                "proforma_expense": float(row.proforma_expense or 0),
+            }
+        return data
 
 
 class ExpenseService:

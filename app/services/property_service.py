@@ -884,6 +884,37 @@ class PropertyUnitTypeServices:
     async def get_unit_type_by_property_id_and_id(db, id, property_id):
         return await PropertyUnitType.get_by_id(db, id, property_id)
 
+    async def get_property_rent_summary(db: Session, property_id: str):
+        stmt = (
+            select(
+                PropertyUnitType.name.label("unit_type_name"),
+                func.count(PropertyUnit.unit_id).label("total_units"),
+                func.avg(PropertyUnit.area_sqft).label("avg_sqft"),
+                func.sum(PropertyUnit.market_lease_rent).label("current_monthly_rent"),
+                func.sum(PropertyUnit.actual_lease_rent).label("actual_monthly_rent"),
+            )
+            .join(PropertyUnit, PropertyUnit.unit_type_id == PropertyUnitType.id)
+            .where(
+                PropertyUnitType.property_id == property_id,
+                PropertyUnitType.is_deleted.is_(False),
+                PropertyUnit.is_deleted.is_(False),
+            )
+            .group_by(PropertyUnitType.name)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        data = {}
+        for row in rows:
+            data[row.unit_type_name] = {
+                "total_units": int(row.total_units or 0),
+                "avg_sqft": float(row.avg_sqft or 0),
+                "current_monthly_rent": float(row.current_monthly_rent or 0),
+                "actual_monthly_rent": float(row.actual_monthly_rent or 0),
+            }
+
+        return data
 
 
 class PropertyUnitServices:

@@ -2,7 +2,7 @@ from fastapi import Request, Response, HTTPException, status
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from app.models.income_model import IncomeType, Income, IncomeGrowth
 from app.models.audit_model import AuditModel
@@ -121,6 +121,32 @@ class IncomeTypeService:
 
     async def get_property_all_income_details(db, property_id):
         return await IncomeType.get_property_income_details(db, property_id)
+    
+    async def get_income_summary_by_property(db: Session, property_id: str):
+        stmt = (
+            select(
+                IncomeType.name.label("income_type_name"),
+                func.sum(Income.current_income).label("current_income"),
+                func.sum(Income.pro_forma_income).label("proforma_income"),
+            )
+            .outerjoin(Income, Income.income_type_id == IncomeType.id)
+            .where(
+                IncomeType.property_id == property_id,
+                IncomeType.is_deleted.is_(False),
+            )
+            .group_by(IncomeType.name)
+        )
+
+        result = await db.execute(stmt)
+        rows = result.all()
+
+        data = {}
+        for row in rows:
+            data[row.income_type_name] = {
+                "current_income": float(row.current_income or 0),
+                "proforma_income": float(row.proforma_income or 0),
+            }
+        return data
 
 
 class IncomeService:
