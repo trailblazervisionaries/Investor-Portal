@@ -161,7 +161,6 @@ class IncomeExpanseGrowthService:
 
 
 
-
     def export_income_expense_to_excel(
         rent_summary: dict,
         inc_summary: dict,
@@ -172,22 +171,56 @@ class IncomeExpanseGrowthService:
         ws = wb.active
         ws.title = "Income & Expense Summary"
 
-        bold = Font(bold=True, color="FFFFFF")
+        # =============================
+        # Styles
+        # =============================
+        header_fill = PatternFill("solid", fgColor="1F4E79")
+        header_font = Font(bold=True, color="FFFFFF")
+        bold_font = Font(bold=True)
         center = Alignment(horizontal="center")
 
+        def style_header(row):
+            for cell in ws[row]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = center
+
+        def bold_first_three(row):
+            for cell in ws[row]:
+                if cell.col_idx <= 3:
+                    cell.font = bold_font
+        
+        def bold_all(row):
+            for cell in ws[row]:
+                cell.font = bold_font
+
+        def currency(cell):
+            if cell.value not in ("", None):
+                cell.number_format = '"$"#,##0'
+
+        # =============================
+        # Title
+        # =============================
         ws.merge_cells("A1:H1")
         ws["A1"] = "Income & Expense Summary"
         ws["A1"].font = Font(size=14, bold=True, color="FFFFFF")
         ws["A1"].alignment = center
-        ws["A1"].fill = PatternFill("solid", fgColor="1F4E79")
+        ws["A1"].fill = header_fill
+
+        # =============================
+        # Unit Table Header
+        # =============================
         ws.append([])
-        ws.merge_cells("D5:E5")
-        ws.merge_cells("F5:G5")
-        ws["D5"].fill = PatternFill("solid", fgColor="1F4E79")
-        ws["D5"].alignment = center
-        ws["F5"].fill = PatternFill("solid", fgColor="1F4E79")
-        ws["F5"].alignment = center
         ws.append(["", "", "", "Current", "", "Potential"])
+        ws.merge_cells("D3:E3")
+        ws.merge_cells("F3:G3")
+        ws["D3"].fill = header_fill
+        ws["F3"].fill = header_fill
+        ws["D3"].font = header_font
+        ws["F3"].font = header_font
+        ws["D3"].alignment = center
+        ws["F3"].alignment = center
+
         ws.append([
             "Unit Type",
             "# of Units",
@@ -197,11 +230,11 @@ class IncomeExpanseGrowthService:
             "Avg Rent/Sqft",
             "Monthly Rent",
         ])
-        he_row = ws.max_row
-        for cell in ws[he_row]:
-            cell.font = bold
-            cell.fill = PatternFill("solid", fgColor="1F4E79")
+        style_header(ws.max_row)
 
+        # =============================
+        # Unit Rows
+        # =============================
         total_units = 0
         total_current_rent = 0
         total_potential_rent = 0
@@ -220,10 +253,14 @@ class IncomeExpanseGrowthService:
                 units,
                 avg_sqft,
                 round(avg_current, 2),
-                round(current_rent),
+                current_rent,
                 round(avg_potential, 2),
-                round(potential_rent),
+                potential_rent,
             ])
+
+            row = ws.max_row
+            currency(ws[f"E{row}"])
+            currency(ws[f"G{row}"])
 
             total_units += units
             total_current_rent += current_rent
@@ -234,58 +271,77 @@ class IncomeExpanseGrowthService:
             total_units,
             "",
             "",
-            round(total_current_rent),
+            total_current_rent,
             "",
-            round(total_potential_rent),
+            total_potential_rent,
         ])
+        bold_all(ws.max_row)
+        currency(ws[f"E{ws.max_row}"])
+        currency(ws[f"G{ws.max_row}"])
 
-
-        # INCOME & EXPENSE SECTION
+        # =============================
+        # Income & Expense Header
+        # =============================
         ws.append([])
         ws.append(["Income", "Current", "Pro Forma", "", "Expenses", "Current", "Pro Forma", "Per Unit"])
+        header_row = ws.max_row
+        for cell in ws[header_row]:
+            if cell.column_letter != "D":
+                cell.fill = header_fill
+            cell.font = header_font
 
-        for cell in ws[ws.max_row]:
-            cell.font = bold
-            cell.fill = PatternFill("solid", fgColor="1F4E79")
-
-        # Income calculations
-
-        gross_rent_current = inc_summary["Rental Income"]["current_income"]
-        gross_rent_proforma = inc_summary["Rental Income"]["proforma_income"]
-
-        vacancy_proforma = inc_summary.get("Vacancy", {}).get("proforma_income", 0)
-
+        # =============================
+        # Income Calculations
+        # =============================
+        gross_current = inc_summary["Rental Income"]["current_income"]
+        gross_proforma = inc_summary["Rental Income"]["proforma_income"]
+        vacancy = inc_summary.get("Vacancy", {}).get("proforma_income", 0)
         other_income = inc_summary.get("Other Income", {}).get("current_income", 0)
 
-        total_income_current = gross_rent_current + other_income
-        total_income_proforma = gross_rent_proforma - vacancy_proforma + other_income
+        total_income_current = gross_current + other_income
+        total_income_proforma = gross_proforma - vacancy + other_income
 
-        # Expense calculations
+        # =============================
+        # Expense Calculations
+        # =============================
         total_exp_current = sum(v["current_expense"] for v in exp_summary.values())
         total_exp_proforma = sum(v["proforma_expense"] for v in exp_summary.values())
 
-        per_unit_exp_current = total_exp_current / total_units if total_units else 0
-        per_unit_exp_proforma = total_exp_proforma / total_units if total_units else 0
+        per_unit_current = total_exp_proforma / total_units if total_units else 0
+        per_unit_proforma = total_exp_proforma / total_units if total_units else 0
 
         expense_pct_current = (total_exp_current / total_income_current) * 100 if total_income_current else 0
         expense_pct_proforma = (total_exp_proforma / total_income_proforma) * 100 if total_income_proforma else 0
 
         noi_current = total_income_current - total_exp_current
-        # noi_proforma = total_income_proforma - total_exp_proforma
 
- 
-        # Write income rows
-        ws.append(["Gross Scheduled Rent", gross_rent_current, gross_rent_proforma])
-        ws.append(["Vacancy", "", -vacancy_proforma])
-        ws.append(["Total Effective Rental Income", gross_rent_current, gross_rent_proforma - vacancy_proforma])
-        ws.append(["Other Income", other_income, other_income])
-        ws.append(["Gross Income", total_income_current, total_income_current])
-        ws.append(["Less: Expenses", -total_exp_current, -total_exp_current])
-        ws.append(["Net Operating Income", noi_current, noi_current])
+        # =============================
+        # Income Rows
+        # =============================
+        income_rows = [
+            ["Gross Scheduled Rent", gross_current, gross_proforma],
+            ["Vacancy", "", -vacancy],
+            ["Total Effective Rental Income", gross_current, gross_proforma - vacancy],
+            ["Other Income", other_income, other_income],
+            ["Gross Income", total_income_current, total_income_proforma],
+            ["Less: Expenses", -total_exp_current, -total_exp_proforma],
+            ["Net Operating Income", noi_current, noi_current],
+        ]
 
-        # Write expense rows side-by-side
-        start_row = ws.max_row - 6
+        start_income_row = ws.max_row + 1
+        for row_data in income_rows:
+            ws.append(row_data)
+            r = ws.max_row
 
+            currency(ws[f"B{r}"])
+            currency(ws[f"C{r}"])
+
+        bold_first_three(ws.max_row)
+
+        # =============================
+        # Expense Rows (side by side)
+        # =============================
+        start_row = start_income_row
         for i, (name, val) in enumerate(exp_summary.items()):
             row = start_row + i
             ws.cell(row=row, column=5, value=name)
@@ -293,20 +349,40 @@ class IncomeExpanseGrowthService:
             ws.cell(row=row, column=7, value=val["proforma_expense"])
             ws.cell(row=row, column=8, value=val["proforma_expense"] / total_units if total_units else 0)
 
-        # Totals & percentages
-        ws.append(["", "", "", "", "Total Expenses", total_exp_current, total_exp_proforma, per_unit_exp_current])
+            currency(ws.cell(row=row, column=6))
+            currency(ws.cell(row=row, column=7))
+            currency(ws.cell(row=row, column=8))
+
+        # =============================
+        # Expense Totals
+        # =============================
+        ws.append(["", "", "", "", "Total Expenses", total_exp_current, total_exp_proforma, per_unit_current])
+        bold_first_three(ws.max_row)
+        for cell in ws[ws.max_row]:
+            cell.font = bold_font
+            if cell.column_letter in ("F", "G", "H"):
+                currency(cell)
+
         ws.append(["", "", "", "", "Expense as % of revenue", f"{expense_pct_current:.1f}%", f"{expense_pct_proforma:.1f}%"])
+        for cell in ws[ws.max_row]:
+            cell.font = bold_font
+
         ws.append(["", "", "", "", "Net operating Income", noi_current, noi_current])
+        for cell in ws[ws.max_row]:
+            cell.font = bold_font
+        currency(ws[f"F{ws.max_row}"])
+        currency(ws[f"G{ws.max_row}"])
 
-
-        # Auto width 
+        # =============================
+        # Auto Column Width
+        # =============================
         for col_idx, column_cells in enumerate(ws.columns, start=1):
-            max_length = 0
-            for cell in column_cells:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
+            max_length = max(len(str(cell.value)) for cell in column_cells if cell.value)
             ws.column_dimensions[get_column_letter(col_idx)].width = max_length + 4
 
+        # =============================
+        # Streaming Response
+        # =============================
         output = BytesIO()
         wb.save(output)
         output.seek(0)
@@ -314,14 +390,5 @@ class IncomeExpanseGrowthService:
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            },
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
-    
-
-
-
-
-
-

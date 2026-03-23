@@ -30,3 +30,7 @@ def generate_image_id():
     return str(uuid.uuid4().int)[:8]
 
 
+def generate_alphanumeric_password(length=10):
+    import secrets, string
+    chars = string.ascii_letters + string.digits
+    return ''.join(secrets.choice(chars) for _ in range(length))

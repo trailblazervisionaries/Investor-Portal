@@ -27,18 +27,18 @@ class MailTemplatesService:
 
         subjects = {
             "admin": "Thank You for Registering in Investment Portal",
-            "manager": f"Your Manager Account has been Created for {created_by} in ",
-            "waiter": f"Your Waiter Account has been Created for {created_by} in RMS",
-            "cook": f"Your Cook Account has been Created for {created_by} in RMS",
+            "investor-assistant": f"Your investor-assistant Account has been Created for {created_by} in ",
+            "fund-assistant": f"Your fund-assistant Account has been Created for {created_by} in RMS",
+            "investor": f"Your investor Account has been Created for {created_by} in RMS",
         }
 
-        subject = subjects.get(role, "Your RMS Account Details")
+        subject = subjects.get(role, "Your Investment Portal Account Details")
 
         html_message = f"""
             <html>
                 <body>
                     <div>
-                        <h2>🎉 Welcome to {created_by or 'RMS'} 🎉</h2>
+                        <h2>🎉 Welcome to {created_by or 'Investment Portal'} 🎉</h2>
 
                         <p>Hi <strong>{name}</strong>,</p>
 
@@ -60,7 +60,7 @@ class MailTemplatesService:
                         </p>
 
                         <div class="footer">
-                            RMS Team <br>
+                            Investment Portal Team <br>
                             {f"({created_by})" if created_by else ""}
                         </div>
                     </div>
@@ -74,7 +74,7 @@ class MailTemplatesService:
     @shared_task(name="app.template.send_template_mail.send_otp_template")
     def send_otp_template(email: str, otp: str):
         masked_email = MailTemplatesService.mask_email(email)
-        subject = "Your One-Time Password (OTP) for RMS"
+        subject = "Your One-Time Password (OTP) for Investment Portal"
         html_message = f"""
             <html>
                 <body>
@@ -95,7 +95,7 @@ class MailTemplatesService:
                         </p>
 
                         <div class="footer">
-                            RMS Team
+                            Investment Portal Team
                         </div>
                     </div>
                 </body>
@@ -108,7 +108,7 @@ class MailTemplatesService:
     @shared_task(name="app.template.send_template_mail.send_notif_password_change")
     def send_notif_password_change(email: str):
         masked_email = MailTemplatesService.mask_email(email)
-        subject = "Your RMS Password Has Been Changed"
+        subject = "Your Investment Portal Password Has Been Changed"
         html_message = f"""
             <html>
                 <body>
@@ -118,7 +118,7 @@ class MailTemplatesService:
                         <p>Dear <strong>{masked_email}</strong>,</p>
 
                         <p>
-                            This is to inform you that your RMS account password has been
+                            This is to inform you that your Investment Portal account password has been
                             <strong>changed successfully</strong>.
                         </p>
 
@@ -130,7 +130,7 @@ class MailTemplatesService:
                         </div>
 
                         <div class="footer">
-                            RMS Team
+                            Investment Portal Team
                         </div>
                     </div>
                 </body>

@@ -2,12 +2,13 @@ from fastapi import Request, Response, HTTPException, status
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
-from app.core.utils_functions import generate_id
+from app.core.utils_functions import generate_id, generate_alphanumeric_password
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.services.user_service import UserServices
 from dotenv import load_dotenv
 from app.models.investor_model import Investors
+from app.models.investor_assist_model import InvestorAssistant, InvestorAssignments
 from app.models.address_model import Address
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
@@ -30,6 +31,9 @@ class InvestorService:
     async def create_investor(db: Session, user_id: str, data: InvestorCreate):
 
         # Check admin existence FIRST
+        investment_assistant = await InvestorAssistant.get_by_id(db, user_id)
+        if not investment_assistant:
+            raise HTTPException(400, "Investor assistant not found you can't perform this operation.")
         existing_investor = await Investors.by_email(db, data.email)
         if existing_investor:
             logger.error("InvestorService: Investor email already exist in database please try with another email.")
@@ -39,11 +43,13 @@ class InvestorService:
             )
 
         try:
+            # temp_password = generate_alphanumeric_password()
+            temp_password = "default_password"
             user = await UserServices.add_new_user(
                 db,
                 data.role,
                 data.email,
-                "default_password"
+                temp_password
             )
 
             new_investor = Investors(
@@ -68,8 +74,14 @@ class InvestorService:
                 country=data.address.country,
                 postal_code=data.address.postal_code,
             )
+            assign_asistant = InvestorAssignments(
+                investor_id = new_investor.investor_id,
+                investor_assistant_id = investment_assistant.investor_assistant_id
+            )
             db.add(new_investor)
             db.add(address)
+            db.add(assign_asistant)
+            await db.flush(assign_asistant)
             await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
@@ -78,6 +90,15 @@ class InvestorService:
                 audit_type = "ADD",
                 entity_type = "Investor Management",
                 object_id = new_investor.investor_id
+            )
+            await AuditModel.add_new_logs(
+                db = db,
+                added_by = user_id,
+                new_data = {"investor_id": new_investor.investor_id, "investor_assistant_id":investment_assistant.investor_assistant_id},
+                old_data = None,
+                audit_type = "ADD",
+                entity_type = "Investor Assistant Assignment Management",
+                object_id = str(assign_asistant.id)
             )
             logger.info("InvestorService: investor Addresses are added")
             await db.commit()

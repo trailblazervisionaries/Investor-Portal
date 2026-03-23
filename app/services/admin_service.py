@@ -2,7 +2,7 @@ from fastapi import Request, Response, HTTPException, status
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
-from app.core.utils_functions import generate_id
+from app.core.utils_functions import generate_id, generate_alphanumeric_password
 from sqlalchemy import select
 from datetime import datetime, timedelta
 from app.core.auth import create_auth_token
@@ -40,11 +40,13 @@ class AdminService:
             )
 
         try:
+            # temp_password = generate_alphanumeric_password()
+            temp_password = "default_password"
             user = await UserServices.add_new_user(
                 db,
                 data.role,
                 data.email,
-                "default_password"
+                temp_password
             )
 
             new_admin = AdminModel(
