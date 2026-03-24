@@ -94,6 +94,7 @@ class UserServices:
         user.password = hashed_pw
         await db.commit()
         await db.refresh(user)
+        # MonitorAsync.deferred(MailTemplatesService.send_notif_password_change, user.email)
         logger.info("UserServices: Password updated successfully :)")
         return user
 

@@ -85,6 +85,12 @@ class FundAssistant(Base):
         stmt = (select(FundAssistant).where(FundAssistant.email == email))
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_id(db, user_id):
+        stmt = (select(FundAssistant).where(FundAssistant.user_id == user_id, FundAssistant.is_deleted == False))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
     
     @staticmethod
     async def get_by_fund_assist_user_id(db, user_id: str):

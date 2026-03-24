@@ -27,6 +27,30 @@ class InvestorCreate(BaseModel):
     class Config:
         from_attributes = True
 
+
+class InvestorAssistantInfo(BaseModel):
+    investor_assistant_id: str
+    user_id: str
+    fname: str
+    lname: Optional[str] = None
+    email: str
+    phone: str
+    role: str
+    profile_image: Optional[str] = None
+    is_active: bool
+    is_deleted: bool
+    class Config:
+        from_attributes = True
+
+class AssistantAssignmentResponse(BaseModel):
+    id: int
+    is_deleted: bool
+    investor_assistant: Optional[InvestorAssistantInfo] = None
+    assigned_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
 class InvestorResponse(BaseModel):
     investor_id: str
     user_id: str
@@ -40,7 +64,7 @@ class InvestorResponse(BaseModel):
     is_active:bool
     role: str | None = "investor"
     address: Optional[AddressBase] = None
-
+    assistant_assignment: List[AssistantAssignmentResponse] = []
     class Config:
         from_attributes = True
 

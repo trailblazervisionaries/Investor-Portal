@@ -47,10 +47,14 @@ async def get_all_summary_detials(property_id: str, db: Session = Depends(get_db
     return await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
 
 
-@router.get("/export-all/{property_id}")
-async def export_all_detials(property_id: str, db: Session = Depends(get_db)):
-    return await PropertyPerformaService.export_all_summary_detials(db, property_id)
+# @router.get("/export-all/{property_id}")
+# async def export_all_detials(property_id: str, db: Session = Depends(get_db)):
+#     return await PropertyPerformaService.export_all_summary_detials(db, property_id)
 
+
+@router.get("/export-all/{property_id}")
+async def export_proforma(property_id: str,  db: Session = Depends(get_db)):
+    return await PropertyPerformaService.generate_real_estate_excel(db, property_id)
 
 
 

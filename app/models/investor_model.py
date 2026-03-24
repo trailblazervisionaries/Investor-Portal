@@ -1,6 +1,7 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, func
+from app.models.investor_assist_model import InvestorAssignments
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -104,6 +105,12 @@ class Investors(Base):
         return result.scalar_one_or_none()
     
     @staticmethod
+    async def get_by_id(db, user_id):
+        stmt = (select(Investors).where(Investors.user_id == user_id, Investors.is_deleted == False))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    @staticmethod
     async def get_by_investor_user_id(db, user_id: str):
         stmt = (
             select(Investors)
@@ -139,11 +146,39 @@ class Investors(Base):
         return result.scalars().all()
 
 
+    # @staticmethod
+    # async def get_all_info_investors(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+    #     stmt = (
+    #         select(Investors)
+    #         .options(joinedload(Investors.address), joinedload(Investors.user))
+    #         .where(Investors.is_deleted == deleted)
+    #         .offset(skip)
+    #         .limit(limit)
+    #     )
+        
+    #     count_stmt = (
+    #         select(func.count())
+    #         .select_from(Investors)
+    #         .where(Investors.is_deleted == deleted)
+    #     )
+
+    #     result = await db.execute(stmt)
+    #     total_res = await db.execute(count_stmt)
+        
+    #     return result.scalars().all(), total_res.scalar() or 0
+
+
     @staticmethod
     async def get_all_info_investors(db, skip: int = 0, limit: int = 10, deleted: bool = False):
         stmt = (
             select(Investors)
-            .options(joinedload(Investors.address), joinedload(Investors.user))
+            .options(
+                joinedload(Investors.address), 
+                joinedload(Investors.user),
+                joinedload(Investors.assistant_assignment).options(
+                    joinedload(InvestorAssignments.investor_assistant)
+                )
+            )
             .where(Investors.is_deleted == deleted)
             .offset(skip)
             .limit(limit)
@@ -158,7 +193,9 @@ class Investors(Base):
         result = await db.execute(stmt)
         total_res = await db.execute(count_stmt)
         
-        return result.scalars().all(), total_res.scalar() or 0
+        # Using unique() is recommended when using joinedload on collections 
+        # to avoid duplicate parent rows in the result set.
+        return result.scalars().unique().all(), total_res.scalar() or 0
 
 
 

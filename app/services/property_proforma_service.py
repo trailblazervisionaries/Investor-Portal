@@ -6,14 +6,24 @@ from app.models.property_model import Property, PropertyUnit, PropertyUnitType, 
 from app.models.income_model import IncomeGrowth, Income, IncomeType
 from app.models.expenses_model import ExpenseGrowth, Expense, ExpenseTypes
 from app.core.utils_functions import generate_id
-from decimal import Decimal
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from io import BytesIO
+from fastapi.responses import StreamingResponse
 from datetime import datetime, timedelta
 from decimal import Decimal, getcontext, ROUND_HALF_UP, ROUND_DOWN
+from typing import Dict, Any
 import logging
 from collections import defaultdict
 
 getcontext().prec = 28
 logger = logging.getLogger(__name__)
+
+ORANGE = "F79646"
+BLUE = "1F4E78"
+LIGHT_GRAY = "D9D9D9"
+
 
 class PropertyPerformaService:
 
@@ -711,9 +721,257 @@ class PropertyPerformaService:
 
 
 
-    async def export_all_summary_detials(db, property_id):
-        pass
 
 
 
+#  10 year performa sheet code written here -------------------------
+
+    def _header_fill():
+        return PatternFill(start_color=ORANGE, end_color=ORANGE, fill_type="solid")
+
+
+    def _blue_fill():
+        return PatternFill(start_color=BLUE, end_color=BLUE, fill_type="solid")
+
+
+    def _thin_border():
+        return Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
+        )
+    
+
+    async def generate_real_estate_excel(db, property_id):
+        data = await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
+
+        if not data:
+            raise HTTPException(400, "Property not found")
+
+        revenue = {str(k): v for k, v in data["revenue_detials"].items()}
+        expense = {str(k): v for k, v in data["expense_detials"].items()}
+        other = {str(k): v for k, v in data["other_detials"].items()}
+        rent_summary = {str(k): v for k, v in data["rent_summary"].items()}
+        prop = data["property_detials"]
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "ProForma"
+
+        # =========================================================
+        # COLUMN WIDTH
+        # =========================================================
+        for col in range(1, 20):
+            ws.column_dimensions[get_column_letter(col)].width = 16
+
+        # =========================================================
+        # PROPERTY HEADER
+        # =========================================================
+        ws.merge_cells("A1:N1")
+        cell = ws["A1"]
+        cell.value = prop["property_name"]
+        cell.font = Font(size=14, bold=True)
+
+        # =========================================================
+        # YEAR HEADER ROW
+        # =========================================================
+        year_row = 4
+        ws.cell(row=year_row, column=1, value="Current")
+
+        year_cols = sorted(revenue.keys(), key=lambda x: int(x))
+        for idx, yr in enumerate(year_cols):
+            ws.cell(row=year_row, column=3 + idx, value=f"Year {yr}")
+
+        # =========================================================
+        # REVENUE SECTION
+        # =========================================================
+        revenue_start = 6
+
+        ws.cell(row=revenue_start, column=1, value="Revenue").fill = PropertyPerformaService._blue_fill()
+        ws.cell(row=revenue_start, column=1).font = Font(color="FFFFFF", bold=True)
+
+        labels = [
+            ("Rental Income", "rental_income"),
+            ("Other Income", "other_income"),
+            ("Vacancy", "vacancy"),
+            ("Total Revenue", "total_revenue"),
+        ]
+
+        for i, (label, key) in enumerate(labels):
+            r = revenue_start + 1 + i
+            ws.cell(row=r, column=1, value=label)
+
+            for c, yr in enumerate(year_cols):
+                ws.cell(row=r, column=3 + c, value=revenue[yr].get(key, 0))
+
+        # =========================================================
+        # EXPENSE SECTION
+        # =========================================================
+        expense_start = revenue_start + 7
+
+        ws.cell(row=expense_start, column=1, value="Expenses").fill = PropertyPerformaService._blue_fill()
+        ws.cell(row=expense_start, column=1).font = Font(color="FFFFFF", bold=True)
+
+        expense_rows = [
+            ("Gas", "Gas"),
+            ("Water", "Water"),
+            ("Hydro", "Hydro"),
+            ("Insurance", "Insurance"),
+            ("Real Estate Taxes", "Real Estate Taxes"),
+            ("Repairs & Maintenance", "Repaires & Maintenance"),
+            ("Management Fee", "Management Fee"),
+            ("Capital Expenditures", "CapEx"),
+            ("Total Expenses", "total_expanse"),
+        ]
+
+        for i, (label, key) in enumerate(expense_rows):
+            r = expense_start + 1 + i
+            ws.cell(row=r, column=1, value=label)
+
+            for c, yr in enumerate(year_cols):
+                ws.cell(row=r, column=3 + c, value=expense[yr].get(key, 0))
+
+        #  opex ratio here ====================
+
+        opex_start = expense_start + 11
+        ws.cell(row=opex_start, column=1, value="Opex Ratio").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=opex_start,
+                column=3 + c,
+                value=other[yr]["opex_ratio"],
+            )
+
+        # =========================================================
+        # NOI SECTION
+        # =========================================================
+        noi_start = opex_start + 3
+
+        ws.cell(row=noi_start, column=1, value="Net Operating Income").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=noi_start,
+                column=3 + c,
+                value=other[yr]["noi"],
+            )
+
+        # =========================================================
+        # DEBT SECTION
+        # =========================================================
+        debt_start = noi_start + 3
+
+        ws.cell(row=debt_start, column=1, value="Debt Payments")
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(row=debt_start, column=3 + c, value=other[yr]["debt_payment"])
+
+        ws.cell(row=debt_start + 1, column=1, value="DSCR")
+        for c, yr in enumerate(year_cols):
+            ws.cell(row=debt_start + 1, column=3 + c, value=other[yr]["dscr"])
+
+        ws.cell(row=debt_start + 2, column=1, value="Cash Flow After Financing")
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=debt_start + 2,
+                column=3 + c,
+                value=other[yr]["cash_flow_after_financing"],
+            )
+
+        # =========================================================
+        # RENT SUMMARY
+        # =========================================================
+        rent_start = debt_start + 5
+
+        ws.cell(row=rent_start, column=1, value="Rent Summary").fill = PropertyPerformaService._blue_fill()
+        ws.cell(row=rent_start, column=1).font = Font(color="FFFFFF", bold=True)
+
+        first_year = next(iter(rent_summary))
+        unit_types = rent_summary[first_year].keys()
+
+        for i, unit in enumerate(unit_types):
+            r = rent_start + 1 + i
+            ws.cell(row=r, column=1, value=unit)
+
+            for c, yr in enumerate(year_cols):
+                ws.cell(row=r, column=3 + c, value=rent_summary[yr].get(unit, 0))
+
+
+        equity_start = rent_start + 3
+
+        ws.cell(row=equity_start, column=1, value="Sweet Equity").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=equity_start,
+                column=3 + c,
+                value=other[yr]["sweet_equity"],
+            )
+
+        cashflow_start = equity_start + 2
+
+        ws.cell(row=cashflow_start, column=1, value="Investor Cashflow").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=cashflow_start,
+                column=3 + c,
+                value=other[yr]["sweet_equity"],
+            )
+
+
+        levered_start_10 = cashflow_start + 2
+        ws.cell(row=levered_start_10, column=1, value="Levered Cashflow").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=levered_start_10,
+                column=3 + c,
+                value=other[yr]["levered_cashflow_10"],
+            )
+
+        
+        levered_start_5 = cashflow_start + 4
+        ws.cell(row=levered_start_5, column=1, value="Levered Cashflow").fill = PropertyPerformaService._header_fill()
+
+        for c, yr in enumerate(year_cols):
+            ws.cell(
+                row=levered_start_5,
+                column=3 + c,
+                value=other[yr]["levered_cashflow_5"],
+            )
+
+        # =========================================================
+        # EXIT VALUES
+        # =========================================================
+        exit_row = levered_start_5 + 6
+
+        ws.cell(row=exit_row, column=1, value="Sale Year 5")
+        ws.cell(row=exit_row, column=3, value=other["sales_year_5"])
+
+        ws.cell(row=exit_row + 1, column=1, value="Net Proceeds Year 5")
+        ws.cell(row=exit_row + 1, column=3, value=other["net_proceeds_5"])
+
+        ws.cell(row=exit_row + 3, column=1, value="Sale Year 10")
+        ws.cell(row=exit_row + 3, column=3, value=other["sales_year_10"])
+
+        ws.cell(row=exit_row + 4, column=1, value="Net Proceeds Year 10")
+        ws.cell(row=exit_row + 4, column=3, value=other["net_proceeds_10"])
+
+        # =========================================================
+        # SAVE
+        # =========================================================
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": f'attachment; filename="{prop["property_id"]}_proforma.xlsx"'
+            },
+        )
 

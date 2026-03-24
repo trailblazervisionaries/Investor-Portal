@@ -65,6 +65,12 @@ class AdminModel(Base):
         stmt = (select(AdminModel).where(AdminModel.email == email))
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_by_id(db, user_id):
+        stmt = (select(AdminModel).where(AdminModel.user_id == user_id, AdminModel.is_deleted == False))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
     
     @staticmethod
     async def get_by_admin_user_id(db, user_id: str):

@@ -59,6 +59,7 @@ async def get_unit_type_by_id(id: int, property_id: str, db: Session = Depends(g
 
 
 
+#  stats route ===============================================================
 @router.get("/get-type-summary/{property_id}")
 async def get_property_income_expense(property_id: str, db: Session = Depends(get_db)):
     rent_summary = await PropertyUnitTypeServices.get_property_rent_summary(db, property_id)
@@ -77,7 +78,7 @@ async def export_property_summary(property_id: str, db: Session = Depends(get_db
     exp_summary = await ExpenseTypeService.get_expense_summary_by_property(db, property_id)
     inc_summary = await IncomeTypeService.get_income_summary_by_property(db, property_id)
 
-    return IncomeExpanseGrowthService.export_income_expense_to_excel(
+    return await IncomeExpanseGrowthService.export_income_expense_to_excel(
         rent_summary=rent_summary,
         inc_summary=inc_summary,
         exp_summary=exp_summary,

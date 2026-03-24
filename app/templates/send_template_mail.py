@@ -139,3 +139,4 @@ class MailTemplatesService:
 
         asyncio.run(MailService.send_mail(email, subject, html_message))
 
+
