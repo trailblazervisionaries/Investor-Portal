@@ -1,4 +1,4 @@
-from sqlalchemy.orm import relationship, joinedload
+from sqlalchemy.orm import relationship, joinedload, selectinload
 from app.config.database import Base
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, ForeignKey, func
@@ -304,5 +304,31 @@ class InvestorAssignments(Base):
         result = await db.execute(stmt)
         return result.scalars().all()
     
+
+
+    # @staticmethod
+    # async def get_active_assign_investor_by_investor_assistant_id(db, investor_assistant_id: str):
+    #     from app.models.investor_model import Investors
+    #     stmt = (
+    #         select(InvestorAssignments)
+    #         .options(
+    #             # Load the investor AND their nested assistant_assignment
+    #             selectinload(InvestorAssignments.investor)
+    #             .selectinload(Investors.assistant_assignment),
+                
+    #             # Load the assistant object itself
+    #             selectinload(InvestorAssignments.investor_assistant)
+    #         )
+    #         .where(
+    #             InvestorAssignments.investor_assistant_id == investor_assistant_id,
+    #             InvestorAssignments.is_deleted.is_(False)
+    #         )
+    #     )
+
+    #     result = await db.execute(stmt)
+    #     return result.scalars().all()
+
+
+
 
 

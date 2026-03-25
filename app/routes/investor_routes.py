@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.config.database import get_db
 from app.services.investor_service import InvestorService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.investor import InvestorCreate, InvestorUpdate, InvestorResponse, InvestorPaginationResponse
+from app.schemas.investor import InvestorCreate, InvestorUpdate, InvestorResponse, InvestorPaginationResponse, InvestorResponseAll
 import logging 
 import math
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ async def get_me(
     total_pages = math.ceil(total_count / size) if total_count > 0 else 0
 
     return {
-        "items": [InvestorResponse.model_validate(i) for i in investors],
+        "items": [InvestorResponseAll.model_validate(i) for i in investors],
         "total_count": total_count,
         "page": page,
         "size": size,

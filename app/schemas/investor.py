@@ -64,12 +64,16 @@ class InvestorResponse(BaseModel):
     is_active:bool
     role: str | None = "investor"
     address: Optional[AddressBase] = None
-    assistant_assignment: List[AssistantAssignmentResponse] = []
+    class Config:
+        from_attributes = True
+
+class InvestorResponseAll(InvestorResponse):
+    assistant_assignment: List[AssistantAssignmentResponse] | None = []
     class Config:
         from_attributes = True
 
 class InvestorPaginationResponse(BaseModel):
-    items: List[InvestorResponse]
+    items: List[InvestorResponseAll]
     total_count: int
     page: int
     size: int
