@@ -9,6 +9,7 @@ from app.services.user_service import UserServices
 from dotenv import load_dotenv
 from app.models.audit_model import AuditModel
 from app.models.investor_assist_model import InvestorAssistant, InvestorAssignments
+from app.models.investor_model import Investors
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 import traceback
@@ -92,7 +93,7 @@ class InvestorassistantAssignmentService:
         result = await db.execute(
             select(InvestorAssignments)
             .options(
-                selectinload(InvestorAssignments.investor),
+                selectinload(InvestorAssignments.investor).selectinload(Investors.assistant_assignment),
                 selectinload(InvestorAssignments.investor_assistant)
             )
             .where(InvestorAssignments.id == new_assignment.id)

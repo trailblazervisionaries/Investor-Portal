@@ -15,12 +15,13 @@ from openpyxl.utils import get_column_letter
 from decimal import Decimal, ROUND_HALF_UP
 from app.models.property_model import Property, PropertyUnitType, PropertyUnit
 import traceback
+import time
 import os
 import logging
 
 
 logger = logging.getLogger(__name__)
-
+timestamp_ms = int(time.time() * 1000)
 
 class PropertyService:
 
@@ -447,7 +448,7 @@ class PropertyService:
             stream,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                "Content-Disposition": "attachment; filename=rent_roll.xlsx"
+                "Content-Disposition": f"attachment; filename=rent_roll_{timestamp_ms}.xlsx"
             }
         )
 
@@ -695,7 +696,7 @@ class PropertyService:
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
                 "Content-Disposition": "attachment; "
-                "filename=rent_roll_summary.xlsx"
+                f"filename=rent_roll_summary_{timestamp_ms}.xlsx"
                 }
         )
 

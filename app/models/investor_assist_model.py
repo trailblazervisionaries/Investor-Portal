@@ -178,7 +178,6 @@ class InvestorAssignments(Base):
         String,
         ForeignKey("investor.investor_id", ondelete="CASCADE"),
         nullable=False,
-        unique=True,
         index=True
     )
 

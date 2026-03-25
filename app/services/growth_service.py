@@ -17,12 +17,13 @@ from dotenv import load_dotenv
 import traceback
 from typing import Dict, Any
 import os
+import time
 import logging
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-
+timestamp_ms = int(time.time() * 1000)
 
 
 class IncomeExpanseGrowthService:
@@ -158,7 +159,7 @@ class IncomeExpanseGrowthService:
             stream,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={
-                "Content-Disposition": "attachment; filename=growth_projection.xlsx"
+                "Content-Disposition": f"attachment; filename=growth_projection{timestamp_ms}.xlsx"
             },
         )
 
@@ -168,12 +169,13 @@ class IncomeExpanseGrowthService:
         rent_summary: dict,
         inc_summary: dict,
         exp_summary: dict,
-        filename: str = "income_expense_summary.xlsx",
+        filename: str = f"income_expense_summary{timestamp_ms}.xlsx",
     ):
         wb = Workbook()
         ws = wb.active
         ws.title = "Income & Expense Summary"
         header_fill = PatternFill("solid", fgColor="1F4E79")
+        cell_fill = PatternFill("solid", fgColor="FF6700")
         header_font = Font(bold=True, color="FFFFFF")
         bold_font = Font(bold=True)
         center = Alignment(horizontal="center")
@@ -184,14 +186,18 @@ class IncomeExpanseGrowthService:
                 cell.font = header_font
                 cell.alignment = center
 
+        def style_any(row):
+            for cell in ws[row]:
+                cell.fill = cell_fill
+                cell.font = header_font
+
         def bold_first_three(row):
             for cell in ws[row]:
                 if cell.col_idx <= 3:
-                    cell.font = bold_font
+                    # cell.font = bold_font
+                    cell.fill = cell_fill
+                    cell.font = header_font
         
-        def bold_all(row):
-            for cell in ws[row]:
-                cell.font = bold_font
 
         def currency(cell):
             if cell.value not in ("", None):
@@ -205,15 +211,17 @@ class IncomeExpanseGrowthService:
 
         # Unit Table Header
         ws.append([])
+        ws.append([])
+        ws.append([])
         ws.append(["", "", "", "Current", "", "Potential"])
-        ws.merge_cells("D3:E3")
-        ws.merge_cells("F3:G3")
-        ws["D3"].fill = header_fill
-        ws["F3"].fill = header_fill
-        ws["D3"].font = header_font
-        ws["F3"].font = header_font
-        ws["D3"].alignment = center
-        ws["F3"].alignment = center
+        ws.merge_cells("D5:E5")
+        ws.merge_cells("F5:G5")
+        ws["D5"].fill = header_fill
+        ws["F5"].fill = header_fill
+        ws["D5"].font = header_font
+        ws["F5"].font = header_font
+        ws["D5"].alignment = center
+        ws["F5"].alignment = center
 
         ws.append([
             "Unit Type",
@@ -266,11 +274,14 @@ class IncomeExpanseGrowthService:
             "",
             total_potential_rent,
         ])
-        bold_all(ws.max_row)
+        style_any(ws.max_row)
         currency(ws[f"E{ws.max_row}"])
         currency(ws[f"G{ws.max_row}"])
 
         # Income & Expense Header
+        ws.append([])
+        ws.append([])
+        ws.append([])
         ws.append([])
         ws.append(["Income", "Current", "Pro Forma", "", "Expenses", "Current", "Pro Forma", "Per Unit"])
         header_row = ws.max_row
@@ -336,21 +347,27 @@ class IncomeExpanseGrowthService:
 
         # Expense Totals
         ws.append(["", "", "", "", "Total Expenses", total_exp_current, total_exp_proforma, per_unit_current])
-        bold_first_three(ws.max_row)
         for cell in ws[ws.max_row]:
-            cell.font = bold_font
-            if cell.column_letter in ("F", "G", "H"):
+            if cell.column_letter in ("E", "F", "G", "H"):
                 currency(cell)
+                cell.fill = cell_fill
+                cell.font = header_font
 
         ws.append(["", "", "", "", "Expense as % of revenue", f"{expense_pct_current:.1f}%", f"{expense_pct_proforma:.1f}%"])
         for cell in ws[ws.max_row]:
-            cell.font = bold_font
+            if cell.column_letter in ("E", "F", "G", "H"):
+                cell.fill = header_fill
+                cell.font = header_font
 
         ws.append(["", "", "", "", "Net operating Income", noi_current, noi_current])
         for cell in ws[ws.max_row]:
-            cell.font = bold_font
-        currency(ws[f"F{ws.max_row}"])
-        currency(ws[f"G{ws.max_row}"])
+        #     cell.font = bold_font
+        # currency(ws[f"F{ws.max_row}"])
+        # currency(ws[f"G{ws.max_row}"])
+            if cell.column_letter in ("E", "F", "G", "H"):
+                currency(cell)
+                cell.fill = cell_fill
+                cell.font = header_font
 
         # Auto Column Width
         for col_idx, column_cells in enumerate(ws.columns, start=1):

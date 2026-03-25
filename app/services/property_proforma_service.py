@@ -194,142 +194,236 @@ class PropertyPerformaService:
 
 
 
-    async def get_all_revenue(db, property_id, is_for_noi = None):
+    # async def get_all_revenue(db, property_id, is_for_noi = None):
 
+    #     data_response = await IncomeType.get_property_income_details(db, property_id)
+
+    #     rental_projection = {}
+    #     other_projection = {}
+    #     parking_projection = {}
+    #     vacancy_growth = {}
+    #     total_revenue_growth = {}
+
+    #     for income_type in data_response:
+
+    #         name = income_type["income_type_name"].strip().lower()
+
+    #         for income in income_type.get("incomes", []):
+
+    #             current = Decimal(str(income.get("current_income", 0)))
+    #             proforma = Decimal(str(income.get("pro_forma_income", 0)))
+    #             growth_data = sorted(
+    #                 income.get("income_growth", []),
+    #                 key=lambda x: x["year"]
+    #             )
+
+    #             # ---------------- VACANCY ----------------
+    #             if name == "vacancy":
+    #                 for g in growth_data:
+    #                     vacancy_growth[g["year"]] = Decimal(
+    #                         str(g["growth_percentage"])
+    #                     )
+    #                 continue
+
+    #             # ---------------- TOTAL REVENUE GROWTH % ----------------
+    #             if name == "total revenue":
+    #                 for g in growth_data:
+    #                     total_revenue_growth[g["year"]] = Decimal(
+    #                         str(g["growth_percentage"])
+    #                     )
+    #                 continue
+
+    #             # ---------------- RENTAL ----------------
+    #             if name == "rental income":
+    #                 rental_projection[0] = current
+    #                 rental_projection[1] = proforma
+
+    #                 for g in growth_data:
+    #                     year = g["year"]
+    #                     if year <= 1:
+    #                         continue
+
+    #                     prev = rental_projection[year - 1]
+    #                     growth_percent = Decimal(str(g["growth_percentage"]))
+
+    #                     rental_projection[year] = prev + (
+    #                         prev * growth_percent / Decimal("100")
+    #                     )
+
+    #             # ---------------- OTHER (FIXED HERE) ----------------
+    #             elif name == "other income":
+
+    #                 # Year 0 = current
+    #                 other_projection[0] = current
+
+    #                 for g in growth_data:
+    #                     year = g["year"]
+
+    #                     # Year 1 grows from Year 0
+    #                     if year == 1:
+    #                         prev = current
+    #                     else:
+    #                         prev = other_projection.get(year - 1, current)
+
+    #                     growth_percent = Decimal(str(g["growth_percentage"]))
+
+    #                     other_projection[year] = prev + (
+    #                         prev * growth_percent / Decimal("100")
+    #                     )
+
+    #             # ---------------- PARKING ----------------
+    #             elif name == "parking":
+
+    #                 parking_projection[0] = current
+
+    #                 for g in growth_data:
+    #                     year = g["year"]
+
+    #                     if year == 1:
+    #                         prev = current
+    #                     else:
+    #                         prev = parking_projection.get(year - 1, current)
+
+    #                     growth_percent = Decimal(str(g["growth_percentage"]))
+
+    #                     parking_projection[year] = prev + (
+    #                         prev * growth_percent / Decimal("100")
+    #                     )
+
+    #     # ---------------- FINAL RESULT ----------------
+    #     final_projection = {}
+    #     previous_total = None
+
+    #     for year in range(0, 12):
+
+    #         rental = rental_projection.get(year, Decimal("0"))
+    #         other = other_projection.get(year, Decimal("0"))
+    #         parking = parking_projection.get(year, Decimal("0"))
+
+    #         gross = rental + other + parking
+
+    #         vacancy_percent = vacancy_growth.get(year, Decimal("0"))
+    #         vacancy_amount = rental * vacancy_percent / Decimal("100")
+
+    #         if year in (0, 1):
+    #             total = gross - vacancy_amount
+    #             previous_total = total
+    #         else:
+    #             growth_percent = total_revenue_growth.get(year, Decimal("0"))
+    #             total = previous_total + (
+    #                 previous_total * growth_percent / Decimal("100")
+    #             )
+    #             previous_total = total
+
+    #         if is_for_noi is not None:
+    #             final_projection[year] = {
+    #                 "total_revenue": total,
+    #             }
+    #         else:
+    #             final_projection[year] = {
+    #                 "rental_income": PropertyPerformaService.round_half_up(rental),
+    #                 "other_income": PropertyPerformaService.round_half_up(other),
+    #                 "parking_income": PropertyPerformaService.round_half_up(parking),
+    #                 "gross_income": PropertyPerformaService.round_half_up(gross),
+    #                 "vacancy": PropertyPerformaService.round_half_up(-vacancy_amount),
+    #                 "total_revenue": PropertyPerformaService.round_half_up(total),
+    #             }
+        
+    #     return final_projection
+
+
+
+    async def get_all_revenue(db, property_id, is_for_noi = None):
         data_response = await IncomeType.get_property_income_details(db, property_id)
 
-        rental_projection = {}
-        other_projection = {}
-        parking_projection = {}
+        # Dictionary to hold projections for ANY income type: { "parking": {0: val, 1: val...}, "laundry": {...} }
+        revenue_projections = {}
         vacancy_growth = {}
         total_revenue_growth = {}
 
         for income_type in data_response:
-
             name = income_type["income_type_name"].strip().lower()
 
             for income in income_type.get("incomes", []):
-
                 current = Decimal(str(income.get("current_income", 0)))
                 proforma = Decimal(str(income.get("pro_forma_income", 0)))
-                growth_data = sorted(
-                    income.get("income_growth", []),
-                    key=lambda x: x["year"]
-                )
+                growth_data = sorted(income.get("income_growth", []), key=lambda x: x["year"])
 
-                # ---------------- VACANCY ----------------
+                # 1. Handle Vacancy and Total Revenue metadata
                 if name == "vacancy":
                     for g in growth_data:
-                        vacancy_growth[g["year"]] = Decimal(
-                            str(g["growth_percentage"])
-                        )
+                        vacancy_growth[g["year"]] = Decimal(str(g["growth_percentage"]))
                     continue
 
-                # ---------------- TOTAL REVENUE GROWTH % ----------------
                 if name == "total revenue":
                     for g in growth_data:
-                        total_revenue_growth[g["year"]] = Decimal(
-                            str(g["growth_percentage"])
-                        )
+                        total_revenue_growth[g["year"]] = Decimal(str(g["growth_percentage"]))
                     continue
 
-                # ---------------- RENTAL ----------------
+                # 2. Initialize the projection tracker for this specific income name
+                if name not in revenue_projections:
+                    revenue_projections[name] = {0: current}
+
+                # 3. Apply Growth Logic
                 if name == "rental income":
-                    rental_projection[0] = current
-                    rental_projection[1] = proforma
-
+                    # Rental uses Proforma for Year 1
+                    revenue_projections[name][1] = proforma
                     for g in growth_data:
                         year = g["year"]
-                        if year <= 1:
-                            continue
-
-                        prev = rental_projection[year - 1]
+                        if year <= 1: continue
+                        
+                        prev = revenue_projections[name][year - 1]
                         growth_percent = Decimal(str(g["growth_percentage"]))
-
-                        rental_projection[year] = prev + (
-                            prev * growth_percent / Decimal("100")
-                        )
-
-                # ---------------- OTHER (FIXED HERE) ----------------
-                elif name == "other income":
-
-                    # Year 0 = current
-                    other_projection[0] = current
-
+                        revenue_projections[name][year] = prev + (prev * growth_percent / Decimal("100"))
+                else:
+                    # ALL other income types (Parking, Other, or any new type)
                     for g in growth_data:
                         year = g["year"]
-
-                        # Year 1 grows from Year 0
-                        if year == 1:
-                            prev = current
-                        else:
-                            prev = other_projection.get(year - 1, current)
-
+                        # Year 1 grows from Year 0 (current), others grow from year-1
+                        prev = revenue_projections[name].get(year - 1, current)
                         growth_percent = Decimal(str(g["growth_percentage"]))
-
-                        other_projection[year] = prev + (
-                            prev * growth_percent / Decimal("100")
-                        )
-
-                # ---------------- PARKING ----------------
-                elif name == "parking":
-
-                    parking_projection[0] = current
-
-                    for g in growth_data:
-                        year = g["year"]
-
-                        if year == 1:
-                            prev = current
-                        else:
-                            prev = parking_projection.get(year - 1, current)
-
-                        growth_percent = Decimal(str(g["growth_percentage"]))
-
-                        parking_projection[year] = prev + (
-                            prev * growth_percent / Decimal("100")
-                        )
+                        revenue_projections[name][year] = prev + (prev * growth_percent / Decimal("100"))
 
         # ---------------- FINAL RESULT ----------------
         final_projection = {}
         previous_total = None
 
         for year in range(0, 12):
+            # Calculate Gross by summing every revenue type found
+            gross = sum(proj.get(year, Decimal("0")) for proj in revenue_projections.values())
 
-            rental = rental_projection.get(year, Decimal("0"))
-            other = other_projection.get(year, Decimal("0"))
-            parking = parking_projection.get(year, Decimal("0"))
+            # Vacancy is calculated specifically against "rental income"
+            rental_val = revenue_projections.get("rental income", {}).get(year, Decimal("0"))
+            vac_percent = vacancy_growth.get(year, Decimal("0"))
+            vacancy_amount = rental_val * vac_percent / Decimal("100")
 
-            gross = rental + other + parking
-
-            vacancy_percent = vacancy_growth.get(year, Decimal("0"))
-            vacancy_amount = rental * vacancy_percent / Decimal("100")
-
+            # Total Revenue Logic
             if year in (0, 1):
                 total = gross - vacancy_amount
                 previous_total = total
             else:
                 growth_percent = total_revenue_growth.get(year, Decimal("0"))
-                total = previous_total + (
-                    previous_total * growth_percent / Decimal("100")
-                )
+                total = previous_total + (previous_total * growth_percent / Decimal("100"))
                 previous_total = total
 
             if is_for_noi is not None:
-                final_projection[year] = {
-                    "total_revenue": total,
-                }
+                final_projection[year] = {"total_revenue": total}
             else:
-                final_projection[year] = {
-                    "rental_income": PropertyPerformaService.round_half_up(rental),
-                    "other_income": PropertyPerformaService.round_half_up(other),
-                    "parking_income": PropertyPerformaService.round_half_up(parking),
+                # Build dynamic row with all individual income types
+                row = { 
+                    f"{k.replace(' ', '_')}": PropertyPerformaService.round_half_up(v.get(year, Decimal("0"))) 
+                    for k, v in revenue_projections.items() 
+                }
+                # Add the summary fields
+                row.update({
                     "gross_income": PropertyPerformaService.round_half_up(gross),
                     "vacancy": PropertyPerformaService.round_half_up(-vacancy_amount),
                     "total_revenue": PropertyPerformaService.round_half_up(total),
-                }
-        
+                })
+                final_projection[year] = row
+
         return final_projection
+
     
 
     # async def calculate_all_expenses(db, property_id, is_for_noi = None):
@@ -794,6 +888,7 @@ class PropertyPerformaService:
         labels = [
             ("Rental Income", "rental_income"),
             ("Other Income", "other_income"),
+            ("Parking Income", "parking_income")
             ("Vacancy", "vacancy"),
             ("Total Revenue", "total_revenue"),
         ]
@@ -838,11 +933,13 @@ class PropertyPerformaService:
         ws.cell(row=opex_start, column=1, value="Opex Ratio").fill = PropertyPerformaService._header_fill()
 
         for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=opex_start,
-                column=3 + c,
-                value=other[yr]["opex_ratio"],
-            )
+            cell = ws.cell(row=opex_start, column=3 + c)
+            
+            # Set the numeric value
+            cell.value = other[yr]["opex_ratio"] 
+            
+            # Apply the format: 3 zeros after the decimal point
+            cell.number_format = '0.000%' 
 
         # =========================================================
         # NOI SECTION
@@ -899,7 +996,7 @@ class PropertyPerformaService:
                 ws.cell(row=r, column=3 + c, value=rent_summary[yr].get(unit, 0))
 
 
-        equity_start = rent_start + 3
+        equity_start = rent_start + 6
 
         ws.cell(row=equity_start, column=1, value="Sweet Equity").fill = PropertyPerformaService._header_fill()
 
