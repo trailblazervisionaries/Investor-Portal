@@ -49,6 +49,8 @@ class APIMiddleware(BaseHTTPMiddleware):
     def should_skip_auth(self, path: str) -> bool:
         # Add paths that don't need authentication
         skip_paths = [
+            "/api/admin/public",
+            "/api/user/public",
             "/api/users",
             "/api/lead/add",
             "/send-test-email",
