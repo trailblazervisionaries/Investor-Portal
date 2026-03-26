@@ -72,7 +72,8 @@ class FundAssistService:
             db.add(new_fund_assist)
             await db.flush()
             db.add(address)
-            await FundAssistant(
+            await AuditModel.add_new_logs(
+                db = db,
                 added_by = user_id,
                 new_data = data.model_dump(),
                 old_data = None,
@@ -151,7 +152,7 @@ class FundAssistService:
                     )
                     db.add(new_address)
                     fund_assistant.address = new_address
-            await FundAssistant(
+            await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data.model_dump(),
