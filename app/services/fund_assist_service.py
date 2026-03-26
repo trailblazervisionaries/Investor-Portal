@@ -73,7 +73,6 @@ class FundAssistService:
             await db.flush()
             db.add(address)
             await FundAssistant(
-                db = db,
                 added_by = user_id,
                 new_data = data.model_dump(),
                 old_data = None,

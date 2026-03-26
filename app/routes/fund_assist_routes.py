@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/add", response_model = FundAssistResponse)
 async def add_admin(data: FundAssistCreate, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
-    user_id = request.state.user_id
+    user_id = request.state.user.user_id
     if role != "admin":
         raise HTTPException(403, "you are not authorise to perform this operation")
     fund_assistant = await FundAssistService.create_fund_assistant(db, user_id, data)

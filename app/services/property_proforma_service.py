@@ -1184,38 +1184,57 @@ class PropertyPerformaService:
             cell_lab.font = Font(color = "FFFFFF")
             cell_lab.fill = PropertyPerformaService.blue_fill()
             cell = ws.cell(row=r, column=3, value=value)
+
+            if is_percent:
+                PropertyPerformaService.percent(cell)
+            if is_currency:
+                PropertyPerformaService.currency(cell)
+            if isinstance(value, datetime):
+                cell.number_format = 'YYYY-MM-DD'
             cell.font = Font(color = "FFFFFF")
             cell.fill = PropertyPerformaService.blue_fill()
             cell = ws.cell(row=r, column=4)
             cell.font = Font(color = "FFFFFF")
             cell.alignment = Alignment(horizontal="center")
             cell.fill = PropertyPerformaService.blue_fill()
-            if is_percent:
-                cell.number_format = '0.00"%"'
-            if is_currency:
-                PropertyPerformaService.currency(cell)
 
             r += 1
-
-        write_detail("Market Cap Rate", prop.get("market_cap_rate", 0), True)
+        write_detail("", "", "")
+        write_detail("Market Cap Rate", prop.get("market_cap_rate", 0)/100, True)
         write_detail("Purchase Price", prop.get("purchase_price", 0), False, True)
-        write_detail("Closing Cost", prop.get("closing_cost", 0) , True)
+        write_detail("Closing Cost", prop.get("closing_cost", 0)/100 , True)
         write_detail("Total Acquisition Cost", prop.get("total_aqz_cost", 0), False, True)
 
         #  Assumptions ---------------------
+        write_detail("", "", "")
+        write_detail("Assumptions :-", "", "")
         write_detail("Property Type", prop.get("property_type", ""))
         write_detail("location City", prop.get("city", ""))
         write_detail("location province", prop.get("province", ""))
         write_detail("Size (SF)", prop.get("total_area", 0))
-        write_detail("Transaction Date", prop.get("pro_forma_start_date", "NA"))
+        raw_date = prop.get("pro_forma_start_date")
+        if raw_date and raw_date != "null":
+            try:
+                date_obj = datetime.strptime(raw_date.split('T')[0], '%Y-%m-%d')
+                write_detail("Transaction Date", date_obj)
+            except (ValueError, TypeError):
+                write_detail("Transaction Date", "NA")
+        else:
+            write_detail("Transaction Date", "---- -- --")
+
+        
         write_detail("Number of Units", prop.get("no_of_units", 0))
 
         #  average rent and no. of units
+        write_detail("", "", "")
+        write_detail("average rent and units :-", "", "")
         for unit in prop['average_rent']['unit_type']:
             write_detail(unit.get("name", ""), unit.get("total_units", 0))
             write_detail(unit.get("name", ""), unit.get("average_actual_lease_rent", 0))
 
         # just space ------
+        write_detail("", "", "")
+        write_detail("Space and other Rent :-","", "")
         write_detail("Parking Space", prop.get("parking_space", 0))
         write_detail("parking Rent", revenue.get(0, {}).get("parking", 0))
         write_detail("Other Incomes", revenue.get(0, {}).get("other_income", 0))
@@ -1223,80 +1242,90 @@ class PropertyPerformaService:
 
         # Debt Section (FIXED)
         # -------------------------------------------------
+        write_detail("", "", "")
+        write_detail("Debt :-", "", "")
         acq_cap = 0
         purchase_price = prop.get("purchase_price", 0)
-        
-        # Check if revenue or other use string "0" or int 0 as keys
         noi_0 = other.get("0", {}).get("noi", 0) if "0" in other else other.get(0, {}).get("noi", 0)
         
         if purchase_price != 0 and noi_0 != 0:
             acq_cap = round((noi_0 / purchase_price) * 100)
 
-        # FIX: Access the first item in the loans list safely
         loan_list = prop.get("loans", [])
         loan_data = loan_list[0] if isinstance(loan_list, list) and len(loan_list) > 0 else {}
 
         loan_amount = loan_data.get("total_loan_amount", 0)
-        sell_price_10 = other.get("sales_year_5", 0)
+        sell_price_10 = other.get("sales_year_10", 0)
         
-        # Prevent division by zero for closing_ltv
         closing_ltv = round((loan_amount / sell_price_10) * 100) if sell_price_10 else 0
         
-        # Prevent division by zero for sell_price_unit
         num_units = prop.get("no_of_units", 0)
         sell_price_unit = (sell_price_10 / num_units) if num_units else 0
 
-        write_detail("Acquisition Cap Rate", acq_cap,  True)
-        write_detail("Stabilized Cap Rate", loan_data.get("stabilized_cap_rate", 0), True)
-        write_detail("LTV", loan_data.get("property_ltv", 0), True)
-        write_detail("Base Lending Rate", loan_data.get("interest_rate", 0), True)
-        write_detail("Spread", loan_data.get("spread_intrest_rate", 0), True)
+        write_detail("Acquisition Cap Rate", acq_cap/100,  True)
+        write_detail("Stabilized Cap Rate", loan_data.get("stabilized_cap_rate", 0)/100, True)
+        write_detail("LTV", loan_data.get("property_ltv", 0)/100, True)
+        write_detail("Base Lending Rate", loan_data.get("interest_rate", 0)/100, True)
+        write_detail("Spread", loan_data.get("spread_intrest_rate", 0)/100, True)
         write_detail("Amortization Period", loan_data.get("amortization_period", 0))
         write_detail("Term", loan_data.get("term", 0))
         write_detail("Intrest Only Period", loan_data.get("intrest_only_period", 0))
         write_detail("Loan Start Date", loan_data.get("loan_start_date", 0))
-        write_detail("Origination Fee", loan_data.get("origination_fee(%)", 0), True)
+        write_detail("Origination Fee", loan_data.get("origination_fee(%)", 0)/100, True)
         write_detail("Loan Amount", loan_amount)
         write_detail("PMT", loan_data.get("total_annual_payment", 0))
-        
-        # Nested dictionary access for loan repayment
+    
         repayment_data = loan_data.get("loan_repayment_and_debt_constant", {})
         write_detail("Loan Repayment", repayment_data.get("loan_repayment", 0))
-        write_detail("Closing LTV", closing_ltv, True)
+        write_detail("Closing LTV", closing_ltv/100, True)
         
 
 
         # Equity --------
+        write_detail("", "", "")
+        write_detail("Initial Equity :-", "", "")
         write_detail("Initial Equity", prop.get("lp_equity_stake_amount", 0))
-        write_detail("GP Equity Stake", prop.get("gp_equity_stake", 0), True)
-        write_detail("LP Equity Stake", prop.get("lp_equity_stake", 0), True)
+        write_detail("GP Equity Stake", prop.get("gp_equity_stake", 0)/100, True)
+        write_detail("LP Equity Stake", prop.get("lp_equity_stake", 0)/100, True)
 
-        write_detail("Unlevered IRR", 0, True)
-        write_detail("Levered IRR", 0, True)
+        write_detail("", "", "")
+        write_detail("", "", "")
+        write_detail("Unlevered IRR", 0/100, True)
+        write_detail("Levered IRR", 0/100, True)
         write_detail("Unlevered EM", 0)
         write_detail("Levered EM", 0)
 
-        write_detail("Hurdle", prop.get("hurdle", 0), True)
-        write_detail("GP Promote at Hurdle", prop.get("go_promote_at_hurdle", 0), True)
-        write_detail("GP Promote Above Hurdle", prop.get("go_promote_above_hurdle", 0), True)
+        write_detail("", "", "")
+        write_detail("", "", "")
+        write_detail("Hurdle", prop.get("hurdle", 0)/100, True)
+        write_detail("GP Promote at Hurdle", prop.get("go_promote_at_hurdle", 0)/100, True)
+        write_detail("GP Promote Above Hurdle", prop.get("go_promote_above_hurdle", 0)/100, True)
 
-
+        write_detail("", "", "")
+        write_detail("", "", "")
         write_detail("GP Return", 0)
         write_detail("LP Return", 0)
 
-        write_detail("Going Out Cap Rate", prop.get("going_out_cap_rate", 0), True)
-        write_detail("Debt Constant", repayment_data.get("debt_constant", 0), True)
+        write_detail("", "", "")
+        write_detail("", "", "")
+        write_detail("Going Out Cap Rate", prop.get("going_out_cap_rate", 0)/100, True)
+        write_detail("Debt Constant", repayment_data.get("debt_constant", 0)/100, True)
         write_detail("Sale Price/Unit", sell_price_unit)
         write_detail("Acquisition Price/Unit", prop.get("aquization_cost_per_unit", 0))
 
         # 5-Year -------------
-        write_detail("Unlevered IRR", 0, True)
-        write_detail("Levered IRR", 0, True)
+        write_detail("", "", "")
+        write_detail("5-Year :-", "", "")
+        write_detail("Unlevered IRR", 0/100, True)
+        write_detail("Levered IRR", 0/100, True)
         write_detail("Unlevered EM", 0)
         write_detail("Levered EM", 0)
 
+        write_detail("", "", "")
+        write_detail("", "", "")
         write_detail("GP Return", 0)
         write_detail("LP Return", 0)
+        write_detail("", "", "")
 
         #  Acquisition
         #  ----------------------------------------------
@@ -1310,7 +1339,11 @@ class PropertyPerformaService:
         closing_cost_ = (prop.get("purchase_price", 0) * prop.get("closing_cost", 0))/100
         cell = ws.cell(row=r+1, column=start_col, value= closing_cost_ )
         cell = ws.cell(row=r+2, column=start_col-1, value="Total Acquisition Price")
+        cell.fill = PropertyPerformaService.header_fill()
+        cell.font = Font(bold = True, color = "FFFFFF")
         cell = ws.cell(row=r+2, column=start_col, value=prop.get("total_aqz_cost", 0))
+        cell.fill = PropertyPerformaService.header_fill()
+        cell.font = Font(bold = True, color = "FFFFFF")
 
 
    
