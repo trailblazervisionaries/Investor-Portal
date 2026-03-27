@@ -178,6 +178,15 @@ class FundAssistService:
     async def get_my_info(db, user_id):
         return await FundAssistant.get_by_fund_assist_user_id(db, user_id)
 
+    @staticmethod
+    async def get_total_count(db):
+
+        stmt = (
+            select(func.count(FundAssistant.fund_assist_id))
+            .where(FundAssistant.is_deleted == False)
+        )
+        result = await db.execute(stmt)
+        return result.scalar()
 
     @staticmethod
     async def get_info_all_fund_assistant(db, skip: int = 0, limit: int = 10, deleted: bool = False):
@@ -212,7 +221,7 @@ class FundAssistService:
         old_data = FundAssistant.model_to_dict(fund_assist)
         fund_assist.is_deleted = True
         fund_assist.user.is_deleted = True
-        await FundAssistant(
+        await AuditModel.add_new_logs(
                 db = db,
                 added_by = id,
                 new_data = {"is_deleted" : True},
@@ -239,7 +248,7 @@ class FundAssistService:
         fund_assist.is_active = False
         fund_assist.user.is_active = False
 
-        await FundAssistant(
+        await AuditModel.add_new_logs(
                 db = db,
                 added_by = id,
                 new_data = {"is_active" : True},
@@ -265,7 +274,7 @@ class FundAssistService:
         old_data = FundAssistant.model_to_dict(fund_assist)
         fund_assist.is_active = True
         fund_assist.user.is_active = True
-        await FundAssistant(
+        await AuditModel.add_new_logs(
                 db = db,
                 added_by = id,
                 new_data = {"is_active" : True},

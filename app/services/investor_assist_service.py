@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
 from app.core.utils_functions import generate_id, generate_alphanumeric_password
-from sqlalchemy import select
+from sqlalchemy import select, func
 from datetime import datetime, timedelta
 from app.services.user_service import UserServices
 from dotenv import load_dotenv
@@ -184,6 +184,15 @@ class InvestorAssistService:
     async def get_my_info(db, user_id):
         return await InvestorAssistant.get_by_investor_assistant_user_id(db, user_id)
 
+    @staticmethod
+    async def get_total_count(db):
+
+        stmt = (
+            select(func.count(InvestorAssistant.investor_assistant_id))
+            .where(InvestorAssistant.is_deleted == False)
+        )
+        result = await db.execute(stmt)
+        return result.scalar()
 
     async def get_all_investor_info(db, skip: int, limit: int, deleted: bool):
         return await InvestorAssistant.get_info_all_investor_assistant(db, skip=skip, limit=limit, deleted = deleted)
