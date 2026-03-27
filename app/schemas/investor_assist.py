@@ -38,6 +38,7 @@ class InvestorAssistResponse(BaseModel):
     phone: str
     is_active:bool
     role: str | None = "investor-assistant"
+    profile_image: str | None = None
     address: Optional[AddressBase] = None
 
     class Config:

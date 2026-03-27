@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
 from app.config.database import get_db
 from app.services.admin_service import AdminService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminResponse
+from app.services.file_img_process import FileImageProcessService, FileUploadService
 import logging 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,6 +18,9 @@ async def add_admin(data: AdminCreate, request: Request, db: Session = Depends(g
 @router.put("/update", response_model = AdminResponse)
 async def add_admin(data: AdminUpdate, request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
+    role = request.state.user.role
+    if role != "admin":
+        raise HTTPException(403, "You are not authorised to perform this operation")
     admin = await AdminService.update_admin(db, user_id, data, request)
     return AdminResponse.model_validate(admin)
 
@@ -29,6 +33,17 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
     return AdminResponse.model_validate(admin)
 
 
-
+@router.post("/upload-profile/{user_id}/{role}")
+async def upload_profile(
+    request: Request,
+    user_id: str,
+    role: str = "admin",
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    role = request.state.user.role
+    if role != "admin":
+        raise HTTPException(403, "You are not authorised to perform this operation")
+    return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
 
 

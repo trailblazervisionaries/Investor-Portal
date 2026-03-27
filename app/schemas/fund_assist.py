@@ -37,6 +37,7 @@ class FundAssistResponse(BaseModel):
     email: str
     phone: str
     role: str | None = "fund-assistant"
+    profile_image: str | None = None
     is_active: bool
     address: Optional[AddressBase] = None
 

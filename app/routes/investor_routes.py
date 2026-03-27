@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
 from app.config.database import get_db
 from app.services.investor_service import InvestorService
+from app.services.file_img_process import FileUploadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.investor import InvestorCreate, InvestorUpdate, InvestorResponse, InvestorPaginationResponse, InvestorResponseAll
 import logging 
@@ -37,6 +38,13 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(404, "Investor data not found")
     return InvestorResponse.model_validate(investor)
 
+@router.get("/number")
+async def get_total(request: Request, db: Session = Depends(get_db)):
+    user_id = request.state.user.user_id
+    investor_total = await InvestorService.get_total_count(db)
+    if not investor_total:
+        return {"total_fund_assistant": 0}
+    return {"total_fund_assistant": investor_total}
 
 @router.get("/getall", response_model = list[InvestorResponse])
 async def get_me(request: Request, db: Session = Depends(get_db)):
@@ -96,4 +104,14 @@ async def get_me(request: Request, user_id: str, db: Session = Depends(get_db)):
     if role not in ["investor-assistant","admin"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     return await InvestorService.get_info_and_activate(db, user_id)
+
+@router.post("/upload-profile/{user_id}/{role}")
+async def upload_profile(
+    request: Request,
+    user_id: str,
+    role: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
 

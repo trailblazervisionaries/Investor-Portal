@@ -37,6 +37,7 @@ class AdminResponse(BaseModel):
     email: str
     phone: str
     role: str | None = "admin"
+    profile_image: str | None = None
     address: Optional[AddressBase] = None
 
     class Config:

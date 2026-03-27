@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
 from app.config.database import get_db
 from app.services.investor_assist_service import InvestorAssistService
+from app.services.file_img_process import FileUploadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.investor_assist import InvestorAssistCreate, InvestorAssistUpdate, InvestorAssistResponse, InvestorAssistPaginationResponse
 import logging 
@@ -37,6 +38,13 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(404, "investor_assist data not found")
     return InvestorAssistResponse.model_validate(investor_assist)
 
+@router.get("/number")
+async def get_total(request: Request, db: Session = Depends(get_db)):
+    user_id = request.state.user.user_id
+    investor_assist_total = await InvestorAssistService.get_total_count(db)
+    if not investor_assist_total:
+        return {"total_fund_assistant": 0}
+    return {"total_fund_assistant": investor_assist_total}
 
 # @router.get("/getall", response_model = list[InvestorAssistResponse])
 # async def get_me(request: Request, db: Session = Depends(get_db)):
@@ -101,4 +109,12 @@ async def get_name_id(db: Session = Depends(get_db)):
     return await InvestorAssistService.get_assistant_name_id(db)
 
 
-
+@router.post("/upload-profile/{user_id}/{role}")
+async def upload_profile(
+    request: Request,
+    user_id: str,
+    role: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    return await FileUploadService.upload_profile_image(db, file, user_id, request, role)

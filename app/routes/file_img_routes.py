@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from app.config.database import get_db
-from app.services.user_service import UserServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.services.file_img_process import FileImageProcessService
-from app.schemas.users import UserLogin, PasswordChange, ForgetPassword, ResetPassword
+from app.services.file_img_process import FileImageProcessService, FileUploadService
+
 import logging 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -11,12 +10,13 @@ router = APIRouter()
 
 @router.post("/upload-profile/{user_id}/{role}")
 async def upload_profile(
+    request: Request,
     user_id: str,
     role: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    return await FileImageProcessService.upload_profile_image(db, file, user_id, role)
+    return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
 
 
 @router.get("/profile-image/{user_id}/{role}")

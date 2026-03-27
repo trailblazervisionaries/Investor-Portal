@@ -109,6 +109,14 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
     property = await PropertyService.get_by_id_of_property(db, property_id)
     return PropertyResponse.model_validate(property)
 
+@router.get("/number")
+async def get_total(request: Request, db: Session = Depends(get_db)):
+    user_id = request.state.user.user_id
+    property_total = await PropertyService.get_total_count(db)
+    if not property_total:
+        return {"total_fund_assistant": 0}
+    return {"total_fund_assistant": property_total}
+
 
 # @router.get("/getall/{risk_status}",  response_model=List[PropertyResponse])
 # async def get_all_property_filter_by_risk(request: Request,risk_status: str, db: Session = Depends(get_db)):

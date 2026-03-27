@@ -62,6 +62,7 @@ class InvestorResponse(BaseModel):
     email: str
     phone: str
     is_active:bool
+    profile_image: str | None = None
     role: str | None = "investor"
     address: Optional[AddressBase] = None
     class Config:

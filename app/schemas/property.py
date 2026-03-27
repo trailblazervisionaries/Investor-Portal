@@ -61,6 +61,7 @@ class PropertyResponse(createProperty):
     is_approved: bool
     is_open_for_investment: bool
     is_deleted: bool
+    property_sheet: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

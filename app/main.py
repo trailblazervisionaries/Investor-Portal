@@ -4,7 +4,7 @@ from app.routes import APIMiddleware
 from app.config.database import create_tables
 from fastapi.staticfiles import StaticFiles
 from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_assist_routes,
-                         investor_routes, leads_routes, lease_rent_routes, loan_amort_routes,
+                         investor_routes, leads_routes, lease_rent_routes, loan_amort_routes, file_img_routes,
                            property_routes, property_type_routes, propery_unit_routes, investor_assist_assign_routes,
                            investor_investment_routes, income_routes, expense_routes, property_proforma_routes)
 import logging
@@ -62,7 +62,7 @@ app.include_router(fund_assist_routes.router, prefix="/api/fund-assist", tags=["
 app.include_router(investor_assist_routes.router, prefix="/api/investor-assist", tags=["investor-assistant"])
 app.include_router(investor_routes.router, prefix="/api/investor", tags=["investors"])
 
-#  it will stor the data of all the new users who want to ask queries or invest using wordpress website
+#  it will store the data of all the new users who want to ask queries or invest using wordpress website
 app.include_router(leads_routes.router, prefix="/api/lead", tags=["leads"])
 
 
@@ -85,5 +85,8 @@ app.include_router(expense_routes.router, prefix="/api/expense", tags=["expense"
 
 # Property Pro-forma, Rent Roll, and Growth Assumptions (from Excel model)
 app.include_router(property_proforma_routes.router, prefix="/api/property-proforma", tags=["property-proforma"])
+
+
+app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["property-proforma"])
 
 

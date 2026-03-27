@@ -37,7 +37,7 @@ class Property(Base):
     hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
     go_promote_at_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
     go_promote_above_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
-
+    property_sheet = Column(String, nullable = True)
     #  addresses fileds
     address_line_1 = Column(String, nullable=False)
     address_line_2 = Column(String, nullable = True)

@@ -16,7 +16,7 @@ import os
 
 load_dotenv()
 
-AWS_BUCKET = os.getenv("AWS_BUCKET")
+AWS_BUCKET = os.getenv("AWS_S3_BUCKET")
 AWS_REGION = os.getenv("AWS_REGION") 
 
 s3_client = boto3.client("s3")
