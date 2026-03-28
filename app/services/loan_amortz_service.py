@@ -63,7 +63,7 @@ class PropertyLoanService:
 
         logger.info("PropertyLoanService: Audit log recorded for new loan.")
         await db.commit()
-        await db.refresh(new_load)
+        await db.refresh(new_load, ["property"])
         logger.info("PropertyLoanService: loan detials added successfully for the provided property")
         return new_load
     

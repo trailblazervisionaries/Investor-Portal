@@ -8,6 +8,7 @@ from app.models.expenses_model import ExpenseGrowth, Expense, ExpenseTypes
 from app.core.utils_functions import generate_id
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from dateutil.relativedelta import relativedelta
 from openpyxl.utils import get_column_letter
 from io import BytesIO
 from fastapi.responses import StreamingResponse
@@ -1150,10 +1151,24 @@ class PropertyPerformaService:
         # YEAR HEADER (F onward)
         # -------------------------------------------------
         start_col = 7  # column F
+        raw_date = datetime.fromisoformat(prop.get("pro_forma_start_date"))
+        if isinstance(raw_date, str):
+            base_date = datetime.fromisoformat(raw_date)
+        elif isinstance(raw_date, datetime):
+            base_date = raw_date
+        else:
+            base_date = datetime.now()
 
         for idx, year in enumerate(revenue_years):
+            current_date = base_date + relativedelta(months=int(year) * 12)
+            cell = ws.cell(row=4, column=start_col + idx, value=current_date)
+            cell.number_format = 'DD-MM-YYYY'
+            cell.font = Font(bold = True, color = "FFFFFF")
+            cell.fill = PropertyPerformaService.header_fill()
+
+
             label = "Current" if str(year) == "0" else f"Year {year}"
-            cell = ws.cell(row=4, column=start_col + idx, value=label)
+            cell = ws.cell(row=5, column=start_col + idx, value=label)
             cell.fill = PropertyPerformaService.blue_fill()
             cell.font = Font(bold = True, color = "FFFFFF")
 
@@ -1216,14 +1231,14 @@ class PropertyPerformaService:
         write_detail("average rent and units :-", "", "")
         for unit in prop['average_rent']['unit_type']:
             write_detail(unit.get("name", ""), unit.get("total_units", 0))
-            write_detail(unit.get("name", ""), unit.get("average_actual_lease_rent", 0))
+            write_detail(unit.get("name", ""), unit.get("average_actual_lease_rent", 0), False, True)
 
         # just space ------
         write_detail("", "", "")
         write_detail("Space and other Rent :-","", "")
         write_detail("Parking Space", prop.get("parking_space", 0))
-        write_detail("parking Rent", revenue.get(0, {}).get("parking", 0))
-        write_detail("Other Incomes", revenue.get(0, {}).get("other_income", 0))
+        write_detail("parking Rent", revenue.get(0, {}).get("parking", 0),False, True)
+        write_detail("Other Incomes", revenue.get(0, {}).get("other_income", 0),False, True)
 
 
         # Debt Section (FIXED)
@@ -1258,11 +1273,11 @@ class PropertyPerformaService:
         write_detail("Intrest Only Period", f"{loan_data.get('intrest_only_period', 0)} Years")
         write_detail("Loan Start Date", loan_data.get("loan_start_date", 0))
         write_detail("Origination Fee", loan_data.get("origination_fee(%)", 0)/100, True)
-        write_detail("Loan Amount", loan_amount)
-        write_detail("PMT", loan_data.get("total_annual_payment", 0))
+        write_detail("Loan Amount", loan_amount,False, True)
+        write_detail("PMT", loan_data.get("total_annual_payment", 0), False, True)
     
         repayment_data = loan_data.get("loan_repayment_and_debt_constant", {})
-        write_detail("Loan Repayment", repayment_data.get("loan_repayment", 0))
+        write_detail("Loan Repayment", repayment_data.get("loan_repayment", 0), False, True)
         write_detail("Closing LTV", closing_ltv/100, True)
         
 
@@ -1271,7 +1286,7 @@ class PropertyPerformaService:
         write_detail("", "", "")
         write_detail("Initial Equity :-", "", "")
         init_equity = prop.get("lp_equity_stake_amount", 0)
-        write_detail("Initial Equity", init_equity)
+        write_detail("Initial Equity", init_equity, False, True)
         gp_equity = prop.get("gp_equity_stake", 0)/100
         write_detail("GP Equity Stake", gp_equity, True, False, (init_equity*gp_equity))
         lp_equity = prop.get("lp_equity_stake", 0)/100
@@ -1299,14 +1314,14 @@ class PropertyPerformaService:
         write_detail("", "", "")
         write_detail("", "", "")
         write_detail("GP Return", 0)
-        write_detail("LP Return", 0)
+        write_detail("LP Return", other.get("net_proceeds_10", 0), False, True)
 
         write_detail("", "", "")
         write_detail("", "", "")
         write_detail("Going Out Cap Rate", prop.get("going_out_cap_rate", 0)/100, True)
         write_detail("Debt Constant", repayment_data.get("debt_constant", 0)/100, True)
-        write_detail("Sale Price/Unit", sell_price_unit)
-        write_detail("Acquisition Price/Unit", prop.get("aquization_cost_per_unit", 0))
+        write_detail("Sale Price/Unit", sell_price_unit, False, True)
+        write_detail("Acquisition Price/Unit", prop.get("aquization_cost_per_unit", 0), False, True)
 
         # 5-Year -------------
         write_detail("", "", "")
@@ -1325,7 +1340,7 @@ class PropertyPerformaService:
         write_detail("", "", "")
         write_detail("", "", "")
         write_detail("GP Return", 0)
-        write_detail("LP Return", 0)
+        write_detail("LP Return", other.get("net_proceeds_5", 0), False, True)
         write_detail("", "", "")
 
         #  Acquisition
@@ -1437,7 +1452,8 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
 
         for c, yr in enumerate(other_years):
-            cell = ws.cell(row=r, column=start_col + c, value=round(other.get(yr, {}).get("opex_ratio", 0),3))
+            cell = ws.cell(row=r, column=start_col + c, value=round(other.get(yr, {}).get("opex_ratio", 0)/100,3))
+            PropertyPerformaService.percent(cell)
             cell.fill = PropertyPerformaService.blue_fill()
             cell.font = Font(bold = True, color = "FFFFFF")
 
@@ -1644,6 +1660,17 @@ class PropertyPerformaService:
         cell = ws.cell(row=r, column=start_col, value=extract_number(other.get("net_proceeds_10", 0)))
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
+
+        r += 9  
+        ws.merge_cells(f"F{r}:T{r}")
+        cell = ws.cell(row=r, column=6, value=" ** Information contained herein has been obtained from the owners or from other sources deemed reliable. " \
+        " We have no reason to doubt its accuracy but regret we cannot guarantee it.")
+        cell.font = Font(bold=True, color="F20D11")
+        cell.alignment = Alignment(horizontal="center")
+        ws.merge_cells(f"F{r+1}:T{r+1}")
+        cell = ws.cell(row=r+1, column=6, value=" ** All properties subject to change or withdrawal without notice.")												
+        cell.font = Font(bold=True, color="F20D11")
+        cell.alignment = Alignment(horizontal="center")
 
         # SAVE
         # -------------------------------------------------
