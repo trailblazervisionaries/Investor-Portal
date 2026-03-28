@@ -118,6 +118,14 @@ async def get_total(request: Request, db: Session = Depends(get_db)):
     return {"total_fund_assistant": property_total}
 
 
+@router.get("/get-property-name-id")
+async def get_property_name_id(request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    return await PropertyService.get_all_property_name_id(db)
+   
+
 # @router.get("/getall/{risk_status}",  response_model=List[PropertyResponse])
 # async def get_all_property_filter_by_risk(request: Request,risk_status: str, db: Session = Depends(get_db)):
 #     role = request.state.user.role

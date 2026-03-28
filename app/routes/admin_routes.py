@@ -24,6 +24,7 @@ async def add_admin(data: AdminUpdate, request: Request, db: Session = Depends(g
     admin = await AdminService.update_admin(db, user_id, data, request)
     return AdminResponse.model_validate(admin)
 
+
 @router.get("/me", response_model = AdminResponse)
 async def get_me(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
@@ -45,5 +46,4 @@ async def upload_profile(
     if role != "admin":
         raise HTTPException(403, "You are not authorised to perform this operation")
     return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
-
 

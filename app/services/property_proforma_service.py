@@ -636,7 +636,7 @@ class PropertyPerformaService:
 
 
     @staticmethod
-    async def get_noi_opex_and_other_detials(db, property_id, investment_required=None):
+    async def get_noi_opex_and_other_detials(db, property_id, investment_required=None, total_cost=None):
         revenue_resp = await PropertyPerformaService.get_all_revenue(db, property_id, True)
         expense_resp = await PropertyPerformaService.calculate_all_expenses(db, property_id, True)
         loan_payment = await PropertyLoan.get_by_property_id(db, property_id)
@@ -666,7 +666,10 @@ class PropertyPerformaService:
                 "sweet_equity": cash_flow * Decimal("0.05"),
                 "investor_cashflow": cash_flow * Decimal("0.95"),
                 "levered_cashflow_10": cash_flow,
-                "levered_cashflow_5": cash_flow
+                "levered_cashflow_5": cash_flow,
+                "unlevered_cashflow_10": noi,
+                "unlevered_cashflow_5": noi
+
             }
 
         # Year 0 override ---------------------------------------
@@ -679,6 +682,8 @@ class PropertyPerformaService:
                 "investor_cashflow": Decimal("0"),
                 "levered_cashflow_10": Decimal(str(investment_required or 0)),
                 "levered_cashflow_5": Decimal(str(investment_required or 0)),
+                "unlevered_cashflow_10": total_cost - noi_output[0]["noi"],
+                "unlevered_cashflow_5": (total_cost - noi_output[0]["noi"]) + revenue_resp[0]["total_revenue"]
             })
 
         # Loan repayment--------------------------------------------
@@ -720,14 +725,17 @@ class PropertyPerformaService:
         # Levered cashflow adjustments ------------------------------------
         if 10 in noi_output:
             noi_output[10]["levered_cashflow_10"] += net_proceeds_10
+            noi_output[10]["unlevered_cashflow_10"] += sales_10
 
         if 5 in noi_output:
             noi_output[5]["levered_cashflow_5"] = net_proceeds_5
+            noi_output[5]["unlevered_cashflow_5"] += sales_5
 
         # Clear years after exit (5-year scenario) --------------------------
         for year in range(6, 12):
             if year in noi_output:
                 noi_output[year]["levered_cashflow_5"] = Decimal("0")
+                noi_output[year]["unlevered_cashflow_5"] = Decimal("0")
 
         return noi_output
 
@@ -800,9 +808,10 @@ class PropertyPerformaService:
     async def get_overall_performa_sumary(db, property_id):
         property_detials = await PropertyPerformaService.get_all_property_info(db, property_id)
         investment_required = property_detials["total_investment_required"]
+        total_cost = property_detials["total_aqz_cost"]
         revenue_detials = await PropertyPerformaService.get_all_revenue(db, property_id)
         expense_detials = await PropertyPerformaService.calculate_all_expenses(db, property_id)
-        other_detials = await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id, investment_required)
+        other_detials = await PropertyPerformaService.get_noi_opex_and_other_detials(db, property_id, investment_required, total_cost)
         rent_summary = await PropertyPerformaService.get_performa_rent_per_year(db, property_id)
 
         return {
@@ -821,23 +830,6 @@ class PropertyPerformaService:
 
 #  10 year performa sheet code written here -------------------------
 
-    # def _header_fill():
-    #     return PatternFill(start_color=ORANGE, end_color=ORANGE, fill_type="solid")
-
-
-    # def _blue_fill():
-    #     return PatternFill(start_color=BLUE, end_color=BLUE, fill_type="solid")
-
-
-    # def _thin_border():
-    #     return Border(
-    #         left=Side(style="thin"),
-    #         right=Side(style="thin"),
-    #         top=Side(style="thin"),
-    #         bottom=Side(style="thin"),
-    #     )
-    
-
     async def generate_real_estate_excel1(db, property_id):
         data = await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
 
@@ -854,13 +846,11 @@ class PropertyPerformaService:
         ws = wb.active
         ws.title = "10 Year ProForma"
 
-        # =========================================================
         # COLUMN WIDTH
         # =========================================================
         for col in range(1, 20):
             ws.column_dimensions[get_column_letter(col)].width = 16
 
-        # =========================================================
         # PROPERTY HEADER
         # =========================================================
         ws.merge_cells("A1:N1")
@@ -875,7 +865,6 @@ class PropertyPerformaService:
         cell.font = Font(size=14, bold=True, color="1F4E79")
         cell.alignment = Alignment(horizontal="center")
 
-        # =========================================================
         # YEAR HEADER ROW
         # =========================================================
         year_row = 4
@@ -887,7 +876,6 @@ class PropertyPerformaService:
             val = "Current" if str(yr) == '0' else yr
             ws.cell(row=year_row, column=3 + idx, value=f"Year {val}")
 
-        # =========================================================
         # REVENUE SECTION
         # =========================================================
         revenue_start = 6
@@ -910,7 +898,6 @@ class PropertyPerformaService:
             for c, yr in enumerate(year_cols):
                 ws.cell(row=r, column=3 + c, value=revenue[yr].get(key, 0))
 
-        # =========================================================
         # EXPENSE SECTION
         # =========================================================
         expense_start = revenue_start + 7
@@ -951,7 +938,6 @@ class PropertyPerformaService:
             # Apply the format: 3 zeros after the decimal point
             cell.number_format = '0.000%' 
 
-        # =========================================================
         # NOI SECTION
         # =========================================================
         noi_start = opex_start + 3
@@ -965,7 +951,6 @@ class PropertyPerformaService:
                 value=other[yr]["noi"],
             )
 
-        # =========================================================
         # DEBT SECTION
         # =========================================================
         debt_start = noi_start + 3
@@ -987,7 +972,6 @@ class PropertyPerformaService:
                 value=other[yr]["cash_flow_after_financing"],
             )
 
-        # =========================================================
         # RENT SUMMARY
         # =========================================================
         rent_start = debt_start + 5
@@ -1050,7 +1034,6 @@ class PropertyPerformaService:
                 value=other[yr]["levered_cashflow_5"],
             )
 
-        # =========================================================
         # EXIT VALUES
         # =========================================================
         exit_row = levered_start_5 + 6
@@ -1078,7 +1061,6 @@ class PropertyPerformaService:
         ws.cell(row=exit_row + 6, column=1, value="Net Proceeds Year 10")
         ws.cell(row=exit_row + 6, column=3, value=other["net_proceeds_10"])
 
-        # =========================================================
         # SAVE
         # =========================================================
         output = BytesIO()
@@ -1110,6 +1092,13 @@ class PropertyPerformaService:
     def percent(cell):
         cell.number_format = '0.0%'
 
+    def get_em(cash_flows):
+        sum_positives = sum(x for x in cash_flows if x > 0)
+        sum_negatives = sum(x for x in cash_flows if x < 0)
+        if sum_negatives != 0:
+            ratio = sum_positives / -sum_negatives
+            return f"{ratio:.2f}x"
+        return 0
 
 
     async def generate_real_estate_excel(db, property_id):
@@ -1143,7 +1132,6 @@ class PropertyPerformaService:
         for col in range(1, 30):
             ws.column_dimensions[get_column_letter(col)].width = 16
 
-        # -------------------------------------------------
         # HEADER
         # -------------------------------------------------
         ws.merge_cells("A1:T1")
@@ -1159,7 +1147,6 @@ class PropertyPerformaService:
         cell.alignment = Alignment(horizontal="center")
         ws.column_dimensions['F'].width = 30
     
-        # -------------------------------------------------
         # YEAR HEADER (F onward)
         # -------------------------------------------------
         start_col = 7  # column F
@@ -1170,12 +1157,11 @@ class PropertyPerformaService:
             cell.fill = PropertyPerformaService.blue_fill()
             cell.font = Font(bold = True, color = "FFFFFF")
 
-        # -------------------------------------------------
         # PROPERTY DETAILS (A–D)
         # -------------------------------------------------
         r = 5
 
-        def write_detail(label, value, is_percent=False, is_currency=False):
+        def write_detail(label, value, is_percent=False, is_currency=False, value2 = ""):
             nonlocal r
             ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=2)
             # ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
@@ -1193,7 +1179,7 @@ class PropertyPerformaService:
                 cell.number_format = 'YYYY-MM-DD'
             cell.font = Font(color = "FFFFFF")
             cell.fill = PropertyPerformaService.blue_fill()
-            cell = ws.cell(row=r, column=4)
+            cell = ws.cell(row=r, column=4, value = value2)
             cell.font = Font(color = "FFFFFF")
             cell.alignment = Alignment(horizontal="center")
             cell.fill = PropertyPerformaService.blue_fill()
@@ -1267,9 +1253,9 @@ class PropertyPerformaService:
         write_detail("LTV", loan_data.get("property_ltv", 0)/100, True)
         write_detail("Base Lending Rate", loan_data.get("interest_rate", 0)/100, True)
         write_detail("Spread", loan_data.get("spread_intrest_rate", 0)/100, True)
-        write_detail("Amortization Period", loan_data.get("amortization_period", 0))
-        write_detail("Term", loan_data.get("term", 0))
-        write_detail("Intrest Only Period", loan_data.get("intrest_only_period", 0))
+        write_detail("Amortization Period", f"{loan_data.get('amortization_period', 0)} Years")
+        write_detail("Term", f"{loan_data.get('term', 0)} Years")
+        write_detail("Intrest Only Period", f"{loan_data.get('intrest_only_period', 0)} Years")
         write_detail("Loan Start Date", loan_data.get("loan_start_date", 0))
         write_detail("Origination Fee", loan_data.get("origination_fee(%)", 0)/100, True)
         write_detail("Loan Amount", loan_amount)
@@ -1284,16 +1270,25 @@ class PropertyPerformaService:
         # Equity --------
         write_detail("", "", "")
         write_detail("Initial Equity :-", "", "")
-        write_detail("Initial Equity", prop.get("lp_equity_stake_amount", 0))
-        write_detail("GP Equity Stake", prop.get("gp_equity_stake", 0)/100, True)
-        write_detail("LP Equity Stake", prop.get("lp_equity_stake", 0)/100, True)
+        init_equity = prop.get("lp_equity_stake_amount", 0)
+        write_detail("Initial Equity", init_equity)
+        gp_equity = prop.get("gp_equity_stake", 0)/100
+        write_detail("GP Equity Stake", gp_equity, True, False, (init_equity*gp_equity))
+        lp_equity = prop.get("lp_equity_stake", 0)/100
+        write_detail("LP Equity Stake", lp_equity, True, False, (init_equity*lp_equity))
 
         write_detail("", "", "")
         write_detail("", "", "")
         write_detail("Unlevered IRR", 0/100, True)
         write_detail("Levered IRR", 0/100, True)
-        write_detail("Unlevered EM", 0)
-        write_detail("Levered EM", 0)
+        unlevered_10 = [float(other[k]["unlevered_cashflow_10"]) for k in range(11)]
+        if unlevered_10:
+            unlevered_10[0] = -abs(float(unlevered_10[0]))
+        write_detail("Unlevered EM", PropertyPerformaService.get_em(unlevered_10))
+        levered_10 = [float(other[k]["levered_cashflow_10"]) for k in range(11)]
+        if levered_10:
+            levered_10[0] = -abs(float(levered_10[0]))
+        write_detail("Levered EM", PropertyPerformaService.get_em(levered_10))
 
         write_detail("", "", "")
         write_detail("", "", "")
@@ -1318,8 +1313,14 @@ class PropertyPerformaService:
         write_detail("5-Year :-", "", "")
         write_detail("Unlevered IRR", 0/100, True)
         write_detail("Levered IRR", 0/100, True)
-        write_detail("Unlevered EM", 0)
-        write_detail("Levered EM", 0)
+        unlevered_5 = [float(other[k]["unlevered_cashflow_5"]) for k in range(6)]
+        if unlevered_5:
+            unlevered_5[0] = -abs(float(unlevered_5[0]))
+        write_detail("Unlevered EM", PropertyPerformaService.get_em(unlevered_5))
+        levered_5 = [float(other[k]["levered_cashflow_5"]) for k in range(6)]
+        if levered_5:
+            levered_5[0] = -abs(float(levered_5[0]))
+        write_detail("Levered EM", PropertyPerformaService.get_em(levered_5))
 
         write_detail("", "", "")
         write_detail("", "", "")
@@ -1387,7 +1388,6 @@ class PropertyPerformaService:
                     
             r += 1
 
-        # -------------------------------------------------
         # EXPENSES
         # -------------------------------------------------
         r += 2
@@ -1484,11 +1484,21 @@ class PropertyPerformaService:
             cell.font = Font(bold = True, color = "13EC49")
             PropertyPerformaService.currency(cell)
 
-
+        # unlevered_cashflow_10
+        # -------------------------------------------------
+        r += 4
+        cell = ws.cell(row=r, column=6, value="Unlevered Cashflow 10 Year")
+        cell.font = Font(bold = True, color = "FFFFFF")
+        cell.fill = PropertyPerformaService.header_fill()
+        for c, yr in enumerate(other_years):
+            cell = ws.cell(row=r, column=start_col + c, value=other.get(yr, {}).get("unlevered_cashflow_10", 0))
+            cell.font = Font(bold = True, color = "FFFFFF")
+            cell.fill = PropertyPerformaService.header_fill()
+            PropertyPerformaService.currency(cell)
 
         # levered_cashflow_10
         # -------------------------------------------------
-        r += 4
+        r += 1
         cell = ws.cell(row=r, column=6, value="Levered Cashflow 10 Year")
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PropertyPerformaService.header_fill()
@@ -1567,6 +1577,17 @@ class PropertyPerformaService:
             cell.fill = PropertyPerformaService.header_fill()
             PropertyPerformaService.currency(cell)
 
+        r += 1
+        cell = ws.cell(row=r, column=6, value="Unlevered Cashflow 5 Year")
+        cell.font = Font(bold = True, color = "FFFFFF")
+        cell.fill = PropertyPerformaService.header_fill()
+
+        for c, yr in enumerate(other_years):
+            cell = ws.cell(row=r, column=start_col + c, value=other.get(yr, {}).get("unlevered_cashflow_5", 0))
+            cell.font = Font(bold = True, color = "FFFFFF")
+            cell.fill = PropertyPerformaService.header_fill()
+            PropertyPerformaService.currency(cell)
+
         # EXIT VALUES
         # -------------------------------------------------
         def extract_number(val, key=None):
@@ -1624,7 +1645,6 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
 
-        # -------------------------------------------------
         # SAVE
         # -------------------------------------------------
         output = BytesIO()

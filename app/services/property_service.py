@@ -293,6 +293,14 @@ class PropertyService:
         return result.scalar_one_or_none()
 
 
+    async def get_all_property_name_id(db):
+        stmt = (select(Property.name, Property.property_id).where(Property.is_deleted.is_(False)))
+        result = await db.execute(stmt)
+        rows = result.all()
+        return [
+                {"property_name": row.name, "property_id": row.id} 
+                for row in rows
+            ]
 
     @staticmethod
     async def get_all_info_related_rent(db, property_id: str):
