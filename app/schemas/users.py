@@ -17,6 +17,6 @@ class ForgetPassword(BaseModel):
 class ResetPassword(BaseModel):
     email: EmailStr
     otp: str
-    new_passwaord: str
+    new_password: str
     
  

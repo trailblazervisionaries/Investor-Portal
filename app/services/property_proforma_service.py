@@ -831,254 +831,6 @@ class PropertyPerformaService:
 
 #  10 year performa sheet code written here -------------------------
 
-    async def generate_real_estate_excel1(db, property_id):
-        data = await PropertyPerformaService.get_overall_performa_sumary(db, property_id)
-
-        if not data:
-            raise HTTPException(400, "Property not found")
-
-        revenue = {str(k): v for k, v in data["revenue_detials"].items()}
-        expense = {str(k): v for k, v in data["expense_detials"].items()}
-        other = {str(k): v for k, v in data["other_detials"].items()}
-        rent_summary = {str(k): v for k, v in data["rent_summary"].items()}
-        prop = data["property_detials"]
-
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "10 Year ProForma"
-
-        # COLUMN WIDTH
-        # =========================================================
-        for col in range(1, 20):
-            ws.column_dimensions[get_column_letter(col)].width = 16
-
-        # PROPERTY HEADER
-        # =========================================================
-        ws.merge_cells("A1:N1")
-        ws.merge_cells("A2:N2")
-        cell = ws["A1"]
-        cell.value = prop["property_name"]
-        cell.font = Font(size=40, bold=True, color="1F4E79")
-        cell.alignment = Alignment(horizontal="center")
-        cell = ws["A2"]
-        address_parts = [prop.get(k, "") for k in ["address_line_1", "address_line_2", "city", "province", "country", "postal_code"]]
-        cell.value = ", ".join(filter(None, address_parts))
-        cell.font = Font(size=14, bold=True, color="1F4E79")
-        cell.alignment = Alignment(horizontal="center")
-
-        # YEAR HEADER ROW
-        # =========================================================
-        year_row = 4
-
-        year_cols = sorted(revenue.keys(), key=lambda x: int(x))
-        for idx, yr in enumerate(year_cols):
-        #     ws.cell(row=year_row, column=3 + idx, value=f"Year {yr}")
-
-            val = "Current" if str(yr) == '0' else yr
-            ws.cell(row=year_row, column=3 + idx, value=f"Year {val}")
-
-        # REVENUE SECTION
-        # =========================================================
-        revenue_start = 6
-
-        ws.cell(row=revenue_start, column=1, value="Revenue").fill = PropertyPerformaService._blue_fill()
-        ws.cell(row=revenue_start, column=1).font = Font(color="FFFFFF", bold=True)
-
-        labels = [
-            ("Rental Income", "rental_income"),
-            ("Other Income", "other_income"),
-            ("Parking Income", "parking"),
-            ("Vacancy", "vacancy"),
-            ("Total Revenue", "total_revenue"),
-        ]
-
-        for i, (label, key) in enumerate(labels):
-            r = revenue_start + 1 + i
-            ws.cell(row=r, column=1, value=label)
-
-            for c, yr in enumerate(year_cols):
-                ws.cell(row=r, column=3 + c, value=revenue[yr].get(key, 0))
-
-        # EXPENSE SECTION
-        # =========================================================
-        expense_start = revenue_start + 7
-
-        ws.cell(row=expense_start, column=1, value="Expenses").fill = PropertyPerformaService._blue_fill()
-        ws.cell(row=expense_start, column=1).font = Font(color="FFFFFF", bold=True)
-
-        expense_rows = [
-            ("Gas", "Gas"),
-            ("Water", "Water"),
-            ("Hydro", "Hydro"),
-            ("Insurance", "Insurance"),
-            ("Real Estate Taxes", "Real Estate Taxes"),
-            ("Repairs & Maintenance", "Repaires & Maintenance"),
-            ("Management Fee", "Management Fee"),
-            ("Capital Expenditures", "CapEx"),
-            ("Total Expenses", "total_expanse"),
-        ]
-
-        for i, (label, key) in enumerate(expense_rows):
-            r = expense_start + 1 + i
-            ws.cell(row=r, column=1, value=label)
-
-            for c, yr in enumerate(year_cols):
-                ws.cell(row=r, column=3 + c, value=expense[yr].get(key, 0))
-
-        #  opex ratio here ====================
-
-        opex_start = expense_start + 11
-        ws.cell(row=opex_start, column=1, value="Opex Ratio").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            cell = ws.cell(row=opex_start, column=3 + c)
-            
-            # Set the numeric value
-            cell.value = other[yr]["opex_ratio"] 
-            
-            # Apply the format: 3 zeros after the decimal point
-            cell.number_format = '0.000%' 
-
-        # NOI SECTION
-        # =========================================================
-        noi_start = opex_start + 3
-
-        ws.cell(row=noi_start, column=1, value="Net Operating Income").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=noi_start,
-                column=3 + c,
-                value=other[yr]["noi"],
-            )
-
-        # DEBT SECTION
-        # =========================================================
-        debt_start = noi_start + 3
-
-        ws.cell(row=debt_start, column=1, value="Debt Payments")
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(row=debt_start, column=3 + c, value=other[yr]["debt_payment"])
-
-        ws.cell(row=debt_start + 1, column=1, value="DSCR")
-        for c, yr in enumerate(year_cols):
-            ws.cell(row=debt_start + 1, column=3 + c, value=other[yr]["dscr"])
-
-        ws.cell(row=debt_start + 2, column=1, value="Cash Flow After Financing")
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=debt_start + 2,
-                column=3 + c,
-                value=other[yr]["cash_flow_after_financing"],
-            )
-
-        # RENT SUMMARY
-        # =========================================================
-        rent_start = debt_start + 5
-
-        ws.cell(row=rent_start, column=1, value="Rent Summary").fill = PropertyPerformaService._blue_fill()
-        ws.cell(row=rent_start, column=1).font = Font(color="FFFFFF", bold=True)
-
-        first_year = next(iter(rent_summary))
-        unit_types = rent_summary[first_year].keys()
-
-        for i, unit in enumerate(unit_types):
-            r = rent_start + 1 + i
-            ws.cell(row=r, column=1, value=unit)
-
-            for c, yr in enumerate(year_cols):
-                ws.cell(row=r, column=3 + c, value=rent_summary[yr].get(unit, 0))
-
-
-        equity_start = rent_start + 6
-
-        ws.cell(row=equity_start, column=1, value="Sweet Equity").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=equity_start,
-                column=3 + c,
-                value=other[yr]["sweet_equity"],
-            )
-
-        cashflow_start = equity_start + 2
-
-        ws.cell(row=cashflow_start, column=1, value="Investor Cashflow").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=cashflow_start,
-                column=3 + c,
-                value=other[yr]["sweet_equity"],
-            )
-
-
-        levered_start_10 = cashflow_start + 2
-        ws.cell(row=levered_start_10, column=1, value="Levered Cashflow").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=levered_start_10,
-                column=3 + c,
-                value=other[yr]["levered_cashflow_10"],
-            )
-
-        
-        levered_start_5 = cashflow_start + 4
-        ws.cell(row=levered_start_5, column=1, value="Levered Cashflow").fill = PropertyPerformaService._header_fill()
-
-        for c, yr in enumerate(year_cols):
-            ws.cell(
-                row=levered_start_5,
-                column=3 + c,
-                value=other[yr]["levered_cashflow_5"],
-            )
-
-        # EXIT VALUES
-        # =========================================================
-        exit_row = levered_start_5 + 6
-
-        ws.cell(row=exit_row, column=1, value="Sale Year 5")
-        ws.cell(row=exit_row, column=3, value=other["sales_year_5"])
-
-        ws.cell(row=exit_row + 1, column=1, value="Loan Repayment After Year 5")
-        cell = ws.cell(row=exit_row + 1, column=3, value=-other['loan_repayment_5']['loan_repayment'])
-        cell.number_format = '#,##0.00;[Red](#,##0.00)'
-
-
-        ws.cell(row=exit_row + 2, column=1, value="Net Proceeds Year 5")
-        ws.cell(row=exit_row + 2, column=3, value=other["net_proceeds_5"])
-
-        ws.cell(row=exit_row + 4, column=1, value="Sale Year 10")
-        ws.cell(row=exit_row + 4, column=3, value=other["sales_year_10"])
-
-        ws.cell(row=exit_row + 5, column=1, value="Loan Repayment After Year 10")
-        cell = ws.cell(row=exit_row + 5, column=3, value=-other['loan_repayment_10']['loan_repayment'])
-        cell.number_format = '#,##0.00;[Red](#,##0.00)'
-
-
-
-        ws.cell(row=exit_row + 6, column=1, value="Net Proceeds Year 10")
-        ws.cell(row=exit_row + 6, column=3, value=other["net_proceeds_10"])
-
-        # SAVE
-        # =========================================================
-        output = BytesIO()
-        wb.save(output)
-        output.seek(0)
-
-        return StreamingResponse(
-            output,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f'attachment; filename="{prop["property_id"]}_proforma_{timestamp_ms}.xlsx"'
-            },
-        )
-
-
-
-
     def header_fill():
         return PatternFill(start_color=ORANGE, end_color=ORANGE, fill_type="solid")
 
@@ -1151,24 +903,28 @@ class PropertyPerformaService:
         # YEAR HEADER (F onward)
         # -------------------------------------------------
         start_col = 7  # column F
-        raw_date = datetime.fromisoformat(prop.get("pro_forma_start_date"))
-        if isinstance(raw_date, str):
-            base_date = datetime.fromisoformat(raw_date)
-        elif isinstance(raw_date, datetime):
-            base_date = raw_date
+
+        val = prop.get("pro_forma_start_date")
+        logger.info(f"DEBUG: val is {val}, type is {type(val)}")
+        if isinstance(val, str):
+            base_date = datetime.fromisoformat(val)
+        elif isinstance(val, datetime):
+            base_date = val
         else:
             base_date = datetime.now()
+        base_date = base_date.replace(month=6, day=1)
 
         for idx, year in enumerate(revenue_years):
-            current_date = base_date + relativedelta(months=int(year) * 12)
-            cell = ws.cell(row=4, column=start_col + idx, value=current_date)
-            cell.number_format = 'DD-MM-YYYY'
-            cell.font = Font(bold = True, color = "FFFFFF")
-            cell.fill = PropertyPerformaService.header_fill()
 
+            current_date = base_date + relativedelta(months=idx * 12)
+            cell = ws.cell(row=3, column=start_col + idx, value=current_date)
+            cell.number_format = 'DD-MM-YYYY'
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.fill = PropertyPerformaService.header_fill()
+            cell.alignment = Alignment(horizontal="left")
 
             label = "Current" if str(year) == "0" else f"Year {year}"
-            cell = ws.cell(row=5, column=start_col + idx, value=label)
+            cell = ws.cell(row=4, column=start_col + idx, value=label)
             cell.fill = PropertyPerformaService.blue_fill()
             cell.font = Font(bold = True, color = "FFFFFF")
 
@@ -1216,9 +972,13 @@ class PropertyPerformaService:
         raw_date = prop.get("pro_forma_start_date")
         if raw_date and raw_date != "null":
             try:
-                date_obj = datetime.strptime(raw_date.split('T')[0], '%Y-%m-%d')
+                if isinstance(raw_date, datetime):
+                    date_obj = raw_date
+                else:
+                    date_obj = datetime.fromisoformat(str(raw_date).split('T')[0])
+                    
                 write_detail("Transaction Date", date_obj)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, AttributeError):
                 write_detail("Transaction Date", "NA")
         else:
             write_detail("Transaction Date", "---- -- --")
@@ -1351,13 +1111,16 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell = ws.cell(row=r, column=start_col-1, value="Purchase Price")
         cell = ws.cell(row=r, column=start_col, value= prop.get("purchase_price", 0))
+        PropertyPerformaService.currency(cell)
         cell = ws.cell(row=r+1, column=start_col-1, value="Closing Cost")
         closing_cost_ = (prop.get("purchase_price", 0) * prop.get("closing_cost", 0))/100
         cell = ws.cell(row=r+1, column=start_col, value= closing_cost_ )
+        PropertyPerformaService.currency(cell)
         cell = ws.cell(row=r+2, column=start_col-1, value="Total Acquisition Price")
         cell.fill = PropertyPerformaService.header_fill()
         cell.font = Font(bold = True, color = "FFFFFF")
         cell = ws.cell(row=r+2, column=start_col, value=prop.get("total_aqz_cost", 0))
+        PropertyPerformaService.currency(cell)
         cell.fill = PropertyPerformaService.header_fill()
         cell.font = Font(bold = True, color = "FFFFFF")
 
@@ -1619,6 +1382,7 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PropertyPerformaService.blue_fill()
         cell = ws.cell(row=r, column=start_col, value=extract_number(other.get("sales_year_5", 0)))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PropertyPerformaService.blue_fill()
 
@@ -1626,6 +1390,7 @@ class PropertyPerformaService:
         cell = ws.cell(row=r, column=6, value="Loan Repayment Year 5")
         cell.font = Font(bold = True, color = "F20D11")
         cell = ws.cell(row=r, column=start_col, value=-extract_number(other.get("loan_repayment_5", 0), "loan_repayment"))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "F20D11")
 
 
@@ -1634,6 +1399,7 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
         cell = ws.cell(row=r, column=start_col, value=extract_number(other.get("net_proceeds_5", 0)))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
 
@@ -1644,6 +1410,7 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PropertyPerformaService.header_fill()
         cell = ws.cell(row=r, column=start_col, value=extract_number(other.get("sales_year_10", 0)))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PropertyPerformaService.header_fill()
 
@@ -1651,6 +1418,7 @@ class PropertyPerformaService:
         cell = ws.cell(row=r, column=6, value="Loan Repayment Year 10")
         cell.font = Font(bold = True, color = "F20D11")
         cell = ws.cell(row=r, column=start_col, value=-extract_number(other.get("loan_repayment_10", 0), "loan_repayment"))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "F20D11")
 
         r += 1
@@ -1658,6 +1426,7 @@ class PropertyPerformaService:
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
         cell = ws.cell(row=r, column=start_col, value=extract_number(other.get("net_proceeds_10", 0)))
+        PropertyPerformaService.currency(cell)
         cell.font = Font(bold = True, color = "FFFFFF")
         cell.fill = PatternFill(start_color="13EC49", end_color="13EC49", fill_type="solid")
 

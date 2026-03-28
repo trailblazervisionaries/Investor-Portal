@@ -81,7 +81,7 @@ class InvestorService:
             db.add(new_investor)
             db.add(address)
             db.add(assign_asistant)
-            await db.flush(assign_asistant)
+            await db.flush()
             await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,

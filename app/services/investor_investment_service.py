@@ -37,6 +37,9 @@ class InvestorInvestmentServices:
         
         amount: Decimal = data.invested_amount
 
+        if property.available_required_for_investment == Decimal('0'):
+            raise HTTPException(400, "You can't invest in this property Fund because investment are completed now. plase see other properties for the investments")
+
         if property.available_required_for_investment <= amount:
             raise HTTPException(
                 400,
@@ -53,6 +56,8 @@ class InvestorInvestmentServices:
         db.add(new_investment)
         await db.flush()
         property.available_required_for_investment -= Decimal(str(amount))
+        if property.available_required_for_investment == Decimal('0'):
+            property.is_open_for_investment = False
 
         audit_log = await AuditModel.add_new_logs(
             db = db,
