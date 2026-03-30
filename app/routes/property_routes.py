@@ -114,8 +114,8 @@ async def get_total(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     property_total = await PropertyService.get_total_count(db)
     if not property_total:
-        return {"total_fund_assistant": 0}
-    return {"total_fund_assistant": property_total}
+        return {"total_properties": 0}
+    return {"total_properties": property_total}
 
 
 @router.get("/get-property-name-id")

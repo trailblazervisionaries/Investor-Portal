@@ -1056,6 +1056,7 @@ class PropertyPerformaService:
 
         write_detail("", "", "")
         write_detail("", "", "")
+        write_detail("10-Year :-", "", "")
         write_detail("Unlevered IRR", 0/100, True)
         write_detail("Levered IRR", 0/100, True)
         unlevered_10 = [float(other[k]["unlevered_cashflow_10"]) for k in range(11)]

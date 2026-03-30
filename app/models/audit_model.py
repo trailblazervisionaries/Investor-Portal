@@ -111,6 +111,34 @@ class AuditModel(Base):
         return result.scalars().all(), total_res.scalar() or 0
     
 
+    @staticmethod
+    async def get_all_logs_by_date_range_and_added_by(
+        db, 
+        user_id: str,
+        skip: int = 0, 
+        limit: int = 10, 
+        start_date: datetime = None, 
+        end_date: datetime = None
+    ):
+        stmt = select(AuditModel).order_by(desc(AuditModel.created_at))
+        count_stmt = select(func.count()).select_from(AuditModel)
+        filters = []
+        if start_date:
+            filters.append(AuditModel.created_at >= start_date)
+        if end_date:
+            filters.append(AuditModel.created_at <= end_date)
+        if user_id:
+            filters.append(AuditModel.added_by == user_id)
+
+        if filters:
+            stmt = stmt.where(and_(*filters))
+            count_stmt = count_stmt.where(and_(*filters))
+        stmt = stmt.offset(skip).limit(limit)
+
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        
+        return result.scalars().all(), total_res.scalar() or 0
 
 
     

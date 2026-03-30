@@ -43,8 +43,8 @@ async def get_total(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     investor_assist_total = await InvestorAssistService.get_total_count(db)
     if not investor_assist_total:
-        return {"total_fund_assistant": 0}
-    return {"total_fund_assistant": investor_assist_total}
+        return {"total_investor_assistant": 0}
+    return {"total_investor_assistant": investor_assist_total}
 
 # @router.get("/getall", response_model = list[InvestorAssistResponse])
 # async def get_me(request: Request, db: Session = Depends(get_db)):

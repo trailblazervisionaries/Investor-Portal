@@ -85,5 +85,32 @@ async def get_audit_logs(
     }
 
 
+@router.get("/audit-logs/{user_id}", response_model=AuditPaginationWrapper)
+async def get_audit_logs_using_user_id(
+    user_id: str,
+    db: Session = Depends(get_db),
+    page: int = 1,
+    size: int = 20,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None
+):
+    skip = (max(1, page) - 1) * size
+    
+    logs, total_count = await AuditModel.get_all_logs_by_date_range_and_added_by(
+        db, 
+        user_id = user_id,
+        skip=skip, 
+        limit=size, 
+        start_date=start_date, 
+        end_date=end_date
+    )
+    
+    return {
+        "items": logs,
+        "total_count": total_count,
+        "page": page,
+        "size": size
+    }
+
 
 
