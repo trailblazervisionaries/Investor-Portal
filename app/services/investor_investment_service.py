@@ -171,8 +171,6 @@ class InvestorInvestmentServices:
         return investment
     
 
-
-
     async def get_all_investment_info_for_by_investor_id(db, investor_id):
         status_order = case(
             (InvestorInvestments.status == "active", 1),
@@ -192,4 +190,10 @@ class InvestorInvestmentServices:
 
         result = await db.execute(stmt)
         return result.scalars().all()
+
+
+
+
+
+
 

@@ -37,6 +37,7 @@ class createProperty(BaseModel):
     cap_rate_flactuation: float
     property_type: str
     total_area: float
+    pro_forma_start_date: datetime| None = None
     total_investment_required: float
     available_required_for_investment: float
     gp_equity_stake: float
@@ -89,6 +90,7 @@ class updateProperty(BaseModel):
     cap_rate_flactuation: float | None = None
     property_type: str | None = None
     total_area: float | None = None
+    pro_forma_start_date: datetime| None = None
     total_investment_required: float | None = None
     available_required_for_investment: float | None = None
     gp_equity_stake: float  | None = None

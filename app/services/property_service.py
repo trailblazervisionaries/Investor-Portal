@@ -40,6 +40,7 @@ class PropertyService:
             cap_rate_flactuation = data.cap_rate_flactuation,
             property_type= data.property_type,
             total_area = data.total_area,
+            pro_forma_start_date = data.pro_forma_start_date,
             total_investment_required = data.total_investment_required,
             available_required_for_investment = data.available_required_for_investment,
             gp_equity_stake = data.gp_equity_stake,
@@ -59,7 +60,7 @@ class PropertyService:
         await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data.model_dump(),
+            new_data = data.model_dump(mode='json'),
             old_data = None,
             audit_type = "ADD",
             entity_type = "Property Management",
@@ -78,7 +79,7 @@ class PropertyService:
         old_data = Property.model_to_dict(property_obj)
         allowed_fields = {
             "name", "description", "risk_status", "purchase_price", "closing_cost",
-            "loan_amount", "market_cap_rate", "cap_rate_flactuation",
+            "loan_amount", "market_cap_rate", "cap_rate_flactuation","pro_forma_start_date",
             "property_type", "total_area", "total_investment_required",
             "gp_equity_stake", "hurdle", "go_promote_at_hurdle", "go_promote_above_hurdle"
             "available_required_for_investment", "address_line_1",
@@ -96,7 +97,7 @@ class PropertyService:
         await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
-            new_data = data.model_dump(),
+            new_data = data.model_dump(mode='json'),
             old_data = old_data,
             audit_type = "UPDATE",
             entity_type = "Property Management",
