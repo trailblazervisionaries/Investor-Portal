@@ -163,6 +163,8 @@ class PropertyPerformaService:
 
     @staticmethod
     def round_half_up(value):
+        if not isinstance(value, Decimal):
+            value = Decimal(str(value))
         return value.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     
     @staticmethod

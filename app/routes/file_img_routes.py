@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from app.config.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileImageProcessService, FileUploadService
+from app.schemas.file_schemas import FileReturnResponse
 
 import logging 
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ async def get_profile_image(
     return response
 
 
-@router.get("/get-uploaded-doc/{added_for_id}")
+@router.get("/get-uploaded-doc/{added_for_id}", response_model=list[FileReturnResponse])
 async def get_all_uploaded_doc(
     added_for_id: str,
     db: Session = Depends(get_db),
@@ -52,8 +53,8 @@ async def get_all_uploaded_doc(
     response = await FileUploadService.get_all_uploaded_docs(db, added_for_id)
     if not response:
         return []
-        raise HTTPException(status_code=404, detail="Image not found in storage")
-    # return response valaidation code are left to write including the schema
+        # raise HTTPException(status_code=404, detail="Image not found in storage")
+    return [FileReturnResponse.model_validate(res) for res in response]
 
 
 
