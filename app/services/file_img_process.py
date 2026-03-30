@@ -2,7 +2,7 @@ from app.models.admin_model import AdminModel
 from app.models.investor_assist_model import InvestorAssistant
 from app.models.fund_assist_model import FundAssistant
 from app.models.investor_model import Investors
-# from app.models.user_model import UploadedDocument
+from app.models.user_model import UploadedDocument
 from app.models.property_model import Property
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from fastapi.responses import StreamingResponse
@@ -281,6 +281,52 @@ class FileUploadService:
             "folder_path":folder_path
         }
     
+
+    
+    async def upload_other_docs(db: Session, file: UploadFile, logged_user_id:str, user_id: str, name: str, request: Request, role: str):
+        if role == "investor":
+            user_data = await Investors.get_by_id(db, user_id)
+        else:
+            user_data = await Property.get_by_id(db, user_id)  # here user_id is equal to Property_id  only here ok
+
+        if not user_data:
+            raise ValueError("User not found")
+        service = FileUploadService(user_id)
+
+        if file:
+            resp = await service.upload_file(file, f"{user_id}")
+            if not resp:
+                logger.error("AdminAuthService: file upload failed")
+                raise HTTPException(500, "File upload failed")
+            print("response  : ", resp)
+
+        # Generate public URL
+        file_url = FileUploadService.convert_to_public_url(request, resp["filepath"])
+        print("file-url ", file_url)
+        upload_docs = UploadedDocument(
+            file_type_name = name,
+            file_url = file_url,
+            added_by = logged_user_id,
+            added_for = user_id
+        )
+        db.add(upload_docs)
+        await db.flush(upload_docs)
+
+        return {
+            "message": f"{name} Document uploaded successfully",
+            "name": upload_docs.name,
+            "doc_url":upload_docs.file_url,
+            "added_for": upload_docs.added_for,
+            "added_by":upload_docs.added_by
+        }
+
+
+
+    async def get_all_uploaded_docs(db: Session, added_for_id: str):
+
+        return await UploadedDocument.get_by_uploaded_for(db, added_for_id)
+      
+
 
 
     

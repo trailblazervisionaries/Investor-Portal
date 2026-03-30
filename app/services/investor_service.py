@@ -109,7 +109,7 @@ class InvestorService:
             #     new_investor.email,
             #     new_investor.fname,
             #     "investor-assistant",
-            #     "default_password",
+            #     temp_password,
             # )
             return new_investor
 

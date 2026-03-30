@@ -19,6 +19,19 @@ async def upload_profile(
     return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
 
 
+@router.post("/upload-docs/{user_id}")
+async def upload_profile(
+    request: Request,
+    user_id: str,
+    role: str,
+    name: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
+    logged_user_id = request.state.user.user_id
+    return await FileUploadService.upload_other_docs(db, file, logged_user_id, user_id, name, request, role)
+
+
 @router.get("/profile-image/{user_id}/{role}")
 async def get_profile_image(
     user_id: str,
@@ -31,6 +44,16 @@ async def get_profile_image(
     return response
 
 
+@router.get("/get-uploaded-doc/{added_for_id}")
+async def get_all_uploaded_doc(
+    added_for_id: str,
+    db: Session = Depends(get_db),
+):
+    response = await FileUploadService.get_all_uploaded_docs(db, added_for_id)
+    if not response:
+        return []
+        raise HTTPException(status_code=404, detail="Image not found in storage")
+    # return response valaidation code are left to write including the schema
 
 
 

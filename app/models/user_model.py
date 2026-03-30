@@ -92,14 +92,17 @@ class OtpModel(Base):
 
 
 
-# class UploadedDocument(Base):
-#     __tablename__ = "uploaded_docs"
-#     id = Column(Integer, primary_key=True)
-#     file_type_name = Column(String, nullable = False)
-#     file_url = Column(String, nullable = False)
-#     added_by = Column(String, nullable = False)
-#     added_for = Column(String, nullable = False)
-#     created_at = Column(DateTime, default=datetime.utcnow)
+class UploadedDocument(Base):
+    __tablename__ = "uploaded_docs"
+    id = Column(Integer, primary_key=True)
+    file_type_name = Column(String, nullable = False)
+    file_url = Column(String, nullable = False)
+    added_by = Column(String, nullable = False)
+    added_for = Column(String, nullable = False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 
-    
+    async def get_by_uploaded_for(db, added_for_id):
+        stmt = (select(UploadedDocument).where(UploadedDocument.added_for == added_for_id))
+        result = db.execute(stmt)
+        return db.scalars().all()

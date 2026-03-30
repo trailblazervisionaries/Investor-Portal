@@ -83,7 +83,16 @@ async def delete_lead_by_id(id: int, request: Request, data: addRemarksLeads, db
     user_id, role = request.state.user.user_id, request.state.user.role
     if role not in ["admin","investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
-    lead =await LeadService.delete_the_lead(db, id, user_id, data.remarks)
+    lead = await LeadService.delete_the_lead(db, id, user_id, data.remarks)
+    return lead
+
+
+@router.delete("/permanent-delete/{id}")
+async def delete_lead_by_id_permanantly(id: int, request: Request, data: addRemarksLeads, db: Session = Depends(get_db)):
+    user_id, role = request.state.user.user_id, request.state.user.role
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    lead = await LeadService.permanant_delete_the_lead(db, id, user_id, data.remarks)
     return lead
 
 

@@ -84,11 +84,11 @@ Comment out the production DOMAIN and uncomment the localhost DOMAIN:
 # DOMAIN='xyzexample.com'
 DOMAIN='localhost'
 
-Save the file before running the application
+Save the file before running the application.
 
 ### Step-6. Starting celery-worker to performs all background tasks
 
-**Note**: Before running celery_worker command please recheck venv should activated your current terminal
+**Note**: Before running celery_worker command please recheck venv should activated your current terminal.
 #### On macOS/Linux:
 ```bash
 source venv/bin/activate

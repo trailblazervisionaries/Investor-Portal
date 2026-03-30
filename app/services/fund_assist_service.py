@@ -90,7 +90,7 @@ class FundAssistService:
             #     new_fund_assist.email,
             #     new_fund_assist.fname,
             #     "fund-assistant",
-            #     "default_password",
+            #     temp_password,
             # )
             return new_fund_assist
 

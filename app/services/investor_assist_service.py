@@ -80,7 +80,7 @@ class InvestorAssistService:
             #     new_investor_assist.email,
             #     new_investor_assist.fname,
             #     "investor-assistant",
-            #     "default_password",
+            #     temp_password,
             # )
             audit_log = await AuditModel.add_new_logs(
                 db = db,

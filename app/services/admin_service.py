@@ -81,7 +81,7 @@ class AdminService:
             #     new_admin.email,
             #     new_admin.fname,
             #     "admin",
-            #     "default_password",
+            #     temp_password,
             # )
             return new_admin
 

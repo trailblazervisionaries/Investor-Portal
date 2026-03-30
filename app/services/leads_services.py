@@ -1,16 +1,15 @@
 from fastapi import Request, Response, HTTPException, status
 from openpyxl import Workbook
 from openpyxl.styles import Font
-from fastapi.responses import FileResponse
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy import select
 from datetime import datetime, timedelta
+from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 from app.models.leads import Leads, LeadRemark
 from app.schemas.leads import createLeads
-import traceback
 import os
 import logging
 from io import BytesIO
@@ -18,7 +17,7 @@ from fastapi.responses import StreamingResponse
 
 from pathlib import Path
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+# BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
 
@@ -28,23 +27,56 @@ logger = logging.getLogger(__name__)
 
 
 class LeadService:
-    
+
     async def create_the_leads(db: Session, data: createLeads):
-        new_leads = Leads(
-            name = data.name,
-            email = data.email,
-            description = data.description,
-            phone = data.phone,
-            # assisted_by = data.assisted_by,
-            # status = data.status,
-            # updated_by = data.updated_by
-        )
+        try:
+            result = await db.execute(select(Leads).where(Leads.email == data.email, Leads.is_deleted._is(False)))
+            existing_lead = result.scalars().first()
 
-        db.add(new_leads)
-        await db.commit()
-        await db.refresh(new_leads)
+            if existing_lead:
+                existing_lead.name = data.name
+                existing_lead.description = data.description
+                existing_lead.phone = data.phone
+                existing_lead.updated_at = datetime.utcnow()
+                
+                await db.commit()
+                await db.refresh(existing_lead)
+                return existing_lead
 
-        return new_leads
+            # CREATE new lead if not found
+            new_lead = Leads(
+                name=data.name,
+                email=data.email,
+                description=data.description,
+                phone=data.phone
+            )
+
+            db.add(new_lead)
+            await db.commit()
+            await db.refresh(new_lead)
+            return new_lead
+
+        except SQLAlchemyError as e:
+            await db.rollback()
+            # Log the error here
+            raise HTTPException(status_code=500, detail="Database error while processing lead.")
+    
+    # async def create_the_leads(db: Session, data: createLeads):
+    #     new_leads = Leads(
+    #         name = data.name,
+    #         email = data.email,
+    #         description = data.description,
+    #         phone = data.phone,
+    #         # assisted_by = data.assisted_by,
+    #         # status = data.status,
+    #         # updated_by = data.updated_by
+    #     )
+
+    #     db.add(new_leads)
+    #     await db.commit()
+    #     await db.refresh(new_leads)
+
+    #     return new_leads
     
 
 
@@ -96,6 +128,35 @@ class LeadService:
         return {
             "message": "lead deleted and remark added successfully."
         }
+   
+   
+    async def permanant_delete_the_lead(db: Session, id: int, user_id: str, remarks: str):
+        lead = await Leads.get_lead_by_id(db, id)
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead with this ID not found.")
+        try:
+            # await LeadService.add_lead_remark(db, id, remarks, user_id)
+            await db.delete(lead)
+            
+            await AuditModel.add_new_logs(
+                db=db,
+                added_by=user_id,
+                new_data=None,
+                old_data={"lead_id": id, "final_remarks": remarks},
+                audit_type="PERMANENT_DELETE",
+                entity_type="Lead Management",
+                object_id=str(id)
+            )
+            await db.commit()
+            return {
+                "status": "success",
+                "message": "Lead permanently deleted and final remark recorded in history."
+            }
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"Error during permanent delete of lead {id}: {e}")
+            raise HTTPException(status_code=500, detail="Could not complete deletion.")
+
 
     async def Update_the_lead_status(db, id, status, updatedby, remarks):
         lead = await Leads.get_lead_by_id(db, id)
