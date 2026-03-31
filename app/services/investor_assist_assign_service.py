@@ -133,24 +133,28 @@ class InvestorassistantAssignmentService:
     async def get_all_assignment_by_investor_id(db, investor_id):
         data = await InvestorAssignments.get_all_assignment_data_by_investor_id(db, investor_id)
         if not data:
-            raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_id")
+            return []
+            # raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_id")
         return data
 
     async def get_all_assign_investor_by_investor_assistant_id(db, investor_assistant_id):
         data = await InvestorAssignments.get_all_assignment_data_by_investor_assistant_id(db, investor_assistant_id)
         if not data:
-            raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_assistant_id")
+            return []
+            # raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_assistant_id")
         return data
     
 
     async def get_current_assign_by_investor_id(db, investor_id):
         data = await InvestorAssignments.get_active_assign_assist_by_investor_id(db, investor_id)
         if not data:
-            raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_id")
+            return []
+            # raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_id")
         return data
 
     async def get_current_assign_by_investor_assistant_id(db, investor_assistant_id):
         data = await InvestorAssignments.get_active_assign_investor_by_investor_assistant_id(db, investor_assistant_id)
         if not data:
-            raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_assistant_id")
+            return []
+            # raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_assistant_id")
         return data

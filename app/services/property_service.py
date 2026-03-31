@@ -942,6 +942,8 @@ class PropertyUnitServices:
 
     async def add_new_property_unit(db, data, user_id):
         get_available = await PropertyUnit.get_all_available_by_ids(db, data.property_id, data.unit_type_id)
+        if not get_available:
+            get_available = 0
         if get_available >= data.total_required:
             raise HTTPException(
                 status_code=400, 
