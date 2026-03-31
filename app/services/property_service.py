@@ -943,7 +943,10 @@ class PropertyUnitServices:
     async def add_new_property_unit(db, data, user_id):
         get_available = await PropertyUnit.get_all_available_by_ids(db, data.property_id, data.unit_type_id)
         if get_available >= data.total_required:
-            raise HTTPException(400, "you have added remt for all the unit for this type.")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Limit reached! You cannot store more than {data.total_required} units. Current count is already {get_available}."
+            )
         new_unit = PropertyUnit(
             unit_id = generate_id("unit"),
             property_id = data.property_id,
