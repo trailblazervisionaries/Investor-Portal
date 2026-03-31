@@ -640,10 +640,13 @@ class PropertyPerformaService:
 
     @staticmethod
     async def get_noi_opex_and_other_detials(db, property_id, investment_required=None, total_cost=None):
+        print("----------------1")
         revenue_resp = await PropertyPerformaService.get_all_revenue(db, property_id, True)
+        print("----------------2")
         expense_resp = await PropertyPerformaService.calculate_all_expenses(db, property_id, True)
+        print("----------------3")
         loan_payment = await PropertyLoan.get_by_property_id(db, property_id)
-
+        print("----------------4")
         noi_output = {}
 
         annual_debt = Decimal(str(loan_payment.total_annual_payment or 0))
@@ -674,7 +677,7 @@ class PropertyPerformaService:
                 "unlevered_cashflow_5": noi
 
             }
-
+        print("----------------5")
         # Year 0 override ---------------------------------------
         if 0 in noi_output:
             noi_output[0].update({
@@ -688,7 +691,7 @@ class PropertyPerformaService:
                 "unlevered_cashflow_10": total_cost - noi_output[0]["noi"],
                 "unlevered_cashflow_5": (total_cost - noi_output[0]["noi"]) + revenue_resp[0]["total_revenue"]
             })
-
+        print("----------------6")
         # Loan repayment--------------------------------------------
         loan_repayment_data = {
             term: PropertyPerformaService.loan_repayment(
@@ -701,7 +704,7 @@ class PropertyPerformaService:
             )
             for term in (5, 10)
         }
-
+        print("----------------7")
         # Sale & proceeds ---------------------------------------
         deposition = await PropertyPerformaService.get_the_deposition_data(db, property_id, noi_output)
 
@@ -714,7 +717,7 @@ class PropertyPerformaService:
         net_proceeds_5 = sales_5 - loan_repayment_5
         net_proceeds_10 = sales_10 - loan_repayment_10
 
-
+        print("----------------8")
         # Attach summary data-----------------------------------------
         noi_output.update({
             "sales_year_5": sales_5,
@@ -724,7 +727,7 @@ class PropertyPerformaService:
             "loan_repayment_10": loan_repayment_data[10],
             "net_proceeds_10": net_proceeds_10,
         })
-
+        print("----------------9")
         # Levered cashflow adjustments ------------------------------------
         if 10 in noi_output:
             noi_output[10]["levered_cashflow_10"] += net_proceeds_10
@@ -733,7 +736,7 @@ class PropertyPerformaService:
         if 5 in noi_output:
             noi_output[5]["levered_cashflow_5"] = net_proceeds_5
             noi_output[5]["unlevered_cashflow_5"] += sales_5
-
+        print("----------------10")
         # Clear years after exit (5-year scenario) --------------------------
         for year in range(6, 12):
             if year in noi_output:

@@ -141,7 +141,7 @@ class PropertyTypeResponse(createPropertyType):
 class createPropertyUnit(BaseModel):
     property_id: str
     unit_type_id: int
-    total_required: int
+    total_required: int |None = None
     unit_status: str
     area_sqft: float
     market_lease_rent: float
