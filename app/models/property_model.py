@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship, selectinload, joinedload
 from app.config.database import Base
-from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, extract
+from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey, extract, func
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -197,6 +197,14 @@ class PropertyUnit(Base):
                 data[c.name] = value
                 
         return data
+    
+    async def get_all_available_by_ids(db, property_id, unit_type_id):
+        stmt = (select(func.count(PropertyUnit.unit_id)).where(PropertyUnit.unit_type_id == unit_type_id, PropertyUnit.property_id == property_id, PropertyUnit.is_deleted.is_(False)))
+        result = await db.execute(stmt)
+        return result.scalar() 
+
+
+
 
 class PropertyLoan(Base):
     __tablename__ = "property_loan"

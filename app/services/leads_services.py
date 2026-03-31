@@ -30,7 +30,7 @@ class LeadService:
 
     async def create_the_leads(db: Session, data: createLeads):
         try:
-            result = await db.execute(select(Leads).where(Leads.email == data.email, Leads.is_deleted._is(False)))
+            result = await db.execute(select(Leads).where(Leads.email == data.email, Leads.is_deleted.is_(False)))
             existing_lead = result.scalars().first()
 
             if existing_lead:
