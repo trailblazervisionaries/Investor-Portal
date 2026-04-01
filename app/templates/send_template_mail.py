@@ -28,8 +28,8 @@ class MailTemplatesService:
         subjects = {
             "admin": "Thank You for Registering in Investment Portal",
             "investor-assistant": f"Your investor-assistant Account has been Created for {created_by} in ",
-            "fund-assistant": f"Your fund-assistant Account has been Created for {created_by} in RMS",
-            "investor": f"Your investor Account has been Created for {created_by} in RMS",
+            "fund-assistant": f"Your fund-assistant Account has been Created for {created_by} in Investment Portal",
+            "investor": f"Your investor Account has been Created for {created_by} in Investment Portal",
         }
 
         subject = subjects.get(role, "Your Investment Portal Account Details")
@@ -104,6 +104,7 @@ class MailTemplatesService:
 
         asyncio.run(MailService.send_mail(email, subject, html_message))
 
+
     @staticmethod
     @shared_task(name="app.template.send_template_mail.send_notif_password_change")
     def send_notif_password_change(email: str):
@@ -136,7 +137,6 @@ class MailTemplatesService:
                 </body>
             </html>
         """
-
         asyncio.run(MailService.send_mail(email, subject, html_message))
 
 

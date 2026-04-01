@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes import APIMiddleware
 from app.config.database import create_tables
 from fastapi.staticfiles import StaticFiles
-from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_assist_routes,
+from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_assist_routes, audit_routes,
                          investor_routes, leads_routes, lease_rent_routes, loan_amort_routes, file_img_routes,
                            property_routes, property_type_routes, propery_unit_routes, investor_assist_assign_routes,
                            investor_investment_routes, income_routes, expense_routes, property_proforma_routes)
@@ -88,5 +88,7 @@ app.include_router(property_proforma_routes.router, prefix="/api/property-profor
 
 
 app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["property-proforma"])
+
+app.include_router(audit_routes.router,prefix="/api/audit-data", tags=["audit"])
 
 

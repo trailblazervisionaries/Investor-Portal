@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query,Form
 from app.config.database import get_db
 from app.models.audit_model import AuditModel
 from sqlalchemy.ext.asyncio import AsyncSession as Session
@@ -15,8 +15,8 @@ router = APIRouter()
 @router.get("/audit", response_model=AuditPaginationWrapper)
 async def get_audit_logs(
     db: Session = Depends(get_db),
-    page: int = 1,
-    size: int = 20
+    page: int = Query(default=1, ge=1, description="Page number"),
+    size: int = Query(default=20, ge=1, le=100, description="Items per page")
 ):
     skip = (max(1, page) - 1) * size
     
@@ -34,10 +34,11 @@ async def get_audit_logs(
 @router.get("/audit-logs", response_model=AuditPaginationWrapper)
 async def get_audit_logs(
     db: Session = Depends(get_db),
-    page: int = 1,
-    size: int = 20,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    start_date: Optional[datetime] = Form(None),
+    end_date: Optional[datetime] = Form(None),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    size: int = Query(default=20, ge=1, le=100, description="Items per page")
+
 ):
     skip = (max(1, page) - 1) * size
     
@@ -57,17 +58,17 @@ async def get_audit_logs(
     }
 
 
-@router.get("/audit-logs/{entity_type}", response_model=AuditPaginationWrapper)
+@router.get("/audit-logs-type", response_model=AuditPaginationWrapper)
 async def get_audit_logs(
-    entity_type: str,
+    entity_type: str = Form(...),
     db: Session = Depends(get_db),
-    page: int = 1,
-    size: int = 20,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    start_date: Optional[datetime] = Form(None),
+    end_date: Optional[datetime] = Form(None),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    size: int = Query(default=20, ge=1, le=100, description="Items per page")
 ):
     skip = (max(1, page) - 1) * size
-    
+    print(entity_type)
     logs, total_count = await AuditModel.get_all_logs_by_date_range_and_entiry_type(
         db, 
         entity_type = entity_type,
@@ -89,10 +90,10 @@ async def get_audit_logs(
 async def get_audit_logs_using_user_id(
     user_id: str,
     db: Session = Depends(get_db),
-    page: int = 1,
-    size: int = 20,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None
+    start_date: Optional[datetime] = Form(None),
+    end_date: Optional[datetime] = Form(None),
+    page: int = Query(default=1, ge=1, description="Page number"),
+    size: int = Query(default=20, ge=1, le=100, description="Items per page")
 ):
     skip = (max(1, page) - 1) * size
     
