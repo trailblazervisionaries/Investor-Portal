@@ -60,23 +60,23 @@ async def get_property_all_type_expense_details(property_id: str, db: Session = 
 
 
 #  below are the expenses routes ======================
-@router.post("/add/{property_id}/{type_id}", response_model = ExpenseResponse)
-async def add_new_expense(property_id: str, type_id: int, request: Request, data: CreateExpense, db: Session = Depends(get_db)):
+@router.post("/add/{property_id}", response_model = ExpenseResponse)
+async def add_new_expense(property_id: str, request: Request, data: CreateExpense, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    expense = await ExpenseService.add_new_expense(db, type_id, property_id, data, user_id)
+    expense = await ExpenseService.add_new_expense(db, property_id, data, user_id)
     return ExpenseResponse.model_validate(expense)
 
 
-@router.put("/update/{property_id}/{type_id}/{income_id}", response_model = ExpenseResponse)
-async def update_expense(property_id: str, type_id: int, income_id: str, request: Request, data: UpdateExpense, db: Session = Depends(get_db)):
+@router.put("/update/{property_id}/{type_id}/{expense_id}", response_model = ExpenseResponse)
+async def update_expense(property_id: str, type_id: int, expense_id: str, request: Request, data: UpdateExpense, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    expense = await ExpenseService.update_expense(db, income_id, type_id, property_id, data, user_id)
+    expense = await ExpenseService.update_expense(db, expense_id, type_id, property_id, data, user_id)
     return ExpenseResponse.model_validate(expense)
 
 

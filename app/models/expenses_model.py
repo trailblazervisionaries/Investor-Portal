@@ -114,7 +114,7 @@ class Expense(Base):
     expense_type_id = Column(Integer, ForeignKey("expense_type.id"), nullable=False, index=True)
 
     current_expense = Column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
-    pro_forma_expense = Column( Numeric(12, 2), nullable=False, default=Decimal("0.00"))
+    # pro_forma_expense = Column( Numeric(12, 2), nullable=False, default=Decimal("0.00"))
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable = True, onupdate = datetime.utcnow)
@@ -152,12 +152,16 @@ class Expense(Base):
         return result.scalar_one_or_none()
     
     async def get_expense_data_by_property_id(db, property_id):
-        stmt = select(Expense).where(
+        stmt = select(Expense).options(joinedload(Expense.expense_type)).where(
             Expense.property_id == property_id,
             Expense.is_deleted.is_(False)
         )
         result = await db.execute(stmt)
-        return result.scalars().all()
+        expenses = result.scalars().all()
+        for exp in expenses:
+            if exp.expense_type:
+                exp.name = exp.expense_type.name
+        return expenses
 
     
 

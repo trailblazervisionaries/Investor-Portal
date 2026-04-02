@@ -115,7 +115,7 @@ class Income(Base):
     income_type_id = Column(Integer, ForeignKey("income_type.id"), nullable=False, index=True)
 
     current_income = Column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
-    pro_forma_income = Column( Numeric(12, 2), nullable=False, default=Decimal("0.00"))
+    # pro_forma_income = Column( Numeric(12, 2), nullable=False, default=Decimal("0.00"))
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable = True, onupdate = datetime.utcnow)
@@ -154,12 +154,17 @@ class Income(Base):
         return result.scalar_one_or_none()
     
     async def get_income_data_by_property_id(db, property_id):
-        stmt = select(Income).where(
+        stmt = select(Income).options(joinedload(Income.income_type)).where(
             Income.property_id == property_id,
             Income.is_deleted.is_(False)
         )
         result = await db.execute(stmt)
-        return result.scalars().all()
+        incomes = result.scalars().all()
+        for inc in incomes:
+            if inc.income_type:
+                inc.name = inc.income_type.name
+        return incomes
+    
 
     async def get_by_id(db, income_id, type_id, property_id):
         stmt = (select(Income).where(Income.income_id == income_id, Income.income_type_id == type_id, Income.property_id == property_id, Income.is_deleted.is_(False)))

@@ -151,22 +151,41 @@ class IncomeTypeService:
 
 class IncomeService:
 
-    async def add_new_income(db, type_id, property_id, data, user_id):
-        income = await Income.get_income_data_by_property_id_and_income_type_id(db, type_id, property_id)
-        if income:
-            logger.info("IncomeService: Income data already exist for this property so you can't create new one without deleting the previous one.")
-            raise HTTPException(500, "IncomeService: Income data already exist for this property so you can't create new one without deleting the previous one.")
+    async def add_new_income(db, property_id, data, user_id):
+        income_type = await IncomeType.get_by_name(db, data.name, property_id)
+        if income_type:
+            income = await Income.get_income_data_by_property_id_and_income_type_id(db, income_type.id, property_id)
+            if income:
+                logger.info("IncomeService: Income data already exist for this property so you can't create new one without deleting the previous one.")
+                raise HTTPException(500, "IncomeService: Income data already exist for this property so you can't create new one without deleting the previous one.")
+            logger.error("IncomeTypeService: income type is already exist with this name and property_id")
+            raise HTTPException(500, "IncomeTypeService: income type is already exist with this name and property_id")
+        
+        inc_type = IncomeType(
+            property_id = property_id,
+            name = data.name
+        )
+        db.add(inc_type)
+        await db.flush()
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"name":data.name, "property_id": property_id},
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Income Type Management",
+            object_id = str(inc_type.id)
+        )
         new_income = Income(
             income_id = generate_id("income"),
             property_id = property_id,
-            income_type_id = type_id,
+            income_type_id = inc_type.id,
             current_income = data.current_income,
-            pro_forma_income = data.pro_forma_income,
         )
         db.add(new_income)
         await db.flush() 
         logger.info("IncomeService: Income data is added successfully.")
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -179,35 +198,43 @@ class IncomeService:
         logger.info("IncomeService: Audit log for the add income data is added successfully.")
         await db.commit()
         await db.refresh(new_income)
-
+        new_income.name = data.name 
         return new_income
     
+
+
     async def update_income(db, income_id, type_id, property_id, data, user_id):
         income = await Income.get_by_id(db, income_id, type_id, property_id)
         if not income:
-            logger.info("IncomeService: Income data is not found for the provided income_id, type_id, property_id.")
-            raise HTTPException(500, "IncomeService: Income data not found for the provided income_id, type_id, property_id")
-        old_data = IncomeType.model_to_dict(income)
+            logger.info("IncomeService: Income data not found for the provided ids")
+            raise HTTPException(status_code=404, detail="Income data not found")
+
+        old_data = Income.model_to_dict(income)
+
+        if hasattr(data, 'name') and data.name:
+            income_type = await db.get(IncomeType, type_id)
+            if income_type:
+                income_type.name = data.name
+                db.add(income_type)
+
         if data.current_income is not None:
             income.current_income = data.current_income
 
-        if data.pro_forma_income is not None:
-            income.pro_forma_income = data.pro_forma_income
-
-        audit_log = await AuditModel.add_new_logs(
-            db = db,
-            added_by = user_id,
-            new_data = data.model_dump(),
-            old_data = old_data,
-            audit_type = "UPDATE",
-            entity_type = "Income Management",
-            object_id = income_id
+        await AuditModel.add_new_logs(
+            db=db,
+            added_by=user_id,
+            new_data=data.model_dump(exclude_unset=True),
+            old_data=old_data,
+            audit_type="UPDATE",
+            entity_type="Income Management",
+            object_id=income_id
         )
 
-        logger.info("IncomeService: Audit data is recorded successfully for this update")
         await db.commit()
         await db.refresh(income)
-        logger.info("IncomeService: income data is updated successfully.")
+        
+        income.name = data.name if hasattr(data, 'name') else old_data.get('name')
+        logger.info("IncomeService: Income data updated successfully.")
         return income
 
 

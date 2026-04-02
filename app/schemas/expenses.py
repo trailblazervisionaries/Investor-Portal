@@ -29,8 +29,9 @@ class ExpenseTypeResponse(CreateExpenseType):
 
 
 class CreateExpense(BaseModel):
+    name: str | None = None
     current_expense: float
-    pro_forma_expense: float
+
 
     class Config:
         from_attributes = True
@@ -38,7 +39,7 @@ class CreateExpense(BaseModel):
 
 class UpdateExpense(BaseModel):
     current_expense: float | None = None
-    pro_forma_expense: float | None = None
+    name: str | None = None
 
 
 class ExpenseResponse(CreateExpense):

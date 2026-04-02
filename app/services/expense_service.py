@@ -153,20 +153,39 @@ class ExpenseTypeService:
 
 class ExpenseService:
 
-    async def add_new_expense(db, type_id, property_id, data, user_id):
-        expense = await Expense.get_expense_data_by_property_id_and_expense_type_id(db, type_id, property_id)
-        if expense:
-            raise HTTPException(500, "ExpenseService: Expense data already exist for this property so you can't create new one without deleting the previous one.")
+    async def add_new_expense(db, property_id, data, user_id):
+        expense_type = await ExpenseTypes.get_by_name(db, data.name, property_id)
+        if expense_type:
+            expense = await Expense.get_expense_data_by_property_id_and_expense_type_id(db, expense_type.id, property_id)
+            if expense:
+                raise HTTPException(500, "ExpenseService: Expense data already exist for this property so you can't create new one without deleting the previous one.")
+            logger.info("ExpenseTypesService: Expense type is already exist with this name and property_id")
+            raise HTTPException(500, "ExpenseTypesService: Expense type is already exist with this name and property_id")
+
+        exp_type = ExpenseTypes(
+            property_id = property_id,
+            name = data.name
+        )
+        db.add(exp_type)
+        await db.flush() 
+        await AuditModel.add_new_logs(
+            db = db,
+            added_by = user_id,
+            new_data = {"name":data.name, "property_id": property_id},
+            old_data = None,
+            audit_type = "ADD",
+            entity_type = "Expense Type Management",
+            object_id = str(exp_type.id)
+        )
         new_expense = Expense(
             expense_id = generate_id("expense"),
             property_id = property_id,
-            expense_type_id = type_id,
+            expense_type_id = exp_type.id,
             current_expense = data.current_expense,
-            pro_forma_expense = data.pro_forma_expense
         )
         db.add(new_expense)
         await db.flush() 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -181,36 +200,44 @@ class ExpenseService:
         await db.commit()
         await db.refresh(new_expense)
         logger.info("ExpenseService: Expense data added successfully.")
+        new_expense.name = data.name 
         return new_expense
-    
+
 
     async def update_expense(db, expense_id, type_id, property_id, data, user_id):
         expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
         if not expense:
             logger.info("ExpenseService: Expense data not found for the provided ids")
-            raise HTTPException(500, "ExpenseService: Expense data not found for the provided Expense_id, type_id, property_id")
+            raise HTTPException(status_code=404, detail="Expense data not found")
+
         old_data = Expense.model_to_dict(expense)
+
+        if hasattr(data, 'name') and data.name:
+            expense_type = await db.get(ExpenseTypes, type_id)
+            if expense_type:
+                expense_type.name = data.name
+                db.add(expense_type)
+
         if data.current_expense is not None:
             expense.current_expense = data.current_expense
 
-        if data.pro_forma_expense is not None:
-            expense.pro_forma_expense = data.pro_forma_expense
-
-        audit_log = await AuditModel.add_new_logs(
-            db = db,
-            added_by = user_id,
-            new_data = data.model_dump(),
-            old_data = old_data,
-            audit_type = "UPDATE",
-            entity_type = "Expense Management",
-            object_id = expense_id
+        await AuditModel.add_new_logs(
+            db=db,
+            added_by=user_id,
+            new_data=data.model_dump(exclude_unset=True),
+            old_data=old_data,
+            audit_type="UPDATE",
+            entity_type="Expense Management",
+            object_id=expense_id
         )
 
-        logger.info("ExpenseService: Audit log recorded for this update successfully.")
         await db.commit()
         await db.refresh(expense)
+        
+        expense.name = data.name if hasattr(data, 'name') else old_data.get('name')
         logger.info("ExpenseService: Expense data updated successfully.")
         return expense
+
 
 
     async def delete_expense(db, expense_id, type_id, property_id, user_id):

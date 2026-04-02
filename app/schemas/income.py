@@ -30,15 +30,16 @@ class IncomeTypeResponse(CreateIncomeType):
 
 class CreateIncome(BaseModel):
     current_income: float
-    pro_forma_income: float
+    name : str |None = None
 
     class Config:
         from_attributes = True
 
 
 class UpdateIncome(BaseModel):
+    name: str | None = None
     current_income: float | None = None
-    pro_forma_income: float | None = None
+
 
 
 class IncomeResponse(CreateIncome):

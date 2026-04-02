@@ -58,13 +58,13 @@ async def get_property_all_type_income_details(property_id: str, db: Session = D
 
 
 #  below are the incomes routes ======================
-@router.post("/add/{property_id}/{type_id}", response_model = IncomeResponse)
-async def add_new_income(request: Request, property_id: str, type_id: int, data: CreateIncome, db: Session = Depends(get_db)):
+@router.post("/add/{property_id}", response_model = IncomeResponse)
+async def add_new_income(request: Request, property_id: str, data: CreateIncome, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
     if role not in ["admin","fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
-    income = await IncomeService.add_new_income(db, type_id, property_id, data, user_id)
+    income = await IncomeService.add_new_income(db, property_id, data, user_id)
     return IncomeResponse.model_validate(income)
 
 
