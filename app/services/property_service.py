@@ -32,21 +32,13 @@ class PropertyService:
             added_by = user_id,
             name = data.name,
             description = data.description,
-            risk_status = data.risk_status,
             purchase_price = data.purchase_price,
-            closing_cost = data.closing_cost,
             loan_amount = data.loan_amount,
-            market_cap_rate = data.market_cap_rate,
-            cap_rate_flactuation = data.cap_rate_flactuation,
             property_type= data.property_type,
             total_area = data.total_area,
-            pro_forma_start_date = data.pro_forma_start_date,
+            going_cap_rate = data.going_cap_rate,
             total_investment_required = data.total_investment_required,
             available_required_for_investment = data.available_required_for_investment,
-            gp_equity_stake = data.gp_equity_stake,
-            hurdle = data.hurdle,
-            go_promote_at_hurdle = data.go_promote_at_hurdle,
-            go_promote_above_hurdle = data.go_promote_above_hurdle,
             address_line_1 = data.address_line_1,
             address_line_2 = data.address_line_2,
             city = data.city,
@@ -78,10 +70,9 @@ class PropertyService:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
         old_data = Property.model_to_dict(property_obj)
         allowed_fields = {
-            "name", "description", "risk_status", "purchase_price", "closing_cost",
-            "loan_amount", "market_cap_rate", "cap_rate_flactuation","pro_forma_start_date",
+            "name", "description", "purchase_price",
+            "loan_amount", "going_cap_rate",
             "property_type", "total_area", "total_investment_required",
-            "gp_equity_stake", "hurdle", "go_promote_at_hurdle", "go_promote_above_hurdle"
             "available_required_for_investment", "address_line_1",
             "address_line_2", "city", "province", "country", "postal_code"
         }
@@ -135,25 +126,25 @@ class PropertyService:
 
 
     
-    async def update_property_risk(db, property_id, risk_status, user_id):
-        property = await Property.get_by_id(db, property_id)
-        if not property:
-            raise HTTPException(404, "property with this property_id is not found or already deleted")
-        old_data = Property.model_to_dict(property)
-        property.risk_status = risk_status
-        await AuditModel.add_new_logs(
-            db = db,
-            added_by = user_id,
-            new_data = {"risk_status": risk_status},
-            old_data = old_data,
-            audit_type = "UPDATE",
-            entity_type = "Property Management",
-            object_id = property.property_id
-        )
-        await db.commit()
-        await db.refresh(property)
-        logger.info("PropertyServices: property risk updated successfully")
-        return {"message ": "PropertyServices: property risk updated successfully"}
+    # async def update_property_risk(db, property_id, risk_status, user_id):
+    #     property = await Property.get_by_id(db, property_id)
+    #     if not property:
+    #         raise HTTPException(404, "property with this property_id is not found or already deleted")
+    #     old_data = Property.model_to_dict(property)
+    #     property.risk_status = risk_status
+    #     await AuditModel.add_new_logs(
+    #         db = db,
+    #         added_by = user_id,
+    #         new_data = {"risk_status": risk_status},
+    #         old_data = old_data,
+    #         audit_type = "UPDATE",
+    #         entity_type = "Property Management",
+    #         object_id = property.property_id
+    #     )
+    #     await db.commit()
+    #     await db.refresh(property)
+    #     logger.info("PropertyServices: property risk updated successfully")
+    #     return {"message ": "PropertyServices: property risk updated successfully"}
 
     async def update_property_available_required_for_investment(db, property_id, available_required_for_investment, user_id):
         property = await Property.get_by_id(db, property_id)
@@ -285,7 +276,9 @@ class PropertyService:
             .where(Property.is_deleted == False)
         )
         result = await db.execute(stmt)
-        return result.scalar()
+        val =  result.scalar()
+        print(f"DEBUG: DB returned {val}")
+        return val
 
     
     async def get_by_id_of_property(db, property_id):
@@ -299,9 +292,10 @@ class PropertyService:
         result = await db.execute(stmt)
         rows = result.all()
         return [
-                {"property_name": row.name, "property_id": row.id} 
+                {"property_name": row.name, "property_id": row.property_id} 
                 for row in rows
             ]
+
 
     @staticmethod
     async def get_all_info_related_rent(db, property_id: str):
@@ -327,7 +321,7 @@ class PropertyService:
             "property_id": property_obj.property_id,
             "name": property_obj.name,
             "description": property_obj.description,
-            "risk_status": property_obj.risk_status,
+            # "risk_status": property_obj.risk_status,
             "purchase_price": property_obj.purchase_price,
             "total_investment_required": property_obj.total_investment_required,
             "unit_type": [
@@ -822,7 +816,8 @@ class PropertyUnitTypeServices:
             name = data.name,
             unit_type = data.unit_type,
             total_units = data.total_units,
-            occupied_units = data.occupied_units,
+            max_rent_per_unit = data.max_rent_per_unit,
+            min_rent_per_unit = data.min_rent_per_unit
         )
 
         db.add(new_property_type)
@@ -856,8 +851,12 @@ class PropertyUnitTypeServices:
         if data.total_units is not None:
             unit_type.total_units = data.total_units
 
-        if data.occupied_units is not None:
-            unit_type.occupied_units = data.occupied_units
+        if data.max_rent_per_unit is not None:
+            unit_type.max_rent_per_unit = data.max_rent_per_unit
+
+        if data.min_rent_per_unit is not None:
+            unit_type.min_rent_per_unit = data.min_rent_per_unit
+
         await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,

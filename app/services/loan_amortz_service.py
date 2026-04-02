@@ -30,7 +30,7 @@ class PropertyLoanService:
 
     async def add_new_loan_details(db, property_id, data, user_id):
 
-        calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(data)
+        # calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(data)
         new_load = PropertyLoan(
             loan_id = generate_id("loan"),
             property_id = property_id,
@@ -39,15 +39,13 @@ class PropertyLoanService:
             total_loan_amount = data.total_loan_amount,
             interest_rate = data.interest_rate,
             spread_intrest_rate = data.spread_intrest_rate,
-            stabilized_cap_rate = data.stabilized_cap_rate,
             ltv = data.ltv,
             origination_fee = data.origination_fee,
             amortization_period = data.amortization_period,
             term = data.term,
-            intrest_only_period = data.intrest_only_period,
             no_of_payments = data.term*12,
-            monthly_payments = AmortizationScheduleService.round_half_up(calculate_other_info["emi"]),
-            total_annual_payment = AmortizationScheduleService.round_half_up(calculate_other_info["emi"] * 12)
+            monthly_payments = AmortizationScheduleService.round_half_up(data.total_annual_payment/12),
+            total_annual_payment = AmortizationScheduleService.round_half_up(data.total_annual_payment)
         )
         db.add(new_load)
         await db.flush()
@@ -117,7 +115,13 @@ class PropertyLoanService:
 
     async def update_loan_detials(db, loan_id, property_id, data, user_id):
 
-        loan = await PropertyLoan.get_by_id(db, loan_id, property_id)
+        stmt = (
+            select(PropertyLoan)
+            .options(selectinload(PropertyLoan.property)) 
+            .where(PropertyLoan.loan_id == loan_id, PropertyLoan.is_deleted.is_(False))
+        )
+        result = await db.execute(stmt)
+        loan = result.scalar_one_or_none()
         if not loan:
             raise HTTPException(status_code=404,
                 detail="LoanServices: no loan found with provided loan_id and property_id"
@@ -129,12 +133,11 @@ class PropertyLoanService:
             "total_loan_amount",
             "interest_rate",
             "spread_intrest_rate",
-            "intrest_only_period",
             "term",
             "amortization_period",
-            "stabilized_cap_rate",
             "origination_fee",
             "ltv",
+            "total_annual_payment"
         ]
 
         for field in update_fields:
@@ -142,19 +145,23 @@ class PropertyLoanService:
             if value is not None:
                 setattr(loan, field, value)
 
-        calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(loan)
+        # calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(loan)
 
-        loan.no_of_payments = loan.term * 12
+        # loan.no_of_payments = loan.term * 12
+
+        # loan.monthly_payments = AmortizationScheduleService.round_half_up(
+        #     calculate_other_info["emi"]
+        # )
 
         loan.monthly_payments = AmortizationScheduleService.round_half_up(
-            calculate_other_info["emi"]
+            data.total_annual_payment/12
         )
 
-        loan.total_annual_payment = AmortizationScheduleService.round_half_up(
-            calculate_other_info["emi"] * 12
-        )
+        # loan.total_annual_payment = AmortizationScheduleService.round_half_up(
+        #     calculate_other_info["emi"] * 12
+        # )
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data.model_dump(mode='json'),
@@ -260,6 +267,8 @@ class AmortizationScheduleService:
 
 
     def round_half_up(value):
+        if not isinstance(value, Decimal):
+            value = Decimal(str(value))
         return value.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     
 
@@ -441,6 +450,12 @@ class AmortizationScheduleService:
 
         # Step 1: Basic loan calculation
         basic = AmortizationScheduleService.calculate_basic_loan_details(loan_info)
+        # basic = {
+        #     "loan_amount":loan_info.loan_info.loan_amount,
+        #     "monthly_rate":loan_info.monthly_rate,
+        #     "total_months":loan_info.term*12
+        #     ""
+        # }
 
         # Step 2: Generate schedule
         schedule_data = AmortizationScheduleService.generate_amortization_schedule(

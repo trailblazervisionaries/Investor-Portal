@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File, Form
 from app.config.database import get_db
 from app.services.property_service import PropertyService, PropertyUnitTypeServices, PropertyUnitServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
+from app.services.file_img_process import FileUploadService
 from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
 from app.services.growth_service import IncomeExpanseGrowthService
 from typing import List
@@ -109,13 +110,12 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
     property = await PropertyService.get_by_id_of_property(db, property_id)
     return PropertyResponse.model_validate(property)
 
-@router.get("/number")
+@router.get("/number", response_model=None)
 async def get_total(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     property_total = await PropertyService.get_total_count(db)
-    if not property_total:
-        return {"total_properties": 0}
-    return {"total_properties": property_total}
+    print(property_total)
+    return {"total_properties": property_total or 0}
 
 
 @router.get("/get-property-name-id")
@@ -152,6 +152,23 @@ async def get_all_property(request: Request, risk_status: str, deleted: bool = F
         "total_pages": total_pages
     }
 
+
+@router.post("/upload-file/{user_id}/{role}")
+async def upload_profile(
+    request: Request,
+    user_id: str,
+    role: str,
+    file: UploadFile = File(...),
+    file_type: str = Form(...),     # profile
+    db: Session = Depends(get_db),
+):
+    return await FileUploadService.upload_profile_image(
+        db, file, user_id, request, role, file_type
+    )
+
+
+
+#  not working ok
 
 @router.get("/getall-rent-info/{property_id}")
 async def get_all_rent_info(property_id: str, db: Session = Depends(get_db)):

@@ -213,7 +213,7 @@ class FileUploadService:
             return False
         
 
-    async def upload_profile_image(db: Session, file: UploadFile, user_id: str, request: Request, role: str):
+    async def upload_profile_image(db: Session, file: UploadFile, user_id: str, request: Request, role: str, file_type = None):
         if role == "admin":
             user_data = await AdminModel.get_by_id(db, user_id)
         elif role == "investor-assistant":
@@ -241,7 +241,10 @@ class FileUploadService:
         print("file-url ", file_url)
 
         if role == "property":
-            user_data.property_sheet = file_url
+            if file_type == "profile":
+                user_data.property_image = file_url
+            else:
+                user_data.property_sheet = file_url
         else:
             user_data.profile_image = file_url
 

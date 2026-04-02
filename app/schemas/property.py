@@ -29,28 +29,19 @@ class AddressUpdate(BaseModel):
 class createProperty(BaseModel):
     name: str
     description: str
-    risk_status: str
     purchase_price: float
-    closing_cost: float
     loan_amount: float
-    market_cap_rate: float
-    cap_rate_flactuation: float
     property_type: str
-    total_area: float
-    pro_forma_start_date: datetime| None = None
+    total_area: float | None = None
     total_investment_required: float
     available_required_for_investment: float
-    gp_equity_stake: float
-    hurdle: float
-    go_promote_at_hurdle: float
-    go_promote_above_hurdle: float
+    going_cap_rate: float
     address_line_1: str | None = None
     address_line_2: str | None = None
     city: str | None = None
     province: str | None = None
     country: str | None = None
     postal_code: str | None = None
-
 
     class Config:
         from_attributes = True
@@ -82,21 +73,13 @@ class PropertyPaginationResponse(BaseModel):
 class updateProperty(BaseModel):
     name: str | None = None
     description: str | None = None
-    risk_status: str | None = None
     purchase_price: float | None = None
-    closing_cost: float | None = None
     loan_amount: float | None = None
-    market_cap_rate: float | None = None
-    cap_rate_flactuation: float | None = None
+    going_cap_rate: float | None = None
     property_type: str | None = None
     total_area: float | None = None
-    pro_forma_start_date: datetime| None = None
     total_investment_required: float | None = None
     available_required_for_investment: float | None = None
-    gp_equity_stake: float  | None = None
-    hurdle: float | None = None
-    go_promote_at_hurdle: float | None = None
-    go_promote_above_hurdle: float | None = None
     address_line_1: str | None = None
     address_line_2: str | None = None
     city: str | None = None
@@ -115,7 +98,8 @@ class createPropertyType(BaseModel):
     name: str
     unit_type: str
     total_units: int
-    occupied_units: int
+    max_rent_per_unit: float
+    min_rent_per_unit: float
 
     class Config:
         from_attributes = True
@@ -125,7 +109,8 @@ class updatePropertyType(BaseModel):
     name: str | None = None
     unit_type: str | None = None
     total_units: int | None = None
-    occupied_units: int | None = None
+    max_rent_per_unit: float | None = None
+    min_rent_per_unit: float | None = None
 
 
 class PropertyTypeResponse(createPropertyType):
@@ -185,15 +170,10 @@ class createPropertyLoan(BaseModel):
     total_loan_amount : float
     interest_rate : float
     spread_intrest_rate: float
-    # interest_per_period : float
     ltv: float
-    stabilized_cap_rate: float
-    intrest_only_period: int
     term: int
     amortization_period : int
     origination_fee: float
-    no_of_payments : int | None = None
-    monthly_payments : float | None = None
     total_annual_payment : float | None = None
 
     class Config:
@@ -206,10 +186,10 @@ class updatePropertyLoan(BaseModel):
     interest_rate : float | None = None
     spread_intrest_rate: float| None = None
     amortization_period : int | None = None
-    intrest_only_period: int | None = None
     ltv: float | None = None
-    stabilized_cap_rate: float | None = None
     term: int | None = None
+    origination_fee: float | None = None
+    total_annual_payment: float |None = None
 
 class PropertyName(BaseModel):
     name: str | None = "----"
@@ -220,6 +200,7 @@ class PropertyLoanResponse(createPropertyLoan):
     loan_id: str
     property_id: str
     property: PropertyName 
+    monthly_payments: float | None = None
     is_active: bool
     is_deleted: bool
     created_at: datetime

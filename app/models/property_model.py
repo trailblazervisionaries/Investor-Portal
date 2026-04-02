@@ -16,13 +16,13 @@ class Property(Base):
     name = Column(String, nullable=False)
     description = Column(String)
 
-    risk_status = Column(String, nullable=False)  # low / medium / high
+    # risk_status = Column(String, nullable=False)  # low / medium / high
 
     purchase_price = Column(Numeric(14, 2), nullable=False)
-    closing_cost = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
+    # closing_cost = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
     loan_amount = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
-    market_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
-    cap_rate_flactuation = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
+    going_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
+    # cap_rate_flactuation = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
 
     property_type = Column(String, nullable=False)
     total_area = Column(Numeric(14, 3), nullable=False, default=Decimal("0.000"))
@@ -31,13 +31,14 @@ class Property(Base):
     available_required_for_investment = Column(Numeric(14, 2), nullable=False)
 
     # Pro-forma start date for 10-year projections (e.g., 2025-06-01)
-    pro_forma_start_date = Column(DateTime, nullable=True)
+    # pro_forma_start_date = Column(DateTime, nullable=True)
 
-    gp_equity_stake = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
-    hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
-    go_promote_at_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
-    go_promote_above_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
+    # gp_equity_stake = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
+    # hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
+    # go_promote_at_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
+    # go_promote_above_hurdle = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
     property_sheet = Column(String, nullable = True)
+    property_image = Column(String, nullable = True)
     #  addresses fileds
     address_line_1 = Column(String, nullable=False)
     address_line_2 = Column(String, nullable = True)
@@ -114,10 +115,10 @@ class PropertyUnitType(Base):
     unit_type = Column(String, nullable=False)  # residential / commercial
 
     total_units =  Column(Integer, nullable=False, default = 0 )
-    occupied_units = Column(Integer, nullable = False, default = 0)
+    # occupied_units = Column(Integer, nullable = False, default = 0)
 
-    # market_rent_per_unit = Column(Numeric(12, 2), nullable=False)
-    # market_rent_per_sqft = Column(Numeric(12, 3), nullable=False)
+    max_rent_per_unit = Column(Numeric(12, 3), nullable=False)
+    min_rent_per_unit = Column(Numeric(12, 3), nullable=False)
 
     is_deleted = Column(Boolean, default=False)
 
@@ -212,14 +213,14 @@ class PropertyLoan(Base):
     loan_id = Column(String, primary_key=True, index=True)
     property_id = Column(String, ForeignKey("property.property_id", ondelete="CASCADE"), index=True)
 
-    started_date = Column(DateTime, nullable=False)
-    end_date = Column(DateTime, nullable=False)
+    started_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
 
     total_loan_amount = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     interest_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
     spread_intrest_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
 
-    stabilized_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
+    # stabilized_cap_rate = Column(Numeric(5, 4), nullable=False, default=Decimal("0.0000"))
     ltv = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
 
     origination_fee = Column(Numeric(7, 4), nullable = False, default = Decimal("0.0000"))
@@ -228,7 +229,7 @@ class PropertyLoan(Base):
     term = Column(Integer, nullable=False)
     no_of_payments = Column(Integer, nullable=False)
 
-    intrest_only_period = Column(Integer, nullable=False)
+    # intrest_only_period = Column(Integer, nullable=False)
     
     monthly_payments = Column(Numeric(12, 2), nullable=False, default=Decimal("0.00"))
     total_annual_payment = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
