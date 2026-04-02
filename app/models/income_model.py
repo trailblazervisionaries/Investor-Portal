@@ -91,7 +91,6 @@ class IncomeType(Base):
                 income_list.append({
                     "income_id": income.income_id,
                     "current_income": float(income.current_income),
-                    "pro_forma_income": float(income.pro_forma_income),
                     "created_at": income.created_at,
                     "updated_at": income.updated_at,
                     "income_growth": growth_list

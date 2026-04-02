@@ -88,7 +88,6 @@ class ExpenseTypes(Base):
                 expense_list.append({
                     "expense_id": expense.expense_id,
                     "current_expense": float(expense.current_expense),
-                    "pro_forma_expense": float(expense.pro_forma_expense),
                     "created_at": expense.created_at,
                     "updated_at": expense.updated_at,
                     "expense_growth": growth_list

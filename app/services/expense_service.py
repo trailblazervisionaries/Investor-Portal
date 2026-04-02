@@ -204,6 +204,7 @@ class ExpenseService:
         return new_expense
 
 
+
     async def update_expense(db, expense_id, type_id, property_id, data, user_id):
         expense = await Expense.get_by_id(db, expense_id, type_id, property_id)
         if not expense:

@@ -54,6 +54,7 @@ class PropertyResponse(createProperty):
     is_open_for_investment: bool
     is_deleted: bool
     property_sheet: str | None = None
+    property_image: str | None = None
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

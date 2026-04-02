@@ -98,7 +98,7 @@ class ExpenseGrowthResponse(BaseModel):
 class ExpenseDetailResponse(BaseModel):
     expense_id: str
     current_expense: float
-    pro_forma_expense: float
+    # pro_forma_expense: float
     created_at: datetime
     updated_at: datetime | None = None
     expense_growth: List[ExpenseGrowthResponse] = []
