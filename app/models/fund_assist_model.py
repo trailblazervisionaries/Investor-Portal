@@ -1,6 +1,6 @@
 from sqlalchemy.orm import relationship, joinedload
 from app.config.database import Base
-from sqlalchemy import Column, Integer, Numeric, String, DateTime, Boolean, select, ForeignKey
+from sqlalchemy import Column, String, DateTime, Boolean, select, ForeignKey
 from datetime import datetime, date
 from decimal import Decimal
 

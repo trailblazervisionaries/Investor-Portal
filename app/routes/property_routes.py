@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File, Form
 from app.config.database import get_db
-from app.services.property_service import PropertyService, PropertyUnitTypeServices, PropertyUnitServices
+from app.services.property_service import PropertyService, PropertyUnitTypeServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileUploadService
 from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
@@ -44,14 +44,14 @@ async def delete_the_property(property_id: str, request: Request, db: Session = 
     return resp
 
 
-@router.put("/update-risk/{property_id}/{risk_status}")
-async def update_the_property_risk(property_id: str, risk_status: str, request: Request, db: Session = Depends(get_db)):
-    role = request.state.user.role
-    user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
-        raise HTTPException(403, "you are not authorise to perform this operation")
-    resp = await PropertyService.update_property_risk(db, property_id, risk_status, user_id)
-    return resp
+# @router.put("/update-risk/{property_id}/{risk_status}")
+# async def update_the_property_risk(property_id: str, risk_status: str, request: Request, db: Session = Depends(get_db)):
+#     role = request.state.user.role
+#     user_id = request.state.user.user_id
+#     if role not in ["admin","fund-assistant"]:
+#         raise HTTPException(403, "you are not authorise to perform this operation")
+#     resp = await PropertyService.update_property_risk(db, property_id, risk_status, user_id)
+#     return resp
 
 
 @router.put("/available-investment/{property_id}")
@@ -165,40 +165,6 @@ async def upload_profile(
     return await FileUploadService.upload_profile_image(
         db, file, user_id, request, role, file_type
     )
-
-
-
-#  not working ok or not in use
-
-@router.get("/getall-rent-info/{property_id}")
-async def get_all_rent_info(property_id: str, db: Session = Depends(get_db)):
-    return await PropertyService.get_all_info_related_rent(db, property_id)
-
-@router.get("/export-rentroll-analysis/{property_id}")
-async def download_rent_roll(property_id: str, db: Session = Depends(get_db)):
-    return await PropertyService.create_rent_roll_excel(db, property_id)
-    
-
-
-
-@router.get("/getall-rentroll-summary/{property_id}")
-async def get_all_rentroll_summary(property_id: str, db: Session = Depends(get_db)):
-    return await PropertyService.calculate_rent_roll_summary(db, property_id)
-
-
-@router.get("/export-rentroll-summary/{property_id}")
-async def download_rentroll_summary(property_id: str, db: Session = Depends(get_db)):
-    return await PropertyService.create_rent_roll_summary_excel(db, property_id)
-
-@router.get("/getall-growth-assumption/{property_id}")
-async def export_growth_assumption(property_id: str, db: Session = Depends(get_db)):
-    return await IncomeExpanseGrowthService.export_growth_assumption(db, property_id)
-
-@router.get("/export-growth-assumption/{property_id}")
-async def export_growth_assumption(property_id: str, db: Session = Depends(get_db)):
-    return await IncomeExpanseGrowthService.create_growth_projection_excel(db, property_id)
-
-
 
 
 

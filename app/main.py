@@ -4,8 +4,8 @@ from app.routes import APIMiddleware
 from app.config.database import create_tables
 from fastapi.staticfiles import StaticFiles
 from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_assist_routes, audit_routes,
-                         investor_routes, leads_routes, lease_rent_routes, loan_amort_routes, file_img_routes,
-                           property_routes, property_type_routes, propery_unit_routes, investor_assist_assign_routes,
+                         investor_routes, leads_routes, loan_amort_routes, file_img_routes,
+                           property_routes, property_type_routes, investor_assist_assign_routes,
                            investor_investment_routes, income_routes, expense_routes, property_proforma_routes)
 import logging
 from app.logging_config import setup_logging
@@ -68,8 +68,6 @@ app.include_router(leads_routes.router, prefix="/api/lead", tags=["leads"])
 
 app.include_router(property_routes.router, prefix="/api/property", tags=["property"])
 app.include_router(property_type_routes.router, prefix="/api/property-type", tags=["property-type"])
-app.include_router(propery_unit_routes.router, prefix="/api/property-unit", tags=["propery-unit"])
-app.include_router(lease_rent_routes.router, prefix="/api/lease-rent", tags=["lease-rent"])
 
 #  for the property loan and amortization schedule routes
 app.include_router(loan_amort_routes.router, prefix="/api/loan-amortz", tags=["loan-amortz"])
@@ -83,12 +81,13 @@ app.include_router(investor_investment_routes.router, prefix="/api/investment", 
 app.include_router(income_routes.router, prefix="/api/income", tags=["income"])
 app.include_router(expense_routes.router, prefix="/api/expense", tags=["expense"])
 
-# Property Pro-forma, Rent Roll, and Growth Assumptions (from Excel model)
+# Property Pro-forma
 app.include_router(property_proforma_routes.router, prefix="/api/property-proforma", tags=["property-proforma"])
 
 
-app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["property-proforma"])
+app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["file-handle"])
 
 app.include_router(audit_routes.router,prefix="/api/audit-data", tags=["audit"])
+
 
 
