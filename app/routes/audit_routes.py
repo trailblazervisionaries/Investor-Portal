@@ -49,6 +49,7 @@ async def get_audit_logs(
         start_date=start_date, 
         end_date=end_date
     )
+    print("logs", logs)
     
     return {
         "items": logs,

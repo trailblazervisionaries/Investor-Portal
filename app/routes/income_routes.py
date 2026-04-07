@@ -57,7 +57,7 @@ async def get_property_all_type_income_details(property_id: str, db: Session = D
     return await IncomeTypeService.get_property_all_income_details(db, property_id)
 
 
-#  below are the incomes routes ======================
+#  below are the incomes routes ====================== 
 @router.post("/add/{property_id}", response_model = IncomeResponse)
 async def add_new_income(request: Request, property_id: str, data: CreateIncome, db: Session = Depends(get_db)):
     role = request.state.user.role

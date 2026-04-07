@@ -168,7 +168,7 @@ async def upload_profile(
 
 
 
-#  not working ok
+#  not working ok or not in use
 
 @router.get("/getall-rent-info/{property_id}")
 async def get_all_rent_info(property_id: str, db: Session = Depends(get_db)):

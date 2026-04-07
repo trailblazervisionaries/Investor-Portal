@@ -296,6 +296,7 @@ class PropertyService:
                 for row in rows
             ]
 
+# not in used ===================================================================
 
     @staticmethod
     async def get_all_info_related_rent(db, property_id: str):
@@ -904,6 +905,8 @@ class PropertyUnitTypeServices:
     async def get_unit_type_by_property_id_and_id(db, id, property_id):
         return await PropertyUnitType.get_by_id(db, id, property_id)
 
+# not in used ===================================================================
+
     async def get_property_rent_summary(db: Session, property_id: str):
         stmt = (
             select(
@@ -936,6 +939,8 @@ class PropertyUnitTypeServices:
 
         return data
 
+
+# not in used ===================================================================
 
 class PropertyUnitServices:
 
