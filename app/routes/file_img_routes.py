@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/upload-profile/{user_id}/{role}")
-async def upload_profile(
-    request: Request,
-    user_id: str,
-    role: str,
-    file: UploadFile = File(...),
-    db: Session = Depends(get_db),
-):
-    return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
+# @router.post("/upload-profile/{user_id}/{role}")
+# async def upload_profile(
+#     request: Request,
+#     user_id: str,
+#     role: str,
+#     file: UploadFile = File(...),
+#     db: Session = Depends(get_db),
+# ):
+#     return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
 
 
 @router.post("/upload-docs/{user_id}")

@@ -111,6 +111,12 @@ class Investors(Base):
         return result.scalar_one_or_none()
     
     @staticmethod
+    async def get_by_investor_id(db, investor_id):
+        stmt = (select(Investors).where(Investors.investor_id == investor_id, Investors.is_deleted == False))
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+    
+    @staticmethod
     async def get_by_investor_user_id(db, user_id: str):
         stmt = (
             select(Investors)

@@ -1,5 +1,4 @@
-from fastapi import Request, Response, HTTPException, status
-from sqlalchemy.orm import selectinload, joinedload
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
 from app.core.utils_functions import generate_id, generate_alphanumeric_password

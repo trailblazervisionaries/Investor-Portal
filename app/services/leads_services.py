@@ -58,34 +58,8 @@ class LeadService:
 
         except SQLAlchemyError as e:
             await db.rollback()
-            # Log the error here
             raise HTTPException(status_code=500, detail="Database error while processing lead.")
     
-    # async def create_the_leads(db: Session, data: createLeads):
-    #     new_leads = Leads(
-    #         name = data.name,
-    #         email = data.email,
-    #         description = data.description,
-    #         phone = data.phone,
-    #         # assisted_by = data.assisted_by,
-    #         # status = data.status,
-    #         # updated_by = data.updated_by
-    #     )
-
-    #     db.add(new_leads)
-    #     await db.commit()
-    #     await db.refresh(new_leads)
-
-    #     return new_leads
-    
-
-
-    # async def get_all_lead(db):
-    #     return await Leads.get_all_leads(db)
-    
-
-    # async def get_all_by_status(db, status):
-    #     return await Leads.get_all_leads_by_status(db, status)
     
     async def get_leads_by_attendend_id_and_status(
         db,

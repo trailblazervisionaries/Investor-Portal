@@ -4,6 +4,7 @@ from sqlalchemy import select, desc, case
 from dotenv import load_dotenv
 from app.models.investor_model import Investors, InvestorInvestments
 from app.models.property_model import Property
+from app.models.investor_assist_model import InvestorAssistant
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.models.audit_model import AuditModel
@@ -19,6 +20,14 @@ logger = logging.getLogger(__name__)
 class InvestorInvestmentServices:
 
     async def add_new_investment(db, investor_id, data, user_id):
+        investor = await Investors.get_by_investor_id(db, investor_id)
+        if not investor:
+            raise HTTPException(404, "Investor not found for the investment")
+        
+        assistant = await InvestorAssistant.get_by_id(db, user_id)
+        if not assistant:
+            raise HTTPException(404, "Investor assistant not found for the investment")
+        
         property = await Property.get_by_id(db, data.property_id)
         if not property:
             raise HTTPException(404, "Property not found for the investment")
@@ -59,7 +68,7 @@ class InvestorInvestmentServices:
         if property.available_required_for_investment == Decimal('0'):
             property.is_open_for_investment = False
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -74,11 +83,21 @@ class InvestorInvestmentServices:
         await db.commit()
         await db.refresh(new_investment)
 
+        MonitorAsync.deferred(
+            MailTemplatesService.send_notif_invested_property_info,
+            investor.email, 
+            property.property_id, 
+            property.name,
+            investor.investor_id,
+            investor.fname,
+            assistant.user_id,
+            assistant.fname,
+            data.invested_amount
+        )
         logger.info(
             f"InvestorInvestmentServices: New investment added successfully "
             f"(Investor={investor_id}, Property={data.property_id}, Amount={amount})"
         )
-
         return new_investment
     
     
@@ -89,8 +108,10 @@ class InvestorInvestmentServices:
                 404,
                 "InvestorInvestmentServices: investment not found using provided id and investor_id"
             )
+        investor = await Investors.get_by_investor_id(db, investor_id)
+        assistant = await InvestorAssistant.get_by_id(db, user_id)
         old_data = InvestorInvestments.model_to_dict(investment)
-        property = await Property.get_by_id(db, data.property_id or investment.property_id)
+        property = await Property.get_by_id(db, data.property_id)
         if not property:
             raise HTTPException(404, "Property not found for the investment")
 
@@ -118,7 +139,7 @@ class InvestorInvestmentServices:
         if data.status is not None:
             investment.status = data.status
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -132,6 +153,19 @@ class InvestorInvestmentServices:
         await db.commit()
         await db.refresh(investment)
 
+        if investor and assistant:
+            MonitorAsync.deferred(
+                MailTemplatesService.send_notif_updated_investment_info,
+                investor.email,
+                property.property_id,
+                property.name,
+                investor.investor_id,
+                investor.fname,
+                assistant.user_id,
+                assistant.fname,
+                investment.invested_amount, 
+                old_data.get("invested_amount")
+            )
         logger.info(
             f"InvestorInvestmentServices: Investment {investment.id} updated successfully"
         )
@@ -146,7 +180,7 @@ class InvestorInvestmentServices:
         old_data = InvestorInvestments.model_to_dict(investment)
         investment.status = status
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"status": status},

@@ -29,8 +29,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 class PropertyLoanService:
 
     async def add_new_loan_details(db, property_id, data, user_id):
-
-        # calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(data)
         new_load = PropertyLoan(
             loan_id = generate_id("loan"),
             property_id = property_id,
@@ -49,7 +47,7 @@ class PropertyLoanService:
         )
         db.add(new_load)
         await db.flush()
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data.model_dump(mode='json'),
@@ -64,53 +62,6 @@ class PropertyLoanService:
         await db.refresh(new_load, ["property"])
         logger.info("PropertyLoanService: loan detials added successfully for the provided property")
         return new_load
-    
-    
-    # async def update_loan_detials(db, loan_id, property_id, data):
-    #     loan = await PropertyLoan.get_by_id(db, loan_id, property_id)
-    #     if not loan:
-    #         raise HTTPException(404, "LoanServices: no any loan found with provided loan_id and property_id")
-        
-    #     if data.started_date is not None:
-    #         loan.started_date = data.started_date
-
-    #     if data.end_date is not None:
-    #         loan.end_date = data.end_date
-
-    #     if data.total_loan_amount is not None:
-    #         loan.total_loan_amount = data.total_loan_amount
-
-    #     if data.interest_rate is not None:
-    #         loan.interest_rate = data.interest_rate
-
-    #     if data.interest_per_period is not None:
-    #         loan.interest_per_period = data.interest_per_period
-
-    #     if data.intrest_only_period is not None:
-    #         loan.intrest_only_period = data.intrest_only_period
-
-    #     if data.spread_intrest_rate is not None:
-    #         loan.spread_intrest_rate = data.spread_intrest_rate
-
-    #     if data.term is not None:
-    #         loan.term = data.term
-
-    #     if data.amortization_period is not None:
-    #         loan.amortization_period = data.amortization_period
-
-    #     if data.no_of_payments is not None:
-    #         loan.no_of_payments = data.no_of_payments
-
-    #     if data.monthly_payments is not None:
-    #         loan.monthly_payments = data.monthly_payments
-
-    #     if data.total_annual_payment is not None:
-    #         loan.total_annual_payment = data.total_annual_payment
-
-    #     await db.commit()
-    #     await db.refresh(loan)
-    #     logger.info("LoanServices: loan data updated successfully")
-    #     return loan
     
 
     async def update_loan_detials(db, loan_id, property_id, data, user_id):
@@ -145,21 +96,9 @@ class PropertyLoanService:
             if value is not None:
                 setattr(loan, field, value)
 
-        # calculate_other_info = AmortizationScheduleService.calculate_basic_loan_details(loan)
-
-        # loan.no_of_payments = loan.term * 12
-
-        # loan.monthly_payments = AmortizationScheduleService.round_half_up(
-        #     calculate_other_info["emi"]
-        # )
-
         loan.monthly_payments = AmortizationScheduleService.round_half_up(
             data.total_annual_payment/12
         )
-
-        # loan.total_annual_payment = AmortizationScheduleService.round_half_up(
-        #     calculate_other_info["emi"] * 12
-        # )
 
         await AuditModel.add_new_logs(
                 db = db,
@@ -187,7 +126,7 @@ class PropertyLoanService:
         old_data = PropertyLoan.model_to_dict(loan)
         loan.is_deleted = True
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -219,7 +158,7 @@ class PropertyLoanService:
             loan.is_active = True
             type = "DEACTIVATE"
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = new_data,

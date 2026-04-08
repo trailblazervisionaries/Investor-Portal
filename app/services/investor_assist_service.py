@@ -84,7 +84,7 @@ class InvestorAssistService:
             #     "investor-assistant",
             #     temp_password,
             # )
-            audit_log = await AuditModel.add_new_logs(
+            await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
                 new_data = data.model_dump(),
@@ -156,7 +156,7 @@ class InvestorAssistService:
                     )
                     db.add(new_address)
                     investor_assistant.address = new_address
-            audit_log = await AuditModel.add_new_logs(
+            await AuditModel.add_new_logs(
                 db=db,
                 added_by = user_id,
                 new_data = data.model_dump(),
@@ -208,7 +208,7 @@ class InvestorAssistService:
         investor_assist.is_deleted = True
         investor_assist.user.is_deleted = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted" : True},
@@ -231,7 +231,7 @@ class InvestorAssistService:
         investor_assist.is_active = False
         investor_assist.user.is_active = False
         old_data = InvestorAssistant.model_to_dict(investor_assist)
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db=db,
             added_by = user_id,
             new_data = {"is_active" : False},
@@ -254,7 +254,7 @@ class InvestorAssistService:
         investor_assist.is_active = True
         investor_assist.user.is_active = True
         old_data = InvestorAssistant.model_to_dict(investor_assist)
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db =db,
             added_by = user_id,
             new_data = {"is_active" : True},

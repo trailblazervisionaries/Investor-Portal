@@ -30,7 +30,7 @@ class ExpenseTypeService:
         db.add(new_expense_type)
         await db.flush() 
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -63,7 +63,7 @@ class ExpenseTypeService:
         if data.property_id is not None:
             expense_type.property_id = data.property_id
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = data.model_dump(),
@@ -87,7 +87,7 @@ class ExpenseTypeService:
         old_data = ExpenseTypes.model_to_dict(expense_type)
         expense_type.is_deleted = True
         
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -248,7 +248,7 @@ class ExpenseService:
         old_data = Expense.model_to_dict(expense)
         expense.is_deleted = True
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted": True},
@@ -282,68 +282,6 @@ class ExpenseService:
 
 class ExpenseGrowthService:
 
-    # async def add_expense_growth(db, expense_id, data, user_id):
-
-    #     growth_objects = []
-    #     audit_object = []
-
-    #     if data.is_same:
-    #         for year in range(1, 12):
-    #             growth = ExpenseGrowth(
-    #                 expense_id=expense_id,
-    #                 year=year,
-    #                 growth_percentage=data.growth_percentage
-    #             )
-    #             db.add(growth)
-    #             await db.flush() 
-    #             growth_objects.append(growth)
-
-    #             audit_log = await AuditModel.add_new_logs(
-    #                 db = db,
-    #                 added_by = user_id,
-    #                 new_data = { "expense_id": expense_id, "year":year, "growth_percentage":data.growth_percentage},
-    #                 old_data = None,
-    #                 audit_type = "ADD",
-    #                 entity_type = "Expense Growth Management",
-    #                 object_id = str(growth.id)
-    #             )
-
-    #             audit_object.append(audit_log)
-    #     else:
-    #         growth = ExpenseGrowth(
-    #             expense_id=expense_id,
-    #             year=data.year,
-    #             growth_percentage=data.growth_percentage
-    #         )
-    #         db.add(growth)
-    #         await db.flush() 
-    #         growth_objects.append(growth)
-            
-    #         audit_log = await AuditModel.add_new_logs(
-    #             db = db,
-    #             added_by = user_id,
-    #             new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
-    #             old_data = None,
-    #             audit_type = "ADD",
-    #             entity_type = "Expense Growth Management",
-    #             object_id = str(growth.id)
-    #         )
-
-    #         audit_object.append(audit_log)
-
-    #     await db.commit()
-
-    #     for growth in growth_objects:
-    #         await db.refresh(growth)
-        
-    #     for audit in audit_object:
-    #         if audit:
-    #             await db.refresh(audit)
-    #     logger.info("ExpenseGrowthService: Audit data recorded for this new expense data")
-    #     logger.info("ExpenseGrowthService: Expense growth data added successfully")
-
-    #     return growth_objects
-
     async def add_expense_growth(db, expense_id, data, user_id):
 
         growth_objects = []
@@ -351,7 +289,6 @@ class ExpenseGrowthService:
 
         try:
 
-            # decide years
             years = range(1, 12) if data.is_same else [data.year]
 
             for year in years:
@@ -413,7 +350,7 @@ class ExpenseGrowthService:
             for growth in growth_objects:
                 await db.refresh(growth)
 
-            # refresh audit logs safely
+            # refresh audit logs 
             for audit in audit_objects:
                 if audit:
                     await db.refresh(audit)
@@ -441,7 +378,7 @@ class ExpenseGrowthService:
         if data.growth_percentage is not None:
             growth.growth_percentage = data.growth_percentage
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = { "expense_id": expense_id, "year":data.year, "growth_percentage":data.growth_percentage},
@@ -466,7 +403,7 @@ class ExpenseGrowthService:
         old_data = ExpenseGrowth.model_to_dict(growth)
         growth.is_deleted = True
 
-        audit_log = await AuditModel.add_new_logs(
+        await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
             new_data = {"is_deleted" : True},
