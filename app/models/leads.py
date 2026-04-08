@@ -218,7 +218,17 @@ class Leads(Base):
         result = await db.execute(stmt)
         return result.scalars().all()
 
-
+    async def get_lead_count_by_assistant(db, assisted_by):
+        stmt = (
+            select(func.count(Leads.id))
+            .where(
+                Leads.assisted_by == assisted_by, 
+                Leads.is_deleted == False, 
+                Leads.status != "onboard"
+            )
+        )
+        result = await db.execute(stmt)
+        return result.scalar() 
 
 
 

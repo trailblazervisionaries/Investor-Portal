@@ -268,17 +268,18 @@ class PropertyService:
         result = await db.execute(stmt)
         return result.scalars().all()
     
-    @staticmethod
-    async def get_total_count(db):
-
+    async def get_available_property_count(db):
         stmt = (
             select(func.count(Property.property_id))
-            .where(Property.is_deleted == False)
+            .where(
+                Property.is_deleted == False
+            )
         )
         result = await db.execute(stmt)
-        val =  result.scalar()
-        print(f"DEBUG: DB returned {val}")
-        return val
+        val = result.scalar() or 0 
+        return {
+            "total_properties": val 
+        }
 
     
     async def get_by_id_of_property(db, property_id):

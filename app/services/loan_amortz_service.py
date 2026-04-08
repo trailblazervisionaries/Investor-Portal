@@ -279,12 +279,13 @@ class AmortizationScheduleService:
             Decimal(loan_info.interest_rate) +
             Decimal(loan_info.spread_intrest_rate)
         )
-
+        # interest_total_per_year = loan_info.interest_rate
         loan_amount = Decimal(loan_info.total_loan_amount)
-
+        # loan_amount = Decimal("10595000")
         monthly_rate = (interest_total_per_year / Decimal(100)) / Decimal(12)
 
         total_months = int(loan_info.amortization_period) * 12
+        term_months = int(loan_info.term) * 12
 
         if monthly_rate == 0:
             emi = loan_amount / Decimal(total_months)
@@ -301,6 +302,7 @@ class AmortizationScheduleService:
             "loan_amount": loan_amount,
             "monthly_rate": monthly_rate,
             "total_months": total_months,
+            "term_months": term_months,
             "emi": emi
         }
 
@@ -448,16 +450,16 @@ class AmortizationScheduleService:
 
         getcontext().prec = 28
 
-        # Step 1: Basic loan calculation
+
         basic = AmortizationScheduleService.calculate_basic_loan_details(loan_info)
+        print("basic data : ", basic)
         # basic = {
         #     "loan_amount":loan_info.loan_info.loan_amount,
         #     "monthly_rate":loan_info.monthly_rate,
         #     "total_months":loan_info.term*12
-        #     ""
+            
         # }
 
-        # Step 2: Generate schedule
         schedule_data = AmortizationScheduleService.generate_amortization_schedule(
             basic["loan_amount"],
             basic["monthly_rate"],
@@ -741,162 +743,4 @@ class AmortizationScheduleService:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-    # async def add_new_amortization_schedule(db, loan_id, property_id, data):
-    #     loan_data = await PropertyLoanService.get_loan_detials_for_property(db, loan_id, property_id)
-    #     if not loan_data:
-    #         raise HTTPException(404, "AmortizationScheduleService: Loan Data not found with the provided property_id and loan_id please correct the ids")
-    #     amort_schedule = AmortizationSchedule(
-    #         amortization_id = generate_id("amort"),
-    #         property_id =property_id,
-    #         loan_id = loan_id,
-    #         year = data.year,
-    #         month = data.month,
-    #         principal_amount = data.principal_amount,
-    #         PMT = data.PMT,   # PMT means might be Payment(monthly against the loan)
-    #         interest = data.interest,
-    #         principal_paid = data.principal_paid,
-    #         loan_balance = data.loan_balance
-    #     )
-
-    #     db.add(amort_schedule)
-    #     await db.commit()
-    #     await db.refresh(amort_schedule)
-    #     logger.info("AmortizationScheduleService: amortization schedule data created successfully.")
-    #     return amort_schedule
-    
-
-
-    # async def update_amortization_schedule(db, amortization_id, loan_id, property_id, data):
-    #     schedule = await AmortizationSchedule.get_by_id(db, amortization_id, loan_id, property_id)
-    #     if not schedule:
-    #         raise HTTPException(404, "AmortizationScheduleService: AmortizationSchedule data not found using these amortization_id, loan_id, property_id detials ")
-
-    #     if data.year is not None:
-    #         schedule.year = data.year
-
-    #     if data.month is not None:
-    #         schedule.month = data.month
-
-    #     if data.principal_amount is not None:
-    #         schedule.principal_amount = data.principal_amount
-
-    #     if data.PMT is not None:
-    #         schedule.PMT = data.PMT
-
-    #     if data.interest is not None:
-    #         schedule.interest = data.interest
-
-    #     if data.principal_paid is not None:
-    #         schedule.principal_paid = data.principal_paid
-        
-    #     if data.loan_balance is not None:
-    #         schedule.loan_balance = data.loan_balance
-
-    #     await db.commit()
-    #     await db.refresh(schedule)
-    #     logger.info("AmortizationScheduleService: amortization schedule data updated successfully.")
-    #     return schedule
-
-
-
-    # async def delete_amortization_schedule(db, amortization_id, loan_id, property_id):
-    #     schedule = await AmortizationSchedule.get_by_id(db, amortization_id, loan_id, property_id)
-    #     if not schedule:
-    #         raise HTTPException(404, "AmortizationScheduleService: AmortizationSchedule data not found using these amortization_id, loan_id, property_id detials.")
-    #     schedule.is_deleted = True
-    #     await db.commit()
-    #     await db.refresh(schedule)
-    #     return{
-    #         "message": "AmortizationSchedule data is deleted successfully."
-    #     }
-    
-
-    # async def get_all(db, loan_id, property_id, year):
-    #     stmt = (
-    #         select(AmortizationSchedule)
-    #         .where(
-    #             AmortizationSchedule.loan_id == loan_id,
-    #             AmortizationSchedule.property_id == property_id,
-    #             AmortizationSchedule.year == year,
-    #             AmortizationSchedule.is_deleted.is_(False),
-    #         )
-    #         .order_by(
-    #             AmortizationSchedule.month,
-    #         )
-    #     )
-
-    #     result = await db.execute(stmt)
-    #     records = result.scalars().all()
-
-    #     if not records:
-    #         raise HTTPException(
-    #             status_code=404,
-    #             detail="AmortizationSchedules data not found with these loan_id, property_id details."
-    #         )
-
-    #     return records
-
-
-    # async def get_one(db, amortization_id, loan_id, property_id):
-    #     stmt = (
-    #         select(AmortizationSchedule)
-    #         .where(
-    #             AmortizationSchedule.amortization_id == amortization_id,
-    #             AmortizationSchedule.loan_id == loan_id,
-    #             AmortizationSchedule.property_id == property_id,
-    #             AmortizationSchedule.is_deleted.is_(False),
-    #         )
-    #     )
-    #     result = await db.execute(stmt)
-    #     record = result.scalar_one_or_none()
-    #     if not record:
-    #         raise HTTPException(
-    #             status_code=404,
-    #             detail="AmortizationSchedules data not found with these amortization_id, loan_id, property_id details."
-    #         )
-    #     return record
-    
-
-    # async def mark_paid_the_amortization(db, amortization_id, loan_id, property_id, data):
-    #     schedule = await AmortizationSchedule.get_by_id(db, amortization_id, loan_id, property_id)
-    #     if not schedule:
-    #         raise HTTPException(404, "AmortizationScheduleService: AmortizationSchedule data not found using these amortization_id, loan_id, property_id detials.")
-    #     schedule.is_paid = data.is_paid
-    #     schedule.paid_date = data.paid_date
-    #     await db.commit()
-    #     await db.refresh(schedule)
-    #     return{
-    #         "message":f"AmortizationScheduleService: AmortizationSchedule payment marked for this amortization_id: {amortization_id}."
-    #     }
-
-
-    # async def mark_unpaid_the_amortization(db, amortization_id, loan_id, property_id, data):
-    #     schedule = await AmortizationSchedule.get_by_id(db, amortization_id, loan_id, property_id)
-    #     if not schedule:
-    #         raise HTTPException(404, "AmortizationScheduleService: AmortizationSchedule data not found using these amortization_id, loan_id, property_id detials.")
-    #     schedule.is_paid = data.is_paid
-    #     schedule.paid_date = None
-    #     await db.commit()
-    #     await db.refresh(schedule)
-    #     return{
-    #         "message":f"AmortizationScheduleService: AmortizationSchedule payment un-marked for this amortization_id: {amortization_id}."
-    #     }
 

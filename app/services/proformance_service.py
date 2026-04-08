@@ -38,7 +38,6 @@ class PerformanceService:
                 growth_map = {g['year']: g['growth_percentage'] for g in growth_list}
 
                 # VACANCY HANDLING --------------------------------------
-
                 if type_name.lower() == "vacancy":
                     for year in range(12):
                         shifted_year = year + 1
@@ -59,7 +58,6 @@ class PerformanceService:
                         income_breakdown[type_name][year] = round(running_income, 2)
                         total_gross_income_per_year[year] += running_income
 
-
         # Vacancy Amount + EGI ----------------------------------
         vacancy_dollar_breakdown = {}
         total_effective_income = {}
@@ -77,7 +75,6 @@ class PerformanceService:
         income_breakdown["Vacancy"] = vacancy_dollar_breakdown
 
         # Expenses ------------------------
-
         expense_breakdown = {}
 
         for category in expense_data:
@@ -168,7 +165,7 @@ class PerformanceService:
             "total_gross_income_per_year": {
                 y: round(v, 2) for y, v in total_gross_income_per_year.items()
             },
-            "vacancy_percentage": vacancy_percentage_map,
+            # "vacancy_percentage": vacancy_percentage_map,
             "vacancy_amount": vacancy_dollar_breakdown,
             "total_income_per_year": total_effective_income,  
             "expense_breakdown": expense_breakdown,
@@ -179,3 +176,10 @@ class PerformanceService:
             "cashflow_after_deb_repayment": cash_flow_after_debt,
             "DSCR": dscr
         }
+    
+
+
+
+
+
+    

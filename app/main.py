@@ -45,48 +45,49 @@ async def startup_event():
     await create_tables()
     # logger.info("Scheduler started")
 
-
 @app.get("/")
 def health():
     return {"status": "FastAPI Scheduler Running"}
-
 
 @app.get("/health")
 def read_root():
     return {"message": "Welcome to RMS Backend :)"} 
 
 
+# all the propject user route
 app.include_router(user_routes.router, prefix="/api/users", tags=["user"])
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["admin"])
 app.include_router(fund_assist_routes.router, prefix="/api/fund-assist", tags=["fund-assistant"])
 app.include_router(investor_assist_routes.router, prefix="/api/investor-assist", tags=["investor-assistant"])
 app.include_router(investor_routes.router, prefix="/api/investor", tags=["investors"])
 
-#  it will store the data of all the new users who want to ask queries or invest using wordpress website
+# It will store the data of all the new users who want to ask queries or invest using wordpress website
 app.include_router(leads_routes.router, prefix="/api/lead", tags=["leads"])
 
-
+# Property and Property Types route
 app.include_router(property_routes.router, prefix="/api/property", tags=["property"])
 app.include_router(property_type_routes.router, prefix="/api/property-type", tags=["property-type"])
 
-#  for the property loan and amortization schedule routes
+# For the property loan and amortization schedule route
 app.include_router(loan_amort_routes.router, prefix="/api/loan-amortz", tags=["loan-amortz"])
 
-# for investor assistant assisgn related routes
-app.include_router(investor_assist_assign_routes.router, prefix="/api/investor-assist-assign", tags=["investor-assistent-assign"])
+# For investor assistant assisgn related route
+app.include_router(investor_assist_assign_routes.router, prefix="/api/investor-assist-assign", tags=["investor-assistant-assign"])
 
-# allocate the investment to the investor against the property
+# Allocate the investment to the investor against the property Route
 app.include_router(investor_investment_routes.router, prefix="/api/investment", tags=["investor-investment"])
 
+# Income and Expense Routes
 app.include_router(income_routes.router, prefix="/api/income", tags=["income"])
 app.include_router(expense_routes.router, prefix="/api/expense", tags=["expense"])
 
-# Property Pro-forma
+# Property Pro-forma Route
 app.include_router(property_proforma_routes.router, prefix="/api/property-proforma", tags=["property-proforma"])
 
-
+# File handle Route
 app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["file-handle"])
 
+# Audit route
 app.include_router(audit_routes.router,prefix="/api/audit-data", tags=["audit"])
 
 

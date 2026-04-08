@@ -118,3 +118,9 @@ async def upload_profile(
     db: Session = Depends(get_db),
 ):
     return await FileUploadService.upload_profile_image(db, file, user_id, request, role)
+
+
+@router.get("/get-dashboard/{assistant_id}")
+async def return_total_leads_investor_data(assistant_id: str, request: Request, db: Session = Depends(get_db)):
+    user_id = request.state.user.user_id
+    return await InvestorAssistService.get_total_leads_investor_data(db, assistant_id)

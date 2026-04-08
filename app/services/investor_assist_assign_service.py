@@ -158,3 +158,5 @@ class InvestorassistantAssignmentService:
             return []
             # raise HTTPException("InvestorAssistantAssignmentService: No Any assisgnment found for the provided investor_assistant_id")
         return data
+    
+

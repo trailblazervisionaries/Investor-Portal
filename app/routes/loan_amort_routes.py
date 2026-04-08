@@ -75,76 +75,10 @@ async def delete_the_amortz_schedule(request: Request, loan_id: str, property_id
     return amortz_schedules
 
 
-
-
 @router.get('/amortz/exportall/{property_id}/{loan_id}')
 async def delete_the_amortz_schedule(request: Request, loan_id: str, property_id: str, db: Session = Depends(get_db)):
     amortz_schedules = await AmortizationScheduleService.export_to_sheet(db, loan_id, property_id)
     return amortz_schedules
-
-
-
-
-
-
-
-
-
-
-
-
-# @router.post("/amortz/add/{property_id}/{loan_id}", response_model = AmortzSecheduleResponse)
-# async def add_the_amortization_schedule_detials(request: Request, loan_id: str, property_id: str, data: createAmortzSechedule, db: Session = Depends(get_db)):
-#     amortz_schedule = await AmortizationScheduleService.add_new_amortization_schedule(db, loan_id, property_id, data)
-#     return AmortzSecheduleResponse.model_validate(amortz_schedule)
-
-
-
-# @router.put("/amortz/update/{property_id}/{loan_id}/{amortization_id}", response_model = AmortzSecheduleResponse)
-# async def update_the_amortization_schedule_detials(request: Request, amortization_id: str, loan_id: str, property_id: str, data: updateAmortzSechedule, db: Session = Depends(get_db)):
-#     role = request.state.user.role
-#     if role not in ["admin","fund-assistant"]:
-#         raise HTTPException(401, "you are not authorise to perform this operation.")
-#     amortz_schedule = await AmortizationScheduleService.update_amortization_schedule(db, amortization_id, loan_id, property_id, data)
-#     return AmortzSecheduleResponse.model_validate(amortz_schedule)    
-    
-
-
-# @router.delete('/amortz/delete/{property_id}/{loan_id}/{amortization_id}')
-# async def delete_the_amortz_schedule(request: Request, amortization_id: str, loan_id: str, property_id: str, db: Session = Depends(get_db)):
-#     role = request.state.user.role
-#     if role not in ["admin","fund-assistant"]:
-#         raise HTTPException(401, "you are not authorise to perform this operation.")
-#     return await AmortizationScheduleService.delete_amortization_schedule(db, amortization_id, loan_id, property_id)
-
-
-# @router.get('/amortz/getall/{property_id}/{loan_id}/{year}', response_model = List[AmortzSecheduleResponse])
-# async def delete_the_amortz_schedule(request: Request, year: str, loan_id: str, property_id: str, db: Session = Depends(get_db)):
-#     amortz_schedules = await AmortizationScheduleService.get_all(db, loan_id, property_id, year)
-#     return [AmortzSecheduleResponse.model_validate(amortz_schedule) for amortz_schedule in amortz_schedules]
-
-
-# @router.get('/amortz/get/{property_id}/{loan_id}/{amortization_id}', response_model = AmortzSecheduleResponse)
-# async def delete_the_amortz_schedule(request: Request, amortization_id: str, loan_id: str, property_id: str, db: Session = Depends(get_db)):
-#     amortz_schedule = await AmortizationScheduleService.get_one(db, amortization_id, loan_id, property_id)
-#     return AmortzSecheduleResponse.model_validate(amortz_schedule)
-
-# @router.put("/amortz/mark/{property_id}/{loan_id}/{amortization_id}")
-# async def mark_paid_for_amortization_schedule(request: Request, amortization_id: str, loan_id: str, 
-#                                               property_id: str, data: updateMarkAmortzSchedulePayment, db: Session = Depends(get_db)):
-#     role = request.state.user.role
-#     if role not in ["admin","fund-assistant"]:
-#         raise HTTPException(401, "you are not authorise to perform this operation.")
-#     return await AmortizationScheduleService.mark_paid_the_amortization(db, amortization_id, loan_id, property_id, data)
-
-
-# @router.put("/amortz/unmark/{property_id}/{loan_id}/{amortization_id}")
-# async def unmark_paid_for_amortization_schedule(request: Request, amortization_id: str, loan_id: str, 
-#                                               property_id: str, data: updateMarkAmortzSchedulePayment, db: Session = Depends(get_db)):
-#     role = request.state.user.role
-#     if role not in ["admin","fund-assistant"]:
-#         raise HTTPException(401, "you are not authorise to perform this operation.")
-#     return await AmortizationScheduleService.mark_unpaid_the_amortization(db, amortization_id, loan_id, property_id, data)
 
 
 

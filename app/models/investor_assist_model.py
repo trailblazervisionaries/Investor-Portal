@@ -304,4 +304,12 @@ class InvestorAssignments(Base):
         return result.scalars().all()
     
 
+    async def get_investor_count_by_assistant(db, assistant_id):
+        stmt = (select(func.count(InvestorAssignments.id)).where(
+                    InvestorAssignments.investor_assistant_id == assistant_id,
+                    InvestorAssignments.is_deleted == False
+                ))
+        result = await db.execute(stmt)
+        return result.scalar()
+
     
