@@ -110,13 +110,6 @@ async def get_by_property_id(request: Request, property_id:str, db: Session = De
     property = await PropertyService.get_by_id_of_property(db, property_id)
     return PropertyResponse.model_validate(property)
 
-@router.get("/numbers", response_model=None)
-async def get_total(request: Request, db: Session = Depends(get_db)):
-    # user_id = request.state.user.user_id
-    print("--------")
-    prop =  await PropertyService.get_available_property_count(db)
-    print("property  ", prop)
-    return prop
 
 
 @router.get("/get-property-name-id")
@@ -125,6 +118,8 @@ async def get_property_name_id(request: Request, db: Session = Depends(get_db)):
     if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     return await PropertyService.get_all_property_name_id(db)
+
+
    
 
 # @router.get("/getall/{risk_status}",  response_model=List[PropertyResponse])

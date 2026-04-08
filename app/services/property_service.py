@@ -1,22 +1,11 @@
-from fastapi import Request, Response, HTTPException, status
-from sqlalchemy.orm import selectinload, joinedload
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, func
-from datetime import datetime, timedelta
+from sqlalchemy import select, func, case, and_
 from app.models.audit_model import AuditModel
-from dotenv import load_dotenv
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from io import BytesIO
-from fastapi.responses import StreamingResponse
-from openpyxl.utils import get_column_letter
 from decimal import Decimal, ROUND_HALF_UP
-from app.models.property_model import Property, PropertyUnitType, PropertyUnit
-import traceback
+from app.models.property_model import Property, PropertyUnitType
 import time
-import os
 import logging
 
 
@@ -276,10 +265,7 @@ class PropertyService:
             )
         )
         result = await db.execute(stmt)
-        val = result.scalar() or 0 
-        return {
-            "total_properties": val 
-        }
+        return result.scalar() or 0
 
     
     async def get_by_id_of_property(db, property_id):
@@ -296,6 +282,37 @@ class PropertyService:
                 {"property_name": row.name, "property_id": row.property_id} 
                 for row in rows
             ]
+
+
+
+    async def get_property_statistics(db):
+        """
+        Returns counts using async select and conditional aggregation.
+        """
+        # Define the columns/counts we want to fetch
+        stmt = select(
+            func.count(case((Property.is_approved == True, 1))),
+            func.count(case((Property.is_open_for_investment == True, 1))),
+            func.count(case((and_(
+                Property.is_approved == True, 
+                Property.is_open_for_investment == True
+            ), 1))),
+            func.count(case((Property.is_deleted == False, 1)))
+        ).filter(Property.is_deleted == False)
+
+        # Execute the statement
+        result = await db.execute(stmt)
+        
+        # Extract the first row of the result (since it's an aggregate)
+        stats = result.fetchone()
+
+        return {
+            "total_approved": stats[0],
+            "total_open_for_investment": stats[1],
+            "total_approved_and_open": stats[2],
+            "total_properties": stats[3]
+        }
+    
 
 # not in used ===================================================================
 

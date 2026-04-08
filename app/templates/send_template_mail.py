@@ -140,3 +140,37 @@ class MailTemplatesService:
         asyncio.run(MailService.send_mail(email, subject, html_message))
 
 
+
+    @staticmethod
+    @shared_task(name="app.template.send_template_mail.send_notif_password_change")
+    def send_notif_invested_property_info(email: str, property_id, property_name, investor_id, investor_assist_id, assistant_name):
+        masked_email = MailTemplatesService.mask_email(email)
+        subject = "Your Investment Portal Password Has Been Changed"
+        html_message = f"""
+            <html>
+                <body>
+                    <div>
+                        <h2>🔒 Password Changed</h2>
+
+                        <p>Dear <strong>{masked_email}</strong>,</p>
+
+                        <p>
+                            This is to inform you that your Investment Portal account password has been
+                            <strong>changed successfully</strong>.
+                        </p>
+
+                        <div class="highlight">
+                            <p>
+                                If you did <strong>NOT</strong> initiate this change,  
+                                please contact support immediately.
+                            </p>
+                        </div>
+
+                        <div class="footer">
+                            Investment Portal Team
+                        </div>
+                    </div>
+                </body>
+            </html>
+        """
+        asyncio.run(MailService.send_mail(email, subject, html_message))

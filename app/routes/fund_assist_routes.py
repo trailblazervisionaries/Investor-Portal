@@ -4,6 +4,7 @@ from app.services.fund_assist_service import FundAssistService
 from app.services.file_img_process import FileUploadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.fund_assist import FundAssistCreate, FundAssistUpdate, FundAssistResponse, FundAssistPaginationResponse
+from app.services.property_service import PropertyService
 import logging 
 import math
 logger = logging.getLogger(__name__)
@@ -40,13 +41,11 @@ async def get_me(request: Request, db: Session = Depends(get_db)):
     return FundAssistResponse.model_validate(fund_assist)
 
 
-@router.get("/number")
+@router.get("/dash-info")
 async def get_total(request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
-    fund_assist_total = await FundAssistService.get_total_count(db)
-    if not fund_assist_total:
-        return {"total_fund_assistant": 0}
-    return {"total_fund_assistant": fund_assist_total}
+    return await PropertyService.get_property_statistics(db)
+
 
 
 @router.get("/getall", response_model=FundAssistPaginationResponse)

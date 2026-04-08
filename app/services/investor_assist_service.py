@@ -13,6 +13,7 @@ from app.models.leads import Leads
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.investor_assist import InvestorAssistCreate, InvestorAssistUpdate
+from app.services.property_service import PropertyService
 from app.models.audit_model import  AuditModel
 import traceback
 import os
@@ -298,9 +299,11 @@ class InvestorAssistService:
     
 
     async def get_total_leads_investor_data(db, assistant_id):
+        properties = await PropertyService.get_property_statistics(db)
         lead = await Leads.get_lead_count_by_assistant(db, assistant_id)
         investor =  await InvestorAssignments.get_investor_count_by_assistant(db, assistant_id)
         return {
             "total_leads": lead,
-            "total_investor": investor
+            "total_investor": investor,
+            "properties": properties
         }
