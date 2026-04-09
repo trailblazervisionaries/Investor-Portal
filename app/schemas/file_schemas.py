@@ -9,3 +9,8 @@ class FileReturnResponse(BaseModel):
     added_by : str
     added_for : str
     created_at : datetime
+
+
+    model_config = {
+        "from_attributes": True
+    }

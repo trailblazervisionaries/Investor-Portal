@@ -104,5 +104,5 @@ class UploadedDocument(Base):
 
     async def get_by_uploaded_for(db, added_for_id):
         stmt = (select(UploadedDocument).where(UploadedDocument.added_for == added_for_id))
-        result = db.execute(stmt)
+        result = await db.execute(stmt)
         return result.scalars().all()
