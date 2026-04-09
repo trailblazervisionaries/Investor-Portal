@@ -62,6 +62,31 @@ class PropertyResponse(createProperty):
     class Config:
         from_attributes = True
 
+
+class PublicPropertyResponse(createProperty):
+    property_id: str
+    added_by: str
+    updated_by: str | None = None
+    is_approved: bool
+    is_open_for_investment: bool
+    is_deleted: bool
+    property_image_urls: List[str] = []
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    class Config:
+        from_attributes = True
+
+class PublicPropertyPaginationResponse(BaseModel):
+    items: List[PublicPropertyResponse]
+    total_count: int
+    page: int
+    size: int
+    total_pages: int
+
+    class Config:
+        from_attributes = True
+
 class PropertyPaginationResponse(BaseModel):
     items: List[PropertyResponse]
     total_count: int

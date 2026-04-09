@@ -3,7 +3,7 @@ from app.config.database import get_db
 from app.services.property_service import PropertyService, PropertyUnitTypeServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileUploadService
-from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
+from app.schemas.property import (createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse, PublicPropertyResponse, PublicPropertyPaginationResponse)
 from typing import List
 import logging 
 import math
@@ -101,14 +101,14 @@ async def get_all_property(request: Request, deleted: bool, db: Session = Depend
     }
 
 
-@router.get("/public/getall", response_model=PropertyPaginationResponse)
+@router.get("/public/getall", response_model=PublicPropertyPaginationResponse)
 async def get_all_property(request: Request, deleted: bool, db: Session = Depends(get_db), page: int = 1, size: int = 10):
     skip = (max(1, page) - 1) * size
     properties, total_count = await PropertyService.get_info_all_properties(db, request, skip, size, deleted)
     total_pages = math.ceil(total_count / size) if total_count > 0 else 0
 
     return {
-        "items": [PropertyResponse.model_validate(property) for property in properties],
+        "items": [PublicPropertyResponse.model_validate(property) for property in properties],
         "total_count": total_count,
         "page": page,
         "size": size,
