@@ -15,12 +15,13 @@ class AddressBase(BaseModel):
         from_attributes = True
 
 class InvestorCreate(BaseModel):
-    sirname: Optional[str] = None,
+    sirname: Optional[str] = None
     fname: str
-    mname: Optional[str] = None,
-    lname: Optional[str] = None,
+    mname: Optional[str] = None
+    lname: Optional[str] = None
     email: str
     phone: str
+    investor_turnover: float
     role: str | None = "investor"
     address: AddressBase
 

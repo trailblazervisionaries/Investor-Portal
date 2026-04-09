@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from app.config.database import get_db
 from app.services.investor_service import InvestorService
 from app.services.file_img_process import FileUploadService

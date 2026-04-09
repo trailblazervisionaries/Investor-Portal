@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query,Form
+from fastapi import APIRouter, Depends, Query,Form
 from app.config.database import get_db
 from app.models.audit_model import AuditModel
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.audit_log import AuditPaginationWrapper
-from typing import List, Optional
+from typing import Optional
 import logging 
 from datetime import datetime
-import math
 logger = logging.getLogger(__name__)
 
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
 from app.services.investor_assist_assign_service import InvestorassistantAssignmentService
 from sqlalchemy.ext.asyncio import AsyncSession as Session

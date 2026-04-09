@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from app.config.database import get_db
 from app.services.investor_assist_service import InvestorAssistService
 from app.services.file_img_process import FileUploadService
@@ -14,7 +14,7 @@ router = APIRouter()
 async def add_admin(request: Request, data: InvestorAssistCreate, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","investor-assistant"]:
+    if role not in ["admin"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     investor_assistant = await InvestorAssistService.create_investor_assistant(db, data, user_id)
     return InvestorAssistResponse.model_validate(investor_assistant)

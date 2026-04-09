@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from fastapi import HTTPException, UploadFile, Request
 from app.models.audit_model import AuditModel
 from io import BytesIO
+from typing import List
 import uuid
 import boto3
 from dotenv import load_dotenv
@@ -325,11 +326,65 @@ class FileUploadService:
 
 
 
+    async def upload_multiple_files(db, request, files: List[UploadFile], property_id: str, folder: str):
+        property_data = await Property.get_by_id(db, property_id)
+        if not property_data:
+            raise HTTPException(status_code=404, detail="Property Not Found")
+
+        folder_path = os.path.join(UPLOAD_BASE, str(property_id), folder)
+        if os.path.exists(folder_path):
+            shutil.rmtree(folder_path)  
+
+        os.makedirs(folder_path, exist_ok=True)
+        
+        uploaded_metadata = []
+
+        for file in files:
+            ext = file.filename.split(".")[-1]
+            unique_name = f"{generate_image_id()}.{ext}"
+            final_path = os.path.join(folder_path, unique_name)
+
+            with open(final_path, "wb") as buffer:
+                content = await file.read()
+                buffer.write(content)
+
+            uploaded_metadata.append({
+                "original_name": file.filename,
+                "filepath": final_path
+            })
+        property_data.property_image = folder_path
+        await db.commit()
+        await db.refresh(property_data)
+        public_links = FileUploadService.get_folder_public_links(request, folder_path)
+        return {
+            "folder_path": folder_path,
+            "files_count": len(uploaded_metadata),
+            "public_urls":public_links,
+            "files": uploaded_metadata
+        }
+
+
+
+
     async def get_all_uploaded_docs(db: Session, added_for_id: str):
 
         return await UploadedDocument.get_by_uploaded_for(db, added_for_id)
       
 
 
+    def get_folder_public_links(request: Request, folder_path: str):
+        if not folder_path or not os.path.exists(folder_path):
+            return []
+
+        public_urls = []
+        # Loop through all files in the folder
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            # Check if it's a file (not a subfolder)
+            if os.path.isfile(file_path):
+                public_urls.append(FileUploadService.convert_to_public_url(request, file_path))
+                
+        return public_urls
+    
 
     

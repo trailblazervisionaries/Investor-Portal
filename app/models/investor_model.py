@@ -15,7 +15,7 @@ class Investors(Base):
     fname = Column(String, nullable=False)
     mname = Column(String)
     lname = Column(String)
-
+    investor_turnover = Column(Numeric(14, 2), nullable=False, default=Decimal("0.00"))
     email = Column(String, nullable=False, unique=True, index=True)
     phone = Column(String, nullable=False)
 

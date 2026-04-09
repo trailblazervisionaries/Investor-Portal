@@ -9,7 +9,6 @@ from app.routes import (user_routes, admin_routes, fund_assist_routes, investor_
                            investor_investment_routes, income_routes, expense_routes, property_proforma_routes)
 import logging
 from app.logging_config import setup_logging
-
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -19,8 +18,6 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-
-
 app.add_middleware(APIMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -89,6 +86,9 @@ app.include_router(file_img_routes.router,prefix="/api/file-handle", tags=["file
 
 # Audit route
 app.include_router(audit_routes.router,prefix="/api/audit-data", tags=["audit"])
+
+
+
 
 
 

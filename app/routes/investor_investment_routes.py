@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
 from app.services.investor_investment_service import InvestorInvestmentServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
@@ -12,7 +12,7 @@ router = APIRouter()
 async def allocate_the_new_investment_to_investor(request: Request, investor_id: str, data: InvestorInvestmentCreate, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","investor-assistant"]:
+    if role not in ["investor-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     new_alloc_investment = await InvestorInvestmentServices.add_new_investment(db, investor_id, data, user_id)
     return InvestorInvestmentsResponse.model_validate(new_alloc_investment)
@@ -22,7 +22,7 @@ async def allocate_the_new_investment_to_investor(request: Request, investor_id:
 async def allocate_the_new_investment_to_investor(request: Request, id: int, investor_id: str, data: InvestorInvestmentsUpdate, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","investor-assistant"]:
+    if role not in ["investor-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     new_alloc_investment = await InvestorInvestmentServices.update_investment(db, id, investor_id, data, user_id)
     return InvestorInvestmentsResponse.model_validate(new_alloc_investment)
@@ -32,7 +32,7 @@ async def allocate_the_new_investment_to_investor(request: Request, id: int, inv
 async def update_the_status_of_investemnt(request: Request, id: int, investor_id: str, status: str, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","investor-assistant"]:
+    if role not in ["investor-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     return await InvestorInvestmentServices.update_the_investment_status(db, id, investor_id, status, user_id)
 

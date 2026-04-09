@@ -1,5 +1,5 @@
 from fastapi import Request, HTTPException,Depends
-from typing import Optional, Dict, List
+from typing import Optional
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -51,7 +51,7 @@ class APIMiddleware(BaseHTTPMiddleware):
         skip_paths = [
             "/api/admin/public",
             "/api/user/public",
-            "/api/users",
+            "/api/property/public/",
             "/api/lead/add",
             "/send-test-email",
             "/docs",

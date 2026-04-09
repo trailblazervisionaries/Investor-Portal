@@ -4,7 +4,6 @@ from app.services.property_service import PropertyService, PropertyUnitTypeServi
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileUploadService
 from app.schemas.property import createProperty, updateProperty, investmentRequired, PropertyResponse, PropertyPaginationResponse
-from app.services.growth_service import IncomeExpanseGrowthService
 from typing import List
 import logging 
 import math
@@ -90,7 +89,22 @@ async def get_all_property(request: Request, deleted: bool, db: Session = Depend
     if role not in ["admin","fund-assistant","investor", "investor-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     skip = (max(1, page) - 1) * size
-    properties, total_count = await PropertyService.get_info_all_properties(db, skip, size, deleted)
+    properties, total_count = await PropertyService.get_info_all_properties(db, request, skip, size, deleted)
+    total_pages = math.ceil(total_count / size) if total_count > 0 else 0
+
+    return {
+        "items": [PropertyResponse.model_validate(property) for property in properties],
+        "total_count": total_count,
+        "page": page,
+        "size": size,
+        "total_pages": total_pages
+    }
+
+
+@router.get("/public/getall", response_model=PropertyPaginationResponse)
+async def get_all_property(request: Request, deleted: bool, db: Session = Depends(get_db), page: int = 1, size: int = 10):
+    skip = (max(1, page) - 1) * size
+    properties, total_count = await PropertyService.get_info_all_properties(db, request, skip, size, deleted)
     total_pages = math.ceil(total_count / size) if total_count > 0 else 0
 
     return {
@@ -155,13 +169,33 @@ async def upload_profile(
     user_id: str,
     role: str,
     file: UploadFile = File(...),
-    file_type: str = Form(...),     # profile
+    file_type: str = Form(...),    
     db: Session = Depends(get_db),
 ):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
     return await FileUploadService.upload_profile_image(
         db, file, user_id, request, role, file_type
     )
 
+
+
+@router.post("/upload-folder/{property_id}")
+async def upload_folder(
+    request: Request,
+    property_id: str,
+    files: List[UploadFile] = File(...),
+    folder_name: str = Form(...),  
+    db: Session = Depends(get_db),
+):
+    role = request.state.user.role
+    if role not in ["admin","fund-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    return await FileUploadService.upload_multiple_files(
+        db, request, files, property_id, folder_name
+    )
 
 
 

@@ -1,9 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
-from app.services.property_service import PropertyService, PropertyUnitTypeServices
-from app.services.expense_service import ExpenseTypeService
-from app.services.income_service import IncomeTypeService
-from app.services.growth_service import IncomeExpanseGrowthService
+from app.services.property_service import PropertyUnitTypeServices
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.property import createPropertyType, updatePropertyType, PropertyTypeResponse
 from typing import List
@@ -17,7 +14,7 @@ router = APIRouter()
 async def add_new_property_type(property_id: str, data: createPropertyType, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     property_type = await PropertyUnitTypeServices.add_new_property_unit_type(db, property_id, data, user_id)
     return PropertyTypeResponse.model_validate(property_type)
@@ -27,7 +24,7 @@ async def add_new_property_type(property_id: str, data: createPropertyType, requ
 async def update_property_type( id : int, property_id: str, data: updatePropertyType, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "you are not authorise to perform this operation")
     property_type = await PropertyUnitTypeServices.update_property_unit_type(db, id, property_id, data, user_id)
     return PropertyTypeResponse.model_validate(property_type)

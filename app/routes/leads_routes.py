@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from app.config.database import get_db
 from app.services.leads_services import LeadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.leads import createLeads, LeadResponse, updateLeads, addRemarksLeads, PaginatedLeadResponse
-from typing import List
+from app.schemas.leads import createLeads, updateLeads, addRemarksLeads, PaginatedLeadResponse
 from datetime import datetime
 import logging 
 logger = logging.getLogger(__name__)

@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
 from app.config.database import get_db
 from app.services.admin_service import AdminService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.schemas.admin import AdminCreate, AdminUpdate, AdminResponse
-from app.services.file_img_process import FileImageProcessService, FileUploadService
+from app.services.file_img_process import FileUploadService
 from app.services.fund_assist_service import FundAssistService
 from app.services.property_service import PropertyService
 from app.services.investor_assist_service import InvestorAssistService

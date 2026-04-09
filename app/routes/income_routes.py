@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
 from app.services.income_service import IncomeService, IncomeTypeService, IncomeGrowthService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
@@ -14,7 +14,7 @@ router = APIRouter()
 async def add_new_income_type(request: Request, data: CreateIncomeType, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     type = await IncomeTypeService.add_income_type(db, data, user_id)
     return IncomeTypeResponse.model_validate(type)
@@ -24,7 +24,7 @@ async def add_new_income_type(request: Request, data: CreateIncomeType, db: Sess
 async def update_income_type_by_id(id: int, request: Request, data: UpdateIncomeType, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     updated_type = await IncomeTypeService.update_income_type(db, id, data, user_id)
     return IncomeTypeResponse.model_validate(updated_type)
@@ -34,7 +34,7 @@ async def update_income_type_by_id(id: int, request: Request, data: UpdateIncome
 async def delete_income_type_by_id(request: Request, property_id: str, id: int, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     return await IncomeTypeService.delete_income_type(db, id, property_id, user_id)
 
@@ -62,7 +62,7 @@ async def get_property_all_type_income_details(property_id: str, db: Session = D
 async def add_new_income(request: Request, property_id: str, data: CreateIncome, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     income = await IncomeService.add_new_income(db, property_id, data, user_id)
     return IncomeResponse.model_validate(income)
@@ -72,7 +72,7 @@ async def add_new_income(request: Request, property_id: str, data: CreateIncome,
 async def update_income(request: Request, property_id: str, type_id: int, income_id: str, data: UpdateIncome, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(403, "You don't have permission to perform this operation")
     income = await IncomeService.update_income(db, income_id, type_id, property_id, data, user_id)
     return IncomeResponse.model_validate(income)

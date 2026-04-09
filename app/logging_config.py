@@ -1,42 +1,74 @@
 import logging
-from logging.handlers import RotatingFileHandler
-import os
+import sys
 
-LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)
+# Define ANSI color codes
+LOG_COLORS = {
+    logging.DEBUG: "\x1b[38;20m",
+    logging.INFO: "\x1b[38;20m",
+    logging.WARNING: "\x1b[33;20m",
+    logging.ERROR: "\x1b[31;20m",
+    logging.CRITICAL: "\x1b[31;1m"
+}
+RESET = "\x1b[0m"
 
-LOG_FORMAT = (
-    "%(asctime)s | %(levelname)s | "
-    "%(name)s | %(filename)s:%(lineno)d | %(message)s"
-)
+class CustomColoredFormatter(logging.Formatter):
+    """Custom logging formatter to provide color-coded terminal output."""
+    
+    def format(self, record):
+        log_fmt = LOG_COLORS.get(record.levelno, "") + \
+                  "%(asctime)s | %(levelname)s | %(message)s" + RESET
+        formatter = logging.Formatter(log_fmt)
+        return formatter.format(record)
 
 def setup_logging():
-    logging.basicConfig(level=logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(CustomColoredFormatter())
+    
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    logger.addHandler(handler)
 
-    formatter = logging.Formatter(LOG_FORMAT)
 
-    # App log (all logs)
-    app_handler = RotatingFileHandler(
-        f"{LOG_DIR}/app.log",
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=5,
-        encoding="utf-8" 
-    )
-    app_handler.setFormatter(formatter)
-    app_handler.setLevel(logging.INFO)
 
-    # Error log (only errors)
-    error_handler = RotatingFileHandler(
-        f"{LOG_DIR}/error.log",
-        maxBytes=10 * 1024 * 1024,
-        backupCount=5,
-        encoding="utf-8" 
-    )
-    error_handler.setFormatter(formatter)
-    error_handler.setLevel(logging.ERROR)
+# import logging
+# from logging.handlers import RotatingFileHandler
+# import os
 
-    root_logger = logging.getLogger()
-    root_logger.addHandler(app_handler)
-    root_logger.addHandler(error_handler)
+# LOG_DIR = "logs"
+# os.makedirs(LOG_DIR, exist_ok=True)
+
+# LOG_FORMAT = (
+#     "%(asctime)s | %(levelname)s | "
+#     "%(name)s | %(filename)s:%(lineno)d | %(message)s"
+# )
+
+# def setup_logging():
+#     logging.basicConfig(level=logging.INFO)
+
+#     formatter = logging.Formatter(LOG_FORMAT)
+
+#     # App log (all logs)
+#     app_handler = RotatingFileHandler(
+#         f"{LOG_DIR}/app.log",
+#         maxBytes=10 * 1024 * 1024,  # 10MB
+#         backupCount=5,
+#         encoding="utf-8" 
+#     )
+#     app_handler.setFormatter(formatter)
+#     app_handler.setLevel(logging.INFO)
+
+#     # Error log (only errors)
+#     error_handler = RotatingFileHandler(
+#         f"{LOG_DIR}/error.log",
+#         maxBytes=10 * 1024 * 1024,
+#         backupCount=5,
+#         encoding="utf-8" 
+#     )
+#     error_handler.setFormatter(formatter)
+#     error_handler.setLevel(logging.ERROR)
+
+#     root_logger = logging.getLogger()
+#     root_logger.addHandler(app_handler)
+#     root_logger.addHandler(error_handler)
 
 

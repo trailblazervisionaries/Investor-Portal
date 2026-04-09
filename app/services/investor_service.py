@@ -59,6 +59,7 @@ class InvestorService:
                 fname=data.fname,
                 mname=data.mname,
                 lname=data.lname,
+                investor_turnover=data.investor_turnover,
                 email=data.email,
                 phone=data.phone,
                 role=data.role,

@@ -1,11 +1,13 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
 from sqlalchemy import select, func, case, and_
 from app.models.audit_model import AuditModel
 from decimal import Decimal, ROUND_HALF_UP
 from app.models.property_model import Property, PropertyUnitType
+from app.services.file_img_process import FileUploadService
 import time
+import os
 import logging
 
 
@@ -218,7 +220,7 @@ class PropertyService:
         return result.scalars().all()
 
     @staticmethod
-    async def get_info_all_properties(db, skip: int = 0, limit: int = 10, deleted: bool = False):
+    async def get_info_all_properties(db, request, skip: int = 0, limit: int = 10, deleted: bool = False):
         stmt = (
             select(Property)
             .where(Property.is_deleted == deleted)
@@ -232,7 +234,26 @@ class PropertyService:
         )
         result = await db.execute(stmt)
         total_res = await db.execute(count_stmt)
-        return result.scalars().all(), total_res.scalar() or 0
+        properties = result.scalars().all()
+
+        # properties to convert folder paths to lists of URLs
+        for item in properties:
+            if item.property_image and os.path.exists(item.property_image):
+                # Scan folder for files
+                files = [
+                    os.path.join(item.property_image, f) 
+                    for f in os.listdir(item.property_image) 
+                    if os.path.isfile(os.path.join(item.property_image, f))
+                ]
+                # Convert each file to a public URL
+                item.property_image_urls = [
+                    FileUploadService.convert_to_public_url(request, f) for f in files
+                ]
+            else:
+                item.property_image_urls = []
+
+        return properties, total_res.scalar() or 0
+        
 
     @staticmethod
     async def get_all_properties_info_by_risk(db, risk_status, skip: int = 0, limit: int = 10, deleted: bool = False):

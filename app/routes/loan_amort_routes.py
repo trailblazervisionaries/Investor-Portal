@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
 from app.services.loan_amortz_service import PropertyLoanService, AmortizationScheduleService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.property import (createPropertyLoan, updatePropertyLoan, PropertyLoanResponse, 
-                                  createAmortzSechedule, updateAmortzSechedule, AmortzSecheduleResponse, updateMarkAmortzSchedulePayment)
+from app.schemas.property import (createPropertyLoan, updatePropertyLoan, PropertyLoanResponse)
 import logging 
 from typing import List
 logger = logging.getLogger(__name__)
@@ -15,7 +14,7 @@ router = APIRouter()
 async def create_property_loan(request: Request, property_id: str, data: createPropertyLoan, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
     property_loan = await PropertyLoanService.add_new_loan_details(db, property_id, data, user_id)
     return PropertyLoanResponse.model_validate(property_loan)
@@ -25,7 +24,7 @@ async def create_property_loan(request: Request, property_id: str, data: createP
 async def update_property_loan(request: Request, loan_id: str, property_id: str, data: updatePropertyLoan, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
-    if role not in ["admin","fund-assistant"]:
+    if role not in ["fund-assistant"]:
         raise HTTPException(401, "you are not authorise to perform this operation.")
     property_loan = await PropertyLoanService.update_loan_detials(db, loan_id, property_id, data, user_id)
     return PropertyLoanResponse.model_validate(property_loan)
