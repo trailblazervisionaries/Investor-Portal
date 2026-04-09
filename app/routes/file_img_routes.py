@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, Form
 from app.config.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileImageProcessService, FileUploadService
@@ -24,8 +24,8 @@ router = APIRouter()
 async def upload_profile(
     request: Request,
     user_id: str,
-    role: str,
-    name: str,
+    role: str = Form(...),
+    name: str = Form(...),
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):

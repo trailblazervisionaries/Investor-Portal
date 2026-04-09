@@ -314,11 +314,11 @@ class FileUploadService:
             added_for = user_id
         )
         db.add(upload_docs)
-        await db.flush(upload_docs)
-
+        await db.commit()
+        await db.refresh(upload_docs)
         return {
             "message": f"{name} Document uploaded successfully",
-            "name": upload_docs.name,
+            "name": upload_docs.file_type_name,
             "doc_url":upload_docs.file_url,
             "added_for": upload_docs.added_for,
             "added_by":upload_docs.added_by
