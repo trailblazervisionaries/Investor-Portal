@@ -50,7 +50,7 @@ class APIMiddleware(BaseHTTPMiddleware):
         # Add paths that don't need authentication
         skip_paths = [
             "/api/admin/public",
-            "/api/user/public",
+            "/api/users/public",
             "/api/property/public/",
             "/api/lead/add",
             "/send-test-email",
