@@ -1,7 +1,3 @@
-"""
-Schemas for property pro-forma and analysis responses
-"""
-
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime

@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
 from app.core.utils_functions import generate_id, generate_alphanumeric_password
 from sqlalchemy import select, func
-from datetime import datetime, timedelta
 from app.services.user_service import UserServices
 from dotenv import load_dotenv
 from app.models.investor_model import Investors
@@ -13,8 +12,6 @@ from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.investor import InvestorCreate, InvestorUpdate
 from app.models.audit_model import AuditModel
-import traceback
-import os
 import logging
 
 load_dotenv()

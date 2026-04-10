@@ -1,16 +1,14 @@
-from fastapi import Request, Response, HTTPException, status
+from fastapi import HTTPException
 from openpyxl import Workbook
 from openpyxl.styles import Font
-from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 from app.models.leads import Leads, LeadRemark
 from app.schemas.leads import createLeads
-import os
 import logging
 from io import BytesIO
 from fastapi.responses import StreamingResponse

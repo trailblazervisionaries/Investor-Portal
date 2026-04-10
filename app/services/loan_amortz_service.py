@@ -1,19 +1,12 @@
-from fastapi import Request, Response, HTTPException, status
-# from fastapi.responses import FileResponse
+from fastapi import HTTPException
 from sqlalchemy.orm import selectinload, joinedload
-from collections import defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy import select
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-from app.models.property_model import Property, PropertyUnitType, PropertyUnit, PropertyLoan
+from app.models.property_model import PropertyLoan
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 from dateutil.relativedelta import relativedelta
-import traceback
-import os
-import math
 import logging
 from pathlib import Path
 from openpyxl import Workbook

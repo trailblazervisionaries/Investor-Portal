@@ -1,14 +1,11 @@
-from fastapi import Request, Response, HTTPException, status
-from sqlalchemy.orm import selectinload, joinedload
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.core.utils_functions import generate_id
 from sqlalchemy import select, func
-from datetime import datetime, timedelta
+from datetime import datetime
 from app.models.income_model import IncomeType, Income, IncomeGrowth
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
-import traceback
-import os
 import logging
 
 load_dotenv()

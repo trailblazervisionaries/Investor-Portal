@@ -1,12 +1,8 @@
 from fastapi import HTTPException
-from app.models.income_model import IncomeGrowth, Income, IncomeType
-from app.models.expenses_model import ExpenseGrowth, Expense, ExpenseTypes
+from app.models.income_model import IncomeType
+from app.models.expenses_model import ExpenseTypes
 from app.models.property_model import PropertyLoan
-from app.core.utils_functions import generate_id
-from openpyxl.utils import get_column_letter
-from io import BytesIO
-from fastapi.responses import StreamingResponse
-from datetime import datetime, timedelta
+
 from decimal import Decimal, getcontext, ROUND_HALF_UP, ROUND_DOWN
 import logging
 

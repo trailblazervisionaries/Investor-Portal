@@ -1,7 +1,7 @@
 import logging
 import sys
 
-# Define ANSI color codes
+# ANSI color codes
 LOG_COLORS = {
     logging.DEBUG: "\x1b[38;20m",
     logging.INFO: "\x1b[38;20m",

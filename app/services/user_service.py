@@ -6,7 +6,7 @@ from app.core.auth import create_auth_token
 from app.core.utils_functions import generate_id, generate_otp
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.templates.send_template_mail import MailTemplatesService
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dotenv import load_dotenv
 import os
 import logging

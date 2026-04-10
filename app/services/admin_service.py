@@ -13,7 +13,6 @@ from app.models.address_model import Address
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.admin import AdminCreate, AdminUpdate
-from app.services.audit_service import AuditService
 import traceback
 import os
 import logging

@@ -16,3 +16,4 @@ def verify_password(plain_password: str, hashed_password) -> bool :
     except Exception:
         logger.error("Password verification is failed", exc_info=True)
         return False
+    

@@ -4,7 +4,7 @@ from app.core.utils_functions import generate_id
 from sqlalchemy import select
 from dotenv import load_dotenv
 from app.models.audit_model import AuditModel
-from app.models.investor_assist_model import InvestorAssistant, InvestorAssignments
+from app.models.investor_assist_model import InvestorAssignments
 from app.models.investor_model import Investors
 from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync

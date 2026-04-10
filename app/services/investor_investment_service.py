@@ -1,5 +1,4 @@
-from fastapi import Request, Response, HTTPException, status
-from sqlalchemy.orm import selectinload, joinedload
+from fastapi import HTTPException
 from sqlalchemy import select, desc, case
 from dotenv import load_dotenv
 from app.models.investor_model import Investors, InvestorInvestments
@@ -9,8 +8,6 @@ from app.templates.send_template_mail import MailTemplatesService
 from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.models.audit_model import AuditModel
 from decimal import Decimal
-import traceback
-import os
 import logging
 
 load_dotenv()

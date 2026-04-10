@@ -1,10 +1,9 @@
-from fastapi import Request, Response, HTTPException, status
+from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import IntegrityError
 from app.core.utils_functions import generate_id, generate_alphanumeric_password
 from sqlalchemy import select, func
-from datetime import datetime, timedelta
 from app.services.user_service import UserServices
 from dotenv import load_dotenv
 from app.models.investor_assist_model import InvestorAssistant, InvestorAssignments
@@ -15,8 +14,6 @@ from app.backgroundTasks.MonitorAsync import MonitorAsync
 from app.schemas.investor_assist import InvestorAssistCreate, InvestorAssistUpdate
 from app.services.property_service import PropertyService
 from app.models.audit_model import  AuditModel
-import traceback
-import os
 import logging
 
 load_dotenv()
