@@ -172,7 +172,7 @@ class FileUploadService:
 
         path = os.path.join(UPLOAD_BASE, self.id, folder_name)
         os.makedirs(path, exist_ok=True)
-
+        logger.info("FileUploadService: Folder created successfully")
         return path
 
     def delete_file(self, file_path: str) -> bool:
@@ -184,6 +184,7 @@ class FileUploadService:
             # File exists?
             if file_path and os.path.isfile(file_path):
                 os.remove(file_path)
+                logger.info("FileUploadService: File deleted successfully")
                 return True
 
             # File does not exist — treat as "successful delete"
@@ -203,6 +204,7 @@ class FileUploadService:
             # Folder exists?
             if folder_path and os.path.exists(folder_path):
                 shutil.rmtree(folder_path, ignore_errors=True)
+                logger.info("FileUpoadService: Folder Deleted Successfully.")
                 return True
 
             # Folder does not exist — treat as "successful delete"
@@ -239,7 +241,7 @@ class FileUploadService:
 
         # Generate public URL
         file_url = FileUploadService.convert_to_public_url(request, resp["filepath"])
-        print("file-url ", file_url)
+        # print("file-url ", file_url)
 
         if role == "property":
             if file_type == "profile":
@@ -279,6 +281,7 @@ class FileUploadService:
         with open(final_path, "wb") as buffer:
             buffer.write(await file.read())
 
+        logger.info("FileUploadService: File uploaded successfully.")
         # return metadata
         return {
             "filepath": final_path,
@@ -306,7 +309,7 @@ class FileUploadService:
 
         # Generate public URL
         file_url = FileUploadService.convert_to_public_url(request, resp["filepath"])
-        print("file-url ", file_url)
+        # print("file-url ", file_url)
         upload_docs = UploadedDocument(
             file_type_name = name,
             file_url = file_url,
@@ -314,6 +317,7 @@ class FileUploadService:
             added_for = user_id
         )
         db.add(upload_docs)
+        logger.info("FileUploadService: file uploaded successfully and their info also stored into the database.")
         await db.commit()
         await db.refresh(upload_docs)
         return {
@@ -353,6 +357,7 @@ class FileUploadService:
                 "filepath": final_path
             })
         property_data.property_image = folder_path
+        logger.info("FileUploadService: Multiple files uploaded successfully and their info also stored into the database.")
         await db.commit()
         await db.refresh(property_data)
         public_links = FileUploadService.get_folder_public_links(request, folder_path)
@@ -383,7 +388,7 @@ class FileUploadService:
             # Check if it's a file (not a subfolder)
             if os.path.isfile(file_path):
                 public_urls.append(FileUploadService.convert_to_public_url(request, file_path))
-                
+        logger.info("FileUploadServices: Generated public links for the folder which is availabe on local disk.")
         return public_urls
     
 

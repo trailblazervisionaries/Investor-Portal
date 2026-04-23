@@ -374,7 +374,7 @@ class IncomeGrowthService:
 
             if data.growth_percentage is not None:
                 growth.growth_percentage = data.growth_percentage
-
+            
             await AuditModel.add_new_logs(
                 db = db,
                 added_by = user_id,
@@ -413,7 +413,6 @@ class IncomeGrowthService:
             entity_type = "Income Growth Management",
             object_id = str(id)
         )
-
 
         logger.info("IncomeGrowthService: Audit data is successfully recorded for this delete")
         await db.commit()

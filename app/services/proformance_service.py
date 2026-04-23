@@ -19,11 +19,11 @@ class PerformanceService:
         loan_info = await PropertyLoan.get_by_property_id(db, property_id)
         income_data = await IncomeType.get_property_income_details(db, property_id)
         expense_data = await ExpenseTypes.get_property_expense_details(db, property_id)
-
+        logger.info("PerformanceService: loan_info, Income_data, expense_data fetched successfully from the db")
         income_breakdown = {}
         total_gross_income_per_year = {year: 0.0 for year in range(12)}
         vacancy_percentage_map = {year: 0.0 for year in range(12)}
-
+        logger.info("PerformanceService: Income Processisng started")
         # Process Income ---------------------------------------
         for category in income_data:
             type_name = category.get('income_type_name', '').strip()
@@ -57,7 +57,7 @@ class PerformanceService:
         # Vacancy Amount + EGI ----------------------------------
         vacancy_dollar_breakdown = {}
         total_effective_income = {}
-
+        logger.info("PerformanceService: Vacancy Amount + EGI calculation.")
         for year in range(12):
             pgi = total_gross_income_per_year[year]
             v_rate = vacancy_percentage_map.get(year, 0.0)
@@ -72,7 +72,7 @@ class PerformanceService:
 
         # Expenses ------------------------
         expense_breakdown = {}
-
+        logger.info("PerformanceService: Expense Calculation initiated")
         for category in expense_data:
             type_name = category.get('expense_type_name', '').strip()
 
@@ -110,6 +110,7 @@ class PerformanceService:
                         expense_breakdown[type_name][year] = round(running_exp, 2)
 
         # Totals ----------------------------------------------
+        logger.info("PerformanceServices: total_expense_per_year calculation initiated")
         total_expense_per_year = {
             year: round(
                 sum(exp.get(year, 0.0) for exp in expense_breakdown.values()),
@@ -117,7 +118,7 @@ class PerformanceService:
             )
             for year in range(12)
         }
-
+        logger.info("PerformanceServices: total_expense_per_year calculation completed now net_operating_income calculation initiated")
         net_operating_income = {
             year: round(
                 total_effective_income[year] - total_expense_per_year[year],
@@ -125,7 +126,7 @@ class PerformanceService:
             )
             for year in range(12)
         }
-
+        logger.info("PerformanceServices:  net_operating_income calculation completed now opex_ratio calculation initiated")
         opex_ratio = {
             year: round(
                 (total_expense_per_year[year] / total_effective_income[year]) * 100,
@@ -133,12 +134,12 @@ class PerformanceService:
             )
             for year in range(12)
         }
-
+        logger.info("PerformanceServices: opex_ratio calculation completed now debt_payment calculation initiated")
         debt_payment = {
             year: 0 if year == 0 else round(float(loan_info.total_annual_payment or 0), 2)
             for year in range(12)
         }
-
+        logger.info("PerformanceServices: debt_payment calculation completed now cash_flow_after_debt calculation initiated")
         cash_flow_after_debt = {
             year: round(
                 (net_operating_income[year] - debt_payment[year]),
@@ -146,7 +147,7 @@ class PerformanceService:
             )
             for year in range(12)
         }
-
+        logger.info("PerformanceServices: cash_flow_after_debt calculation completed now dscr calculation initiated")
         dscr = {
             year: round(
                 (net_operating_income[year] / debt_payment[year]),
@@ -154,7 +155,7 @@ class PerformanceService:
             )
             for year in range(1, 12)
         }
-
+        logger.info("PerformanceServices: dscr calculation completed now returning the response")
         # FINAL RESPONSE ------------------------------------
         return {
             "income_breakdown": income_breakdown,

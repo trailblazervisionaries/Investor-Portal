@@ -253,6 +253,44 @@ class PropertyService:
                 item.property_image_urls = []
 
         return properties, total_res.scalar() or 0
+    
+
+
+    
+    @staticmethod
+    async def get_info_all_properties_public(db, request, skip: int = 0, limit: int = 10, deleted: bool = False):
+        stmt = (
+            select(Property)
+            .where(Property.is_deleted == deleted, Property.is_open_for_investment == True)
+            .offset(skip)
+            .limit(limit)
+        )
+        count_stmt = (
+            select(func.count())
+            .select_from(Property)
+            .where(Property.is_deleted == deleted, Property.is_open_for_investment == True)
+        )
+        result = await db.execute(stmt)
+        total_res = await db.execute(count_stmt)
+        properties = result.scalars().all()
+
+        # properties to convert folder paths to lists of URLs
+        for item in properties:
+            if item.property_image and os.path.exists(item.property_image):
+                # Scan folder for files
+                files = [
+                    os.path.join(item.property_image, f) 
+                    for f in os.listdir(item.property_image) 
+                    if os.path.isfile(os.path.join(item.property_image, f))
+                ]
+                # Convert each file to a public URL
+                item.property_image_urls = [
+                    FileUploadService.convert_to_public_url(request, f) for f in files
+                ]
+            else:
+                item.property_image_urls = []
+
+        return properties, total_res.scalar() or 0
         
 
     @staticmethod

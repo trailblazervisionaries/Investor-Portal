@@ -205,7 +205,7 @@ class FundAssistService:
 
         result = await db.execute(stmt)
         total_res = await db.execute(count_stmt)
-        
+        logger.info("FundAssistService: Fund Assistant data Fetched Successfully with pagination")
         return result.scalars().all(), total_res.scalar() or 0
 
 
@@ -229,6 +229,7 @@ class FundAssistService:
                 entity_type = "Fund Growth Management",
                 object_id = fund_assist.fund_assist_id
             )
+        logger.info("FundAssistService: Marked fund Assistant deleted.")
         await db.commit()
         await db.refresh(fund_assist)
         return {
@@ -256,6 +257,7 @@ class FundAssistService:
                 entity_type = "Fund Growth Management",
                 object_id = fund_assist.fund_assist_id
             )
+        logger.info("FundAssistService: Deactivated the Fund Assistant account.")
         await db.commit()
         await db.refresh(fund_assist)
         return {
@@ -282,6 +284,7 @@ class FundAssistService:
                 entity_type = "Fund Growth Management",
                 object_id = fund_assist.fund_assist_id
             )
+        logger.info("FundAssistService: Fund Assistant Account Activated.")
         await db.commit()
         await db.refresh(fund_assist)
         return {

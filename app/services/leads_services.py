@@ -36,11 +36,11 @@ class LeadService:
                 existing_lead.description = data.description
                 existing_lead.phone = data.phone
                 existing_lead.updated_at = datetime.utcnow()
-                
+                logger.info("LeadService: Lead info found for this email so we are updating you previous info insted of creating a new one.")
                 await db.commit()
                 await db.refresh(existing_lead)
                 return existing_lead
-
+            logger.info("LeadService: Lead info not found for this email so we are creating a new lead for you and stored you data.")
             # CREATE new lead if not found
             new_lead = Leads(
                 name=data.name,
@@ -50,6 +50,7 @@ class LeadService:
             )
 
             db.add(new_lead)
+            logger.info("LeadService: New Lead Data created and stored into the database successfully.")
             await db.commit()
             await db.refresh(new_lead)
             return new_lead
@@ -59,13 +60,7 @@ class LeadService:
             raise HTTPException(status_code=500, detail="Database error while processing lead.")
     
     
-    async def get_leads_by_attendend_id_and_status(
-        db,
-        user_id,
-        status,
-        page,
-        page_size
-    ):
+    async def get_leads_by_attendend_id_and_status(db, user_id, status, page, page_size):
         return await Leads.get_all_leads_by_attendend_id_and_status(
             db,
             user_id,
@@ -109,7 +104,7 @@ class LeadService:
         try:
             # await LeadService.add_lead_remark(db, id, remarks, user_id)
             await db.delete(lead)
-            
+            logger.info(f"LeadService: Lead with id {id} is deleted permanently.")
             await AuditModel.add_new_logs(
                 db=db,
                 added_by=user_id,
@@ -137,6 +132,7 @@ class LeadService:
         lead.updated_by = updatedby
         lead.status = status
         lead.updated_at = datetime.utcnow()
+        logger.info("LeadService: Lead status updated successfully and also added the remarks for the lead.")
         new_remark = await LeadService.add_lead_remark(db, id, remarks, updatedby)
         await db.commit()
         await db.refresh(lead)
@@ -151,6 +147,7 @@ class LeadService:
             raise HTTPException(404, "lead with this id is not found.")
         lead.assisted_by = assistedby
         new_remark = await LeadService.add_lead_remark(db, id, remarks, assistedby)
+        logger.info("LeadService: update the marked the assisted lead and add new lead remarks.")
         await db.commit()
         await db.refresh(lead)
         await db.refresh(new_remark)
@@ -174,7 +171,7 @@ class LeadService:
         lead.assisted_by = assistedby
         # The rest of your logic remains the same
         new_remark = await LeadService.add_lead_remark(db, id, remarks, assistedby)
-        
+        logger.info("LeadService: Lead marked for assistance and added the remarks")
         await db.commit()
         return {"message": "lead assisted marked and remarks added successfully."}
 
@@ -200,6 +197,7 @@ class LeadService:
 
         lead.updated_by = user_id
         new_remark = await LeadService.add_lead_remark(db, id, data.remarks, user_id)
+        logger.info("LeadService: Lead info updated successfully and lead remarks added successfully.")
         await db.commit()
         await db.refresh(new_remark)
 
@@ -218,11 +216,7 @@ class LeadService:
         return new_remark
 
 
-    def _export_leads_to_excel(
-        leads: list,
-        sheet_title: str,
-        filename: str,
-    ):
+    def _export_leads_to_excel(leads: list, sheet_title: str, filename: str):
 
         wb = Workbook()
         ws = wb.active
@@ -303,12 +297,7 @@ class LeadService:
         )
 
 
-    async def convert_to_excel_status_and_date_wise_leads(
-        db,
-        status: str,
-        start_date: datetime,
-        end_date: datetime,
-    ):
+    async def convert_to_excel_status_and_date_wise_leads(db, status: str, start_date: datetime, end_date: datetime):
 
         leads = await Leads.get_leads_by_status_and_date_range(
             db=db,

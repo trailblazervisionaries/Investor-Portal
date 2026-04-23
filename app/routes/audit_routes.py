@@ -48,7 +48,7 @@ async def get_audit_logs(
         start_date=start_date, 
         end_date=end_date
     )
-    print("logs", logs)
+    # print("logs", logs)
     
     return {
         "items": logs,
@@ -68,7 +68,7 @@ async def get_audit_logs(
     size: int = Query(default=20, ge=1, le=100, description="Items per page")
 ):
     skip = (max(1, page) - 1) * size
-    print(entity_type)
+    # print(entity_type)
     logs, total_count = await AuditModel.get_all_logs_by_date_range_and_entiry_type(
         db, 
         entity_type = entity_type,

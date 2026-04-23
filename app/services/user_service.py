@@ -58,7 +58,7 @@ class UserServices:
         
         if not verify_password(password, user.password):
             logger.error("UserService: User password verification failed due to password mismatch please enter correct password")
-            raise HTTPException(403, "UserService: User password verification failed due to password mismatch please enter correct password")
+            raise HTTPException(401, "UserService: User password verification failed due to password mismatch please enter correct password")
         access_token = create_auth_token(
             data = {'sub': user.email, 'user_id': user.user_id, 'role': user.role},
             expires_delta= timedelta(hours = ACCESS_TOKEN_EXPIRE_HOURS),

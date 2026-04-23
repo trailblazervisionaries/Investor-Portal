@@ -26,10 +26,10 @@ class MailTemplatesService:
         role = role.lower()
 
         subjects = {
-            "admin": "Thank You for Registering in Investment Portal",
-            "investor-assistant": f"Your investor-assistant Account has been Created for {created_by} in ",
-            "fund-assistant": f"Your fund-assistant Account has been Created for {created_by} in Investment Portal",
-            "investor": f"Your investor Account has been Created for {created_by} in Investment Portal",
+            "admin": "Thank You for Registering in Investment Portal of Infinite Property Group.",
+            "investor-assistant": f"Your investor-assistant Account has been Created by {created_by} in Investment Portal of Infinite Property Group ",
+            "fund-assistant": f"Your fund-assistant Account has been Created by {created_by} in Investment Portal of Infinite Property Group",
+            "investor": f"Your investor Account has been Created by {created_by} in Investment Portal of Infinite Property Group",
         }
 
         subject = subjects.get(role, "Your Investment Portal Account Details")
@@ -38,7 +38,7 @@ class MailTemplatesService:
             <html>
                 <body>
                     <div>
-                        <h2>🎉 Welcome to {created_by or 'Investment Portal'} 🎉</h2>
+                        <h2>🎉 Welcome to {'Investment Portal'} 🎉</h2>
 
                         <p>Hi <strong>{name}</strong>,</p>
 
@@ -74,7 +74,7 @@ class MailTemplatesService:
     @shared_task(name="app.template.send_template_mail.send_otp_template")
     def send_otp_template(email: str, otp: str):
         masked_email = MailTemplatesService.mask_email(email)
-        subject = "Your One-Time Password (OTP) for Investment Portal"
+        subject = "Your One-Time Password (OTP) for Investment Portal of Infinite Property Group"
         html_message = f"""
             <html>
                 <body>
@@ -109,7 +109,7 @@ class MailTemplatesService:
     @shared_task(name="app.template.send_template_mail.send_notif_password_change")
     def send_notif_password_change(email: str):
         masked_email = MailTemplatesService.mask_email(email)
-        subject = "Your Investment Portal Password Has Been Changed"
+        subject = "Your Infinite Property Group Investment Portal Password Has Been Changed"
         html_message = f"""
             <html>
                 <body>
@@ -168,7 +168,7 @@ class MailTemplatesService:
                     </div>
                     <div class="content">
                         <p>Dear <strong> {investor_name} (ID : {investor_id}) </strong>,</p>
-                        <p>We are pleased to confirm that your investment has been successfully processed through the Investment Portal.</p>
+                        <p>We are pleased to confirm that your investment has been successfully processed through the Investment Portal of Infinite Property Group.</p>
                         
                         <div class="summary-box">
                             <div class="summary-item"><span class="label">Property:</span> {property_name}</div>
@@ -180,7 +180,7 @@ class MailTemplatesService:
                         <p>Your portfolio has been updated to reflect this transaction. You can view the full details and documents by logging into your dashboard.</p>
 
                         <div class="highlight">
-                            Note: If you did not authorize this transaction, please contact our security team immediately.
+                            Note: If you did not authorize this transaction, please contact your Exampt Market Dealer immediately.
                         </div>
                     </div>
                     <div class="footer">
@@ -237,7 +237,7 @@ class MailTemplatesService:
                         <p>Your portfolio has been updated to reflect this transaction. You can view the full details and documents by logging into your dashboard.</p>
 
                         <div class="highlight">
-                            Note: If you did not authorize this transaction, please contact our security team immediately.
+                            Note: If you did not authorize this transaction, please contact Your Exempt Market Dealer immediately.
                         </div>
                     </div>
                     <div class="footer">
@@ -250,5 +250,10 @@ class MailTemplatesService:
         """
         print(subject, html_message)
         asyncio.run(MailService.send_mail(email, subject, html_message))
+
+
+
+
+
 
 
