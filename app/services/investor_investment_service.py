@@ -56,15 +56,16 @@ class InvestorInvestmentServices:
             investor_id=investor_id,  
             property_id=data.property_id,
             invested_amount=amount,
-            status=data.status or "activate",
+            status=data.status or "active",
         )
 
         db.add(new_investment)
         await db.flush()
+        logger.info("InvestorInvestmentService: new investment is created successsfully")
         property.available_required_for_investment -= Decimal(str(amount))
         if property.available_required_for_investment == Decimal('0'):
             property.is_open_for_investment = False
-
+        logger.info("InvestorInvestmentService: property available for the investment is update successfully.")
         await AuditModel.add_new_logs(
             db = db,
             added_by = user_id,
@@ -75,7 +76,7 @@ class InvestorInvestmentServices:
             object_id = str(new_investment.id)
         )
     
-        logger.info("ExpenseTypeService: Audit log recorded for new investor investment.")
+        logger.info("InvestorInvestmentService: Audit log recorded for new investor investment.")
 
         await db.commit()
         await db.refresh(new_investment)
@@ -187,9 +188,9 @@ class InvestorInvestmentServices:
             object_id = str(id)
         )
    
-        logger.info("ExpenseTypeService: Audit log recorded for this status update.")
         await db.commit()
         await db.refresh(investment)
+        logger.info("ExpenseTypeService: Audit log recorded for this status update.")
         return {
             "message": f"InvestorInvestmentServices: status updated for the id: {id}, and investor_id: {investor_id} now the updated status is {investment.status}. "
         }

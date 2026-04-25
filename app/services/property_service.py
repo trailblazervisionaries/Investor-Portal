@@ -5,6 +5,7 @@ from sqlalchemy import select, func, case, and_
 from app.models.audit_model import AuditModel
 from decimal import Decimal, ROUND_HALF_UP
 from app.models.property_model import Property, PropertyUnitType
+from app.models.investor_model import InvestorInvestments
 from app.services.file_img_process import FileUploadService
 import time
 import os
@@ -99,6 +100,9 @@ class PropertyService:
         property = await Property.get_by_id(db, property_id)
         if not property:
             raise HTTPException(404, "property with this property_id is not found or already deleted")
+        active_investment = InvestorInvestments.get_by_propertyid(db, property_id)
+        if active_investment:
+            raise HTTPException(400, "This property have active investments so you can't deleted it without paying back to investor investment.")
         old_data = Property.model_to_dict(property)
         property.is_deleted = True
         await AuditModel.add_new_logs(

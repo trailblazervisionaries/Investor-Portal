@@ -249,8 +249,10 @@ class InvestorInvestments(Base):
         return result.scalar_one_or_none()
 
 
-
-
+    async def get_by_propertyid(db, property_id):
+        stmt = (select(InvestorInvestments).where(InvestorInvestments.property_id == property_id, InvestorInvestments.status == "active"))
+        result = await db.execute(stmt)
+        return result.scalars().all()
 
 
 
