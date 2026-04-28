@@ -62,6 +62,7 @@ class InvestorResponse(BaseModel):
     lname: Optional[str] = None
     email: str
     phone: str
+    investor_turnover: float | None = None
     is_active:bool
     profile_image: str | None = None
     role: str | None = "investor"
