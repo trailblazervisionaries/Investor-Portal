@@ -147,6 +147,9 @@ class InvestorService:
                 investor.user.role = data.role
                 investor.role = data.role
 
+            if hasattr(data, "investor_turnover") and data.investor_turnover is not None:
+                investor.investor_turnover = data.investor_turnover
+
             admin_data = data.model_dump(
                 exclude_unset=True,
                 exclude={"address", "email", "role"}

@@ -99,6 +99,7 @@ class InvestorUpdate(BaseModel):
     mname: str | None = None
     lname: str | None = None
     phone: str | None = None
+    investor_turnover: float | None = None
     profile_image: str | None = None
     is_active: bool | None = None
     address: AddressUpdate | None = None
