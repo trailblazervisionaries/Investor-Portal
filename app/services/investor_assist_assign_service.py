@@ -24,8 +24,8 @@ class InvestorassistantAssignmentService:
 
         if previous_assignment:
             previous_assignment.is_deleted = True
-        db.add(previous_assignment) 
-        
+            db.add(previous_assignment) 
+
         new_assignment = InvestorAssignments(
             investor_id=data.investor_id,
             investor_assistant_id=data.investor_assistant_id,
