@@ -4,7 +4,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, Forei
 from datetime import datetime, date
 from decimal import Decimal
 
-from app.models.investor_model import Investors 
+
 
 
 class InvestorAssistant(Base):
@@ -256,7 +256,7 @@ class InvestorAssignments(Base):
 
     @staticmethod
     async def get_all_assignment_data_by_investor_assistant_id(db, investor_assistant_id: str):
-
+        from app.models.investor_model import Investors 
         stmt = (
             select(InvestorAssignments)
             .options(
