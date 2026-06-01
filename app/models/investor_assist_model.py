@@ -245,6 +245,7 @@ class InvestorAssignments(Base):
             )
             .where(
                 InvestorAssignments.investor_assistant_id == investor_assistant_id,
+                InvestorAssignments.is_deleted.is_(False)
             )
         )
 
