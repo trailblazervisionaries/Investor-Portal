@@ -82,6 +82,13 @@ class AssignNewAssist(BaseModel):
     class Config:
         from_attributes = True
 
+class AssignNewAssistToOld(BaseModel):
+    investor_id: str
+    old_investor_assistant_id: str
+    investor_assistant_id: str
+
+    class Config:
+        from_attributes = True
 
 
 class AssignAssistResponse(AssignNewAssist):

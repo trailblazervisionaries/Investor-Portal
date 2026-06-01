@@ -19,7 +19,7 @@ class InvestorassistantAssignmentService:
     async def assign_new_assistant_to_investor(db, data, user_id):
 
         previous_assignment = await InvestorAssignments.get_active_assignment_by_investor(
-            db, data.investor_id, data.investor_assistant_id
+            db, data.investor_id, data.old_investor_assistant_id
         )
 
         if previous_assignment:

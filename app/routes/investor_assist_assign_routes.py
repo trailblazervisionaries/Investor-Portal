@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from app.config.database import get_db
 from app.services.investor_assist_assign_service import InvestorassistantAssignmentService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.schemas.investor_assist import AssignNewAssist, AssignAssistResponse
+from app.schemas.investor_assist import AssignNewAssist, AssignAssistResponse, AssignNewAssistToOld
 import logging 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -11,6 +11,15 @@ router = APIRouter()
 
 @router.post("/add-assign", response_model = AssignAssistResponse)
 async def add_new_assignment(data: AssignNewAssist, request: Request, db: Session = Depends(get_db)):
+    role = request.state.user.role
+    user_id = request.state.user.user_id
+    if role not in ["admin","investor-assistant"]:
+        raise HTTPException(403, "you are not authorise to perform this operation")
+    new_assign = await InvestorassistantAssignmentService.assign_new_assistant_to_investor(db, data, user_id)
+    return AssignAssistResponse.model_validate(new_assign)
+
+@router.post("/add-newassistant", response_model = AssignAssistResponse)
+async def add_new_assignment(data: AssignNewAssistToOld, request: Request, db: Session = Depends(get_db)):
     role = request.state.user.role
     user_id = request.state.user.user_id
     if role not in ["admin","investor-assistant"]:
