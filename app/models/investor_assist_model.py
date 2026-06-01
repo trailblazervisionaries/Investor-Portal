@@ -4,6 +4,8 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, select, Forei
 from datetime import datetime, date
 from decimal import Decimal
 
+from app.models.investor_model import Investors 
+
 
 class InvestorAssistant(Base):
     __tablename__ = "investor_assistant"
@@ -236,21 +238,44 @@ class InvestorAssignments(Base):
         result = await db.execute(stmt)
         return result.scalars().all()
     
+    # @staticmethod
+    # async def get_all_assignment_data_by_investor_assistant_id(db, investor_assistant_id: str):
+    #     stmt = (
+    #         select(InvestorAssignments)
+    #         .options(
+    #             joinedload(InvestorAssignments.investor)
+    #         )
+    #         .where(
+    #             InvestorAssignments.investor_assistant_id == investor_assistant_id,
+    #             InvestorAssignments.is_deleted.is_(False),
+    #         )
+    #     )
+
+    #     result = await db.execute(stmt)
+    #     return result.scalars().all()
+
     @staticmethod
     async def get_all_assignment_data_by_investor_assistant_id(db, investor_assistant_id: str):
+
         stmt = (
             select(InvestorAssignments)
             .options(
                 joinedload(InvestorAssignments.investor)
             )
+            .join(InvestorAssignments.investor) 
             .where(
                 InvestorAssignments.investor_assistant_id == investor_assistant_id,
-                InvestorAssignments.is_deleted.is_(False)
+                InvestorAssignments.is_deleted.is_(False),
+                Investors.is_deleted.is_(False)  
             )
         )
 
         result = await db.execute(stmt)
         return result.scalars().all()
+
+
+
+
     
     
     @staticmethod
