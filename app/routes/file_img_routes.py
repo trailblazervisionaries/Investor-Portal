@@ -1,12 +1,40 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request, Form
+from fastapi.responses import FileResponse
 from app.config.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from app.services.file_img_process import FileImageProcessService, FileUploadService
 from app.schemas.file_schemas import FileReturnResponse
+from pathlib import Path
+from urllib.parse import unquote, urlparse
+import mimetypes
 
 import logging 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+UPLOAD_ROOT = Path("uploads").resolve()
+
+
+def resolve_uploaded_file_path(file_url: str) -> Path | None:
+    if not file_url:
+        return None
+
+    parsed_url = urlparse(file_url)
+    raw_path = unquote(parsed_url.path or file_url).replace("\\", "/")
+
+    if "/uploads/" in raw_path:
+        relative_path = raw_path.split("/uploads/", 1)[1]
+    elif raw_path.startswith("uploads/"):
+        relative_path = raw_path[len("uploads/"):]
+    else:
+        return None
+
+    candidate_path = (UPLOAD_ROOT / Path(relative_path)).resolve()
+    try:
+        candidate_path.relative_to(UPLOAD_ROOT)
+    except ValueError:
+        return None
+
+    return candidate_path
 
 
 # @router.post("/upload-profile/{user_id}/{role}")
@@ -55,6 +83,20 @@ async def get_all_uploaded_doc(
         return []
         # raise HTTPException(status_code=404, detail="Image not found in storage")
     return [FileReturnResponse.model_validate(res) for res in response]
+
+
+@router.get("/download-doc")
+async def download_uploaded_doc(file_url: str, file_name: str | None = None):
+    file_path = resolve_uploaded_file_path(file_url)
+    if not file_path or not file_path.exists():
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    media_type, _ = mimetypes.guess_type(file_path.name)
+    return FileResponse(
+        path=str(file_path),
+        filename=file_name or file_path.name,
+        media_type=media_type or "application/octet-stream",
+    )
 
 
 
