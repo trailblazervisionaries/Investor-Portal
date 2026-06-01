@@ -1,5 +1,7 @@
 ## This project contains all the route and their backend logic for the Investment Portal
 
+For architecture details, see [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 # Project Setup Guide
 
 This guide outlines the steps to set up and run the Investment Portal project built with FastAPI and Uvicorn, PostgresSQL. The project uses Python >= 3.11.8 version and includes a virtual environment setup, dependency installation, and environment configuration.
