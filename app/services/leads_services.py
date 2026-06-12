@@ -3,11 +3,12 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_
 from datetime import datetime
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
 from app.models.leads import Leads, LeadRemark
+from app.models.investor_assist_model import InvestorAssistant
 from app.schemas.leads import createLeads
 import logging
 from io import BytesIO
@@ -342,3 +343,117 @@ class LeadService:
             filename=filename,
         )
 
+    
+    async def assign_unassigned_leads_round_robin(db: Session, admin_id: str):
+        """
+        Assign all unassigned leads to investor assistants using round-robin distribution.
+        Each lead gets assigned to an investor assistant in a round-robin manner.
+        """
+        try:
+            unassigned_leads_stmt = select(Leads).where(
+                and_(
+                    Leads.is_deleted == False,
+                    or_(
+                        Leads.assisted_by == None,
+                        Leads.assisted_by == ""
+                    )
+                )
+            )
+            
+            unassigned_result = await db.execute(unassigned_leads_stmt)
+            unassigned_leads = unassigned_result.scalars().all()
+            
+            active_assistants_stmt = select(InvestorAssistant).where(
+                and_(
+                    InvestorAssistant.is_active == True,
+                    InvestorAssistant.is_deleted == False
+                )
+            )
+            
+            assistants_result = await db.execute(active_assistants_stmt)
+            active_assistants = assistants_result.scalars().all()
+            
+            if not unassigned_leads:
+                logger.info("LeadService: No unassigned leads found for round-robin assignment.")
+                return {
+                    "status": "success",
+                    "message": "No unassigned leads found",
+                    "assigned_count": 0,
+                    "total_assistants": len(active_assistants) if active_assistants else 0
+                }
+            
+            if not active_assistants:
+                logger.warning("LeadService: No active investor assistants available for assignment.")
+                return {
+                    "status": "error",
+                    "message": "No active investor assistants available",
+                    "assigned_count": 0
+                }
+            
+            assistant_count = len(active_assistants)
+            assigned_count = 0
+            assignments_detail = []
+            
+            for idx, lead in enumerate(unassigned_leads):
+                assigned_assistant = active_assistants[idx % assistant_count]
+                
+                old_assisted_by = lead.assisted_by
+                lead.assisted_by = assigned_assistant.user_id
+                lead.updated_by = admin_id
+                lead.updated_at = datetime.utcnow()
+                
+
+                remark_text = f"Lead auto-assigned to {assigned_assistant.fname} {assigned_assistant.lname} via round-robin distribution"
+                await LeadService.add_lead_remark(db, lead.id, remark_text, admin_id)
+                
+                assignments_detail.append({
+                    "lead_id": lead.id,
+                    "lead_email": lead.email,
+                    "assigned_to": assigned_assistant.user_id,
+                    "assistant_name": f"{assigned_assistant.fname} {assigned_assistant.lname}"
+                })
+                
+                assigned_count += 1
+            
+            await db.commit()
+            
+            logger.info(
+                f"LeadService: Successfully assigned {assigned_count} leads to {assistant_count} "
+                f"investor assistants using round-robin by admin {admin_id}."
+            )
+            
+            await AuditModel.add_new_logs(
+                db=db,
+                added_by=admin_id,
+                new_data={"assigned_count": assigned_count, "assistant_count": assistant_count},
+                old_data=None,
+                audit_type="BULK_ASSIGNMENT",
+                entity_type="Lead Management",
+                object_id="bulk_assignment"
+            )
+            
+            await db.commit()
+            
+            return {
+                "status": "success",
+                "message": "Leads assigned successfully using round-robin distribution",
+                "assigned_count": assigned_count,
+                "total_assistants": assistant_count,
+                "leads_per_assistant": assigned_count // assistant_count if assistant_count > 0 else 0,
+                "summary": f"Distributed {assigned_count} leads among {assistant_count} assistants"
+            }
+            
+        except SQLAlchemyError as e:
+            await db.rollback()
+            logger.error(f"LeadService: Database error during round-robin assignment: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Database error during lead assignment: {str(e)}"
+            )
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"LeadService: Unexpected error during round-robin assignment: {str(e)}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Unexpected error during lead assignment: {str(e)}"
+            )

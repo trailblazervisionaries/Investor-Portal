@@ -187,6 +187,25 @@ async def export_leads(status: str, start_date: datetime, end_date: datetime, db
     return file
 
 
+@router.post("/assign-unassigned-leads-round-robin")
+async def assign_unassigned_leads_round_robin(request: Request, db: Session = Depends(get_db)):
+    """
+    Assign all unassigned leads to investor assistants using round-robin distribution.
+    Only accessible by admin users.
+    """
+    user_id, role = request.state.user.user_id, request.state.user.role
+    
+    if role not in ["admin"]:
+        raise HTTPException(403, "you are not authorised to perform this operation")
+    
+    try:
+        result = await LeadService.assign_unassigned_leads_round_robin(db, user_id)
+        return result
+    except Exception as e:
+        logger.error(f"Error assigning leads: {str(e)}")
+        raise HTTPException(500, f"Error during lead assignment: {str(e)}")
+
+
 
 
 
