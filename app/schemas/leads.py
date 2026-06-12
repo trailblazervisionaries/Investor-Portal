@@ -3,21 +3,27 @@ from typing import Optional, List
 from datetime import datetime
 
 class createLeads(BaseModel):
-    name: str
+    fname: str
+    lname: str
     email: EmailStr
+    i_am_type: str
     description: str
     phone: str
+    consent_check: bool
 
     class Config:
         from_attributes = True
 
 class updateLeads(BaseModel):
-    name: Optional[str]
+    fname: Optional[str]
+    lname: Optional[str]
     email: Optional[EmailStr]
+    i_am_type: Optional[str]
     description: Optional[str]
     phone: Optional[str]
     status: str
     remarks: str
+    consent_check: Optional[bool]
 
 
 class addRemarksLeads(BaseModel):
@@ -36,12 +42,15 @@ class LeadRemarkResponse(BaseModel):
 
 class LeadResponse(BaseModel):
     id: int
-    name: str
+    fname: str
+    lname: str
     email: str
     description: Optional[str]
+    i_am_type: str
     phone: Optional[str]
     assisted_by: Optional[str]
     status: str
+    consent_check: bool
     updated_by: Optional[str]
     is_deleted: bool
 
@@ -55,12 +64,14 @@ class LeadResponse(BaseModel):
 
 class LeadListResponse(BaseModel):
     id: int
-    name: str
+    fname: str
+    lname: str
     email: str
+    i_am_type: str
     phone: Optional[str]
     assisted_by: Optional[str]
     status: str
-
+    consent_check: bool
     latest_remark: Optional[str]
     latest_remark_by: Optional[str]
     latest_remark_at: Optional[datetime]

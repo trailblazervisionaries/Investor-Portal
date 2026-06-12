@@ -9,16 +9,20 @@ class Leads(Base):
     __tablename__ = "leads"
 
     id = Column(Integer, primary_key = True)
-    name = Column(String, nullable = False)
+    fname = Column(String, nullable = False)
+    lname = Column(String, nullable = False)
     email = Column(String, nullable = False)
     description = Column(String, nullable = True)
     phone = Column(String, nullable = True)
+    i_am_type = Column(String, nullable = False) # Individual Investor, Financial Advisor, Institutional Investor, General Enquiry
     assisted_by = Column(String, nullable = True)
+    consent_check = Column(Boolean, default = False, nullable = False)
     status = Column(String, nullable = False, default = "pending")  # pending, stage1, stage2, stage3, onboard or decline
     updated_by = Column(String, nullable = True)
     is_deleted = Column(Boolean, default = False)
     created_at = Column(DateTime, default = datetime.utcnow)
     updated_at = Column(DateTime, nullable = True, onupdate = datetime.utcnow)
+
 
     remarks = relationship(
         "LeadRemark",

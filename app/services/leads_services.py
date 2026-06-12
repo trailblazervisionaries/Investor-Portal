@@ -32,9 +32,12 @@ class LeadService:
             existing_lead = result.scalars().first()
 
             if existing_lead:
-                existing_lead.name = data.name
+                existing_lead.fname = data.fname
+                existing_lead.lname = data.lname
+                existing_lead.i_am_type = data.i_am_type
                 existing_lead.description = data.description
                 existing_lead.phone = data.phone
+                existing_lead.consent_check = data.consent_check
                 existing_lead.updated_at = datetime.utcnow()
                 logger.info("LeadService: Lead info found for this email so we are updating you previous info insted of creating a new one.")
                 await db.commit()
@@ -43,10 +46,13 @@ class LeadService:
             logger.info("LeadService: Lead info not found for this email so we are creating a new lead for you and stored you data.")
             # CREATE new lead if not found
             new_lead = Leads(
-                name=data.name,
+                fname=data.fname,
+                lname=data.lname,
                 email=data.email,
+                i_am_type= data.i_am_type,
                 description=data.description,
-                phone=data.phone
+                phone=data.phone,
+                consent_check=data.consent_check
             )
 
             db.add(new_lead)
@@ -181,8 +187,15 @@ class LeadService:
         lead = await Leads.get_lead_by_id(db, id)
         if not lead:
             raise HTTPException(404, "Lead data not found")
-        if data.name is not None:
-            lead.name = data.name
+        if data.fname is not None:
+            lead.fname = data.fname
+
+        if data.lname is not None:
+            lead.lname = data.lname
+        
+        if data.i_am_type is not None:
+            lead.i_am_type = data.i_am_type
+
         if data.email is not None:
             lead.email = data.email
 
@@ -191,7 +204,10 @@ class LeadService:
                 
         if data.status is not None:
             lead.status = data.status
-            
+
+        if data.consent_check is not None:
+            lead.consent_check = data.consent_check
+
         if data.phone is not None:
             lead.phone = data.phone
 
@@ -224,12 +240,15 @@ class LeadService:
 
         headers = [
             "ID",
-            "Name",
+            "First_Name",
+            "Last_Name",
             "Email",
             "Description",
             "Phone",
+            "User_type",
             "Assisted By",
             "Status",
+            "Consent_Check",
             "Latest Remark",
             "Remark Added By",
             "Remark Created At",
@@ -248,12 +267,15 @@ class LeadService:
 
             ws.append([
                 lead.id,
-                lead.name,
+                lead.fname,
+                lead.lname,
                 lead.email,
                 lead.description,
                 lead.phone,
+                lead.i_am_type,
                 lead.assisted_by,
                 lead.status,
+                lead.consent_check,
                 latest_remark.remark if latest_remark else "",
                 latest_remark.created_by if latest_remark else "",
                 latest_remark.created_at.strftime("%Y-%m-%d %H:%M:%S") if latest_remark else "",
