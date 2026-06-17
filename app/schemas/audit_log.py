@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, List, Optional
 
 class AuditLogResponse(BaseModel):
@@ -20,3 +20,14 @@ class AuditPaginationWrapper(BaseModel):
     total_count: int
     page: int
     size: int
+
+
+class UniqueAuditTypesResponse(BaseModel):
+    audit_types: List[str]
+
+    class Config:
+        from_attributes = True
+
+class DeleteAuditRecordsRequest(BaseModel):
+    start_date: date
+    end_date: date

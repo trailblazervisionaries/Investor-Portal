@@ -1,8 +1,9 @@
 from sqlalchemy.orm import relationship
 from app.config.database import Base
-from sqlalchemy import Column, Integer, String, DateTime, JSON, select, desc, func, and_
-from datetime import datetime
-
+from sqlalchemy import Column, Integer, String, DateTime, JSON, select, desc, func, and_, distinct, delete
+from datetime import datetime, date, time
+from sqlalchemy.exc import SQLAlchemyError
+from fastapi import HTTPException
 
 
 class AuditModel(Base):
@@ -136,4 +137,44 @@ class AuditModel(Base):
         
         return result.scalars().all(), total_res.scalar() or 0
 
+    async def get_all_unique_audit_types(db):
+        """
+        Fetches all distinct audit_type values from the auditmodel table.
+        """
+        try:
+            query = select(distinct(AuditModel.audit_type))
+            result = await db.execute(query)
+            unique_types = result.scalars().all()
+            
+            return unique_types
 
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=500, 
+                detail="Database error while retrieving unique audit types."
+            )
+
+
+    @staticmethod
+    async def delete_audit_records_by_date(db, start_date: date | None, end_date: date) -> int:
+        try:
+            end_datetime = datetime.combine(end_date, time.max)
+        
+            query = delete(AuditModel).where(AuditModel.created_at <= end_datetime)
+            if start_date:
+                start_datetime = datetime.combine(start_date, time.min)
+                query = query.where(AuditModel.created_at >= start_datetime)
+            
+            result = await db.execute(query)
+            await db.commit()
+            deleted_rows = result.rowcount
+            return deleted_rows
+
+        except SQLAlchemyError as e:
+            await db.rollback()
+            raise HTTPException(
+                status_code=500, 
+                detail="Database error while executing audit logs cleanup."
+            )
+        
+        

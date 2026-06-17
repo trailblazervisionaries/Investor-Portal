@@ -71,4 +71,69 @@ class MailService:
 
 
 
+# import os
+# import logging
+# from email.message import EmailMessage
+# from fastapi import HTTPException
+# from dotenv import load_dotenv
+# import aioboto3
+# from botocore.exceptions import ClientError
+
+# load_dotenv()
+# logger = logging.getLogger(__name__)
+
+# # Safe env reads
+# RAW_EMAIL = os.getenv("FROM_EMAIL", "").strip()
+# EMAIL_FROM = f"InvestmentPortal (no-reply) <{RAW_EMAIL}>"
+# AWS_REGION = os.getenv("AWS_REGION", "us-east-1").strip()
+# AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY_ID", "").strip()
+# AWS_SECRET_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "").strip()
+
+# class MailService:
+#     @staticmethod
+#     async def send_mail(email: str, subject: str, html_message: str):
+#         try:
+#             # Build the standard email message
+#             message = EmailMessage()
+#             message["From"] = EMAIL_FROM
+#             message["To"] = email
+#             message["Subject"] = subject
+#             message.set_content(html_message, subtype="html")
+
+#             # Initialize asynchronous boto3 session
+#             session = aioboto3.Session(
+#                 aws_access_key_id=AWS_ACCESS_KEY,
+#                 aws_secret_access_key=AWS_SECRET_KEY,
+#                 region_name=AWS_REGION
+#             )
+
+#             # Send using SES SendRawEmail to support standard email formatting
+#             async with session.client("ses") as ses_client:
+#                 response = await ses_client.send_raw_email(
+#                     Source=EMAIL_FROM,
+#                     Destinations=[email],
+#                     RawMessage={"Data": message.as_bytes()}
+#                 )
+            
+#             logger.info(f"SES email sent to {email} successfully. MessageId: {response.get('MessageId')}")
+#             return {"message": "Email sent successfully :)"}
+
+#         except ClientError as e:
+#             error_code = e.response['Error']['Code']
+#             error_message = e.response['Error']['Message']
+#             logger.error(f"AWS SES ClientError [{error_code}]: {error_message}", exc_info=True)
+            
+#             # Handle sandbox mode or unverified email issues gracefully
+#             if error_code == "MessageRejected":
+#                 raise HTTPException(
+#                     status_code=400, 
+#                     detail=f"Email rejected by SES. Ensure the sender/recipient is verified in sandbox mode: {error_message}"
+#                 )
+            
+#             raise HTTPException(status_code=500, detail=f"AWS SES error: {error_message}")
+            
+#         except Exception as e:
+#             logger.error("Email sending failed", exc_info=True)
+#             raise HTTPException(status_code=500, detail=f"Email sending failed: {str(e)}")
+
 

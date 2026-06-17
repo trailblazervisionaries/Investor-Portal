@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, UploadFile, File, status
 from app.config.database import get_db
 from app.services.leads_services import LeadService
 from sqlalchemy.ext.asyncio import AsyncSession as Session
@@ -194,16 +194,39 @@ async def assign_unassigned_leads_round_robin(request: Request, db: Session = De
     Only accessible by admin users.
     """
     user_id, role = request.state.user.user_id, request.state.user.role
-    
     if role not in ["admin"]:
         raise HTTPException(403, "you are not authorised to perform this operation")
-    
     try:
         result = await LeadService.assign_unassigned_leads_round_robin(db, user_id)
         return result
     except Exception as e:
         logger.error(f"Error assigning leads: {str(e)}")
         raise HTTPException(500, f"Error during lead assignment: {str(e)}")
+
+
+
+@router.post("/upload-excel", status_code=status.HTTP_200_OK)
+async def upload_leads_excel(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Upload an Excel file (.xlsx or .xls) containing bulk leads.
+    Required columns in the sheet: 'email', 'fname', 'lname'
+    Optional columns: 'i_am_type', 'description', 'phone', 'consent_check'
+    """
+    role = request.state.user.role
+    if role not in{"admin", "investor-assistant"}:
+        raise HTTPException(403, "You are not authorised to bulk upload the data.")
+    if not (file.filename.endswith(".xlsx") or file.filename.endswith(".xls")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Invalid file format. Please upload a valid Excel file (.xlsx or .xls)"
+        )
+    contents = await file.read()
+    result = await LeadService.import_leads_from_excel(db, contents)
+    return result
 
 
 

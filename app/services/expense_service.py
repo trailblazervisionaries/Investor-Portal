@@ -422,7 +422,6 @@ class ExpenseGrowthService:
         growth = await ExpenseGrowth.get_by_id(db, id, expense_id)
         if not growth:
             raise HTTPException(500, f"ExpenseGrowthService: ExpenseGrowth data is not found with id: {id}, Expense_id: {expense_id}")
-
         return growth
 
 

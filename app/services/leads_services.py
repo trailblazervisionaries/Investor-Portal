@@ -12,8 +12,9 @@ from app.models.investor_assist_model import InvestorAssistant
 from app.schemas.leads import createLeads
 import logging
 from io import BytesIO
+import io
 from fastapi.responses import StreamingResponse
-
+import pandas as pd
 from pathlib import Path
 
 # BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -457,3 +458,84 @@ class LeadService:
                 status_code=500,
                 detail=f"Unexpected error during lead assignment: {str(e)}"
             )
+
+
+    @staticmethod
+    async def import_leads_from_excel(db: Session, file_contents: bytes) -> dict:
+        try:
+            df = pd.read_excel(io.BytesIO(file_contents))
+            df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
+
+            required_fields = ["email", "fname", "lname"]
+            for field in required_fields:
+                if field not in df.columns:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Missing required column in Excel sheet: '{field}'"
+                    )
+
+            created_count = 0
+            updated_count = 0
+
+            for _, row in df.iterrows():
+                email = str(row.get("email")).strip()
+                if not email or pd.isna(row.get("email")):
+                    continue  
+
+                result = await db.execute(
+                    select(Leads).where(Leads.email == email, Leads.is_deleted.is_(False))
+                )
+                existing_lead = result.scalars().first()
+
+                fname = str(row.get("fname")) if not pd.isna(row.get("fname")) else ""
+                lname = str(row.get("lname")) if not pd.isna(row.get("lname")) else ""
+                i_am_type = str(row.get("i_am_type")) if not pd.isna(row.get("i_am_type")) else None
+                description = str(row.get("description")) if not pd.isna(row.get("description")) else None
+                phone = str(row.get("phone")) if not pd.isna(row.get("phone")) else None
+                
+                consent_input = row.get("consent_check")
+                consent_check = str(consent_input).lower() in ["true", "1", "yes"] if not pd.isna(consent_input) else True
+
+                if existing_lead:
+                    existing_lead.fname = fname
+                    existing_lead.lname = lname
+                    existing_lead.i_am_type = i_am_type
+                    existing_lead.description = description
+                    existing_lead.phone = phone
+                    existing_lead.consent_check = consent_check
+                    existing_lead.updated_at = datetime.utcnow()
+                    updated_count += 1
+                else:
+                    new_lead = Leads(
+                        fname=fname,
+                        lname=lname,
+                        email=email,
+                        i_am_type=i_am_type,
+                        description=description,
+                        phone=phone,
+                        consent_check=consent_check
+                    )
+                    db.add(new_lead)
+                    created_count += 1
+
+            await db.commit()
+            
+            return {
+                "status": "success",
+                "message": "Excel bulk processing completed successfully.",
+                "created_leads": created_count,
+                "updated_leads": updated_count,
+                "total_processed": created_count + updated_count
+            }
+
+        except HTTPException as he:
+            raise he
+        except SQLAlchemyError as e:
+            await db.rollback()
+            logger.error(f"Database error during bulk Excel import: {e}")
+            raise HTTPException(status_code=500, detail="Database error while processing bulk leads.")
+        except Exception as e:
+            logger.error(f"Unexpected error parsing Excel file: {e}")
+            raise HTTPException(status_code=400, detail="Invalid Excel file format or structure.")
+        
+
