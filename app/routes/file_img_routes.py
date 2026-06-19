@@ -63,11 +63,12 @@ async def upload_profile(
 
 @router.get("/profile-image/{user_id}/{role}")
 async def get_profile_image(
+    request: Request,
     user_id: str,
     role: str,
     db: Session = Depends(get_db),
 ):
-    response = await FileImageProcessService.get_profile_image_buffer(db, user_id, role)
+    response = await FileUploadService.get_profile_image_buffer(db, request, user_id, role)
     if not response:
         raise HTTPException(status_code=404, detail="Image not found in storage")
     return response
