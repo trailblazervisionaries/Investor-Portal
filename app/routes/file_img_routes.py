@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from fastapi.responses import FileResponse
 from app.config.database import get_db
 from sqlalchemy.ext.asyncio import AsyncSession as Session
-from app.services.file_img_process import FileImageProcessService, FileUploadService
+from app.services.file_img_process import  FileUploadService
 from app.schemas.file_schemas import FileReturnResponse
 from pathlib import Path
 from urllib.parse import unquote, urlparse
