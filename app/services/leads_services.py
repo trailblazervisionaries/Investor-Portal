@@ -3,7 +3,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font
 from sqlalchemy.ext.asyncio import AsyncSession as Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, delete
 from datetime import datetime
 from app.models.audit_model import AuditModel
 from dotenv import load_dotenv
@@ -89,6 +89,8 @@ class LeadService:
             page_size=page_size
         )
 
+    async def get_by_id_(db, lead_id):
+        return Leads.get_by_id(db, lead_id)
     
 
     async def delete_the_lead(db, id, user_id, remarks):
@@ -538,4 +540,38 @@ class LeadService:
             logger.error(f"Unexpected error parsing Excel file: {e}")
             raise HTTPException(status_code=400, detail="Invalid Excel file format or structure.")
         
+
+    async def add_new_remarks(db, lead_id, user_id, data):
+        lead = LeadService.get_by_id_(db, lead_id)
+        if not lead:
+            raise HTTPException(404, "Lead not found for adding the remarks")
+        new_remark = LeadRemark(
+            lead_id = lead_id,
+            remark = data.remark,
+            created_by = user_id
+        )
+        db.add(new_remark)
+        await db.commit()
+        await db.refresh(new_remark)
+        return new_remark
+    
+    async def update_remarks(db, remark_id, data):
+        rema = LeadRemark.get_by_id(db, remark_id)
+        if not rema:
+            raise HTTPException(404, "remark not found for updating the remarks")
+        rema.remark = data.remark
+        await db.commit()
+        await db.refresh(rema)
+        return rema
+
+    async def delete_remarks(db, remark_id):
+        result = await db.execute(select(LeadRemark).where(LeadRemark.id == remark_id))
+        remark = result.scalar_one_or_none()
+        if not remark:
+            raise HTTPException(404, "Remark not found for deletion")
+        await db.delete(remark)
+        await db.commit()
+        return {"detail": "Remark successfully deleted"}
+
+
 

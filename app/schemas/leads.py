@@ -88,3 +88,15 @@ class PaginatedLeadResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+
+class CreateRemarks(BaseModel):
+    remark: str
+
+
+class RemarkResponse(BaseModel):
+    id : int
+    remark: str
+    lead_id : str
+    created_by : str
+    created_at : datetime

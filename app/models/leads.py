@@ -199,6 +199,15 @@ class Leads(Base):
         )
         result = await db.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def get_by_id(db, id):
+        stmt = (
+            select(Leads)
+            # .options(selectinload(Leads.remarks))
+            .where(Leads.id == id, Leads.is_deleted == False)
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
 
 
     @staticmethod
@@ -251,4 +260,7 @@ class LeadRemark(Base):
 
 
 
-
+    async def get_by_id(db, remark_id):
+        result = await db.execute(select(LeadRemark).where(LeadRemark.id == remark_id))
+        return result.scalar_one_or_none()
+        

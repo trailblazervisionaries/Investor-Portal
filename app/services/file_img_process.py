@@ -283,17 +283,19 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 
 #    async def get_profile_image_buffer(db, request, user_id, role):
 #       if role == "admin":
-#            admin = await AdminModel.get_by_id(db, user_id)
-#            return FileUploadService.convert_to_public_url(request, admin.profile_image)
+#            user = await AdminModel.get_by_id(db, user_id)
+#            return FileUploadService.convert_to_public_url(request, user.profile_image)
 #        elif role == "investor-assistant":
-#            inv_assist = await InvestorAssistant.get_by_id(db, user_id)
-#            return FileUploadService.convert_to_public_url(request, inv_assist.profile_image)
+#            user = await InvestorAssistant.get_by_id(db, user_id)
+#            return FileUploadService.convert_to_public_url(request, user.profile_image)
 #        elif role == "fund-assistant":
-#            fund_assist = await FundAssistant.get_by_id(db, user_id)
-#           return FileUploadService.convert_to_public_url(request, fund_assist.profile_image)
-#        else:
-#            investor = await Investors.get_by_id(db, user_id)
-#            return FileUploadService.convert_to_public_url(request, investor.profile_image)
+#            user = await FundAssistant.get_by_id(db, user_id)
+#           return FileUploadService.convert_to_public_url(request, user.profile_image)
+#        elif == "investor":
+#            user = await Investors.get_by_id(db, user_id)
+#            return FileUploadService.convert_to_public_url(request, user.profile_image)
+#        if not user:
+#           return None
 
 
 
@@ -533,14 +535,17 @@ class FileUploadService:
 
     async def get_profile_image_buffer(db, request, user_id, role):
         if role == "admin":
-            admin = await AdminModel.get_by_id(db, user_id)
-            return FileUploadService.convert_to_public_url(request, admin.profile_image)
+            user = await AdminModel.get_by_id(db, user_id)
+            return FileUploadService.convert_to_public_url(request, user.profile_image)
         elif role == "investor-assistant":
-            inv_assist = await InvestorAssistant.get_by_id(db, user_id)
-            return FileUploadService.convert_to_public_url(request, inv_assist.profile_image)
+            user = await InvestorAssistant.get_by_id(db, user_id)
+            return FileUploadService.convert_to_public_url(request, user.profile_image)
         elif role == "fund-assistant":
-            fund_assist = await FundAssistant.get_by_id(db, user_id)
-            return FileUploadService.convert_to_public_url(request, fund_assist.profile_image)
-        else:
-            investor = await Investors.get_by_id(db, user_id)
-            return FileUploadService.convert_to_public_url(request, investor.profile_image)
+            user = await FundAssistant.get_by_id(db, user_id)
+            return FileUploadService.convert_to_public_url(request, user.profile_image)
+        elif role == "investor":
+            user = await Investors.get_by_id(db, user_id)
+            return FileUploadService.convert_to_public_url(request, user.profile_image)
+        if not user:
+            return None
+        
