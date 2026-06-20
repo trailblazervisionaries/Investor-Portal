@@ -230,7 +230,7 @@ async def upload_leads_excel(
 
 
 @router.post("/add-remark/{lead_id}", response_model=RemarkResponse)
-async def add_new_remarks_(lead_id: str, request: Request, data: CreateRemarks, db : Session = Depends(get_db)):
+async def add_new_remarks_(lead_id: str, request: Request, data: CreateRemarks, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     role = request.state.user.role
     if role != "investor-assistant":
@@ -238,8 +238,9 @@ async def add_new_remarks_(lead_id: str, request: Request, data: CreateRemarks, 
     remark = LeadService.add_new_remarks(db, lead_id, user_id, data)
     return RemarkResponse.model_validate(remark)
 
+
 @router.put("/update-remark/{remark_id}",  response_model=RemarkResponse)
-async def update_remarks_(remark_id: str, request: Request, data: CreateRemarks, db : Session = Depends(get_db)):
+async def update_remarks_(remark_id: str, request: Request, data: CreateRemarks, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     role = request.state.user.role
     if role != "investor-assistant":
@@ -247,13 +248,12 @@ async def update_remarks_(remark_id: str, request: Request, data: CreateRemarks,
     remark = LeadService.update_remarks(db, remark_id, data)
     return RemarkResponse.model_validate(remark)
 
+
 @router.delete("/delete-remark/{remark_id}")
-async def delete_remarks_(remark_id: str, request: Request, db : Session = Depends(get_db)):
+async def delete_remarks_(remark_id: str, request: Request, db: Session = Depends(get_db)):
     user_id = request.state.user.user_id
     role = request.state.user.role
     if role != "investor-assistant":
         raise HTTPException(403, "You have not autthorise to do this work.")
     return LeadService.delete_remarks(db, remark_id, user_id)
-
-
 

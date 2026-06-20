@@ -54,7 +54,6 @@ async def get_audit_logs(
     end_date: Optional[datetime] = Form(None),
     page: int = Query(default=1, ge=1, description="Page number"),
     size: int = Query(default=20, ge=1, le=100, description="Items per page")
-
 ):
     role = request.state.user.role
     if role not in ["admin","investor-assistant", "fund-assistant"]:
