@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 S3_BUCKET_NAME = os.getenv("AWS_S3_BUCKET", "your-bucket-name")
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
+AWS_ACCESS_KEY_ID=os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY=os.getenv("AWS_SECRET_ACCESS_KEY")
 
 # class FileUploadService:
 
@@ -28,9 +30,16 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 #         self.id = id
 #         self.session = aioboto3.Session()
 
-#     async def _get_s3_client(self):
-#         """Helper to yield an async S3 client context."""
-#         return self.session.client("s3", region_name=AWS_REGION)
+    # @asynccontextmanager
+    # async def _get_s3_client(self):
+    #     """Yields an async S3 client using explicit credentials."""
+    #     async with self.session.client(
+    #         "s3", 
+    #         region_name=AWS_REGION,
+    #         aws_access_key_id=AWS_ACCESS_KEY_ID,      
+    #         aws_secret_access_key=AWS_SECRET_ACCESS_KEY   
+    #     ) as client:
+    #         yield client
 
 #     def _generate_s3_key(self, folder_name: str, filename: str) -> str:
 #         """Helper to generate standard S3 structural keys instead of local paths."""
